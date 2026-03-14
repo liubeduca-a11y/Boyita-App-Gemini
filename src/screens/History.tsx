@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useStore, BabyEvent } from '../store';
-import { format } from 'date-fns';
+import { format, isAfter, isBefore, startOfDay, endOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Trash2, Edit2, Download, FileText, FileSpreadsheet, Check, X } from 'lucide-react';
+import { Trash2, Edit2, Download, FileText, FileSpreadsheet, Check, X, Calendar } from 'lucide-react';
 import { cn } from '../components/Layout';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
@@ -13,6 +13,22 @@ export function History() {
   const [showExport, setShowExport] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editNotes, setEditNotes] = useState('');
+
+  const [filterType, setFilterType] = useState<'all' | 'custom'>('all');
+  const [customStart, setCustomStart] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
+  const [customEnd, setCustomEnd] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
+
+  const filteredEvents = useMemo(() => {
+    if (filterType === 'all') return events;
+    
+    const start = startOfDay(new Date(customStart));
+    const end = endOfDay(new Date(customEnd));
+    
+    return events.filter(e => {
+      const eventDate = new Date(e.timestamp);
+      return isAfter(eventDate, start) && isBefore(eventDate, end);
+    });
+  }, [events, filterType, customStart, customEnd]);
 
   const formatEventTime = (timestamp: number) => {
     return format(new Date(timestamp), "HH:mm", { locale: es });
@@ -57,7 +73,7 @@ export function History() {
     const doc = new jsPDF();
     doc.text("Reporte Boyita App", 14, 15);
     
-    const tableData = events.map(e => [
+    const tableData = filteredEvents.map(e => [
       formatEventDate(e.timestamp),
       formatEventTime(e.timestamp),
       e.type,
@@ -76,7 +92,7 @@ export function History() {
   };
 
   const exportCSV = () => {
-    const data = events.map(e => ({
+    const data = filteredEvents.map(e => ({
       Fecha: formatEventDate(e.timestamp),
       Hora: formatEventTime(e.timestamp),
       Tipo: e.type,
@@ -108,7 +124,7 @@ export function History() {
   };
 
   // Group events by date
-  const groupedEvents = events.reduce((acc, event) => {
+  const groupedEvents = filteredEvents.reduce((acc, event) => {
     const date = formatEventDate(event.timestamp);
     if (!acc[date]) acc[date] = [];
     acc[date].push(event);
@@ -119,34 +135,68 @@ export function History() {
     <div className="p-4 space-y-6 max-w-md mx-auto pb-8">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold text-gray-800">Historial</h2>
-        <div className="relative">
+        <div className="flex items-center space-x-2">
           <button 
-            onClick={() => setShowExport(!showExport)}
-            className="p-2 bg-theme-light text-theme-dark rounded-full hover:bg-theme-base hover:text-white transition-colors"
+            onClick={() => setFilterType(filterType === 'all' ? 'custom' : 'all')}
+            className={cn(
+              "p-2 rounded-full transition-colors",
+              filterType === 'custom' ? "bg-theme-base text-white" : "bg-theme-light text-theme-dark hover:bg-theme-base hover:text-white"
+            )}
           >
-            <Download className="w-5 h-5" />
+            <Calendar className="w-5 h-5" />
           </button>
-          
-          {showExport && (
-            <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden z-30 animate-in fade-in slide-in-from-top-2">
-              <button onClick={exportPDF} className="w-full flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 border-b">
-                <FileText className="w-4 h-4 mr-2 text-red-500" /> Exportar PDF
-              </button>
-              <button onClick={exportCSV} className="w-full flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50">
-                <FileSpreadsheet className="w-4 h-4 mr-2 text-green-500" /> Exportar Excel (CSV)
-              </button>
-            </div>
-          )}
+          <div className="relative">
+            <button 
+              onClick={() => setShowExport(!showExport)}
+              className="p-2 bg-theme-light text-theme-dark rounded-full hover:bg-theme-base hover:text-white transition-colors"
+            >
+              <Download className="w-5 h-5" />
+            </button>
+            
+            {showExport && (
+              <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden z-30 animate-in fade-in slide-in-from-top-2">
+                <button onClick={exportPDF} className="w-full flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 border-b">
+                  <FileText className="w-4 h-4 mr-2 text-red-500" /> Exportar PDF
+                </button>
+                <button onClick={exportCSV} className="w-full flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50">
+                  <FileSpreadsheet className="w-4 h-4 mr-2 text-green-500" /> Exportar Excel (CSV)
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
-      {events.length === 0 ? (
+      {filterType === 'custom' && (
+        <div className="flex space-x-3 bg-white p-3 rounded-xl shadow-sm border border-gray-100 animate-in fade-in slide-in-from-top-2">
+          <div className="flex-1">
+            <label className="block text-xs font-medium text-gray-500 mb-1">Desde</label>
+            <input 
+              type="date" 
+              value={customStart}
+              onChange={(e) => setCustomStart(e.target.value)}
+              className="w-full text-sm p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-theme-base outline-none"
+            />
+          </div>
+          <div className="flex-1">
+            <label className="block text-xs font-medium text-gray-500 mb-1">Hasta</label>
+            <input 
+              type="date" 
+              value={customEnd}
+              onChange={(e) => setCustomEnd(e.target.value)}
+              className="w-full text-sm p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-theme-base outline-none"
+            />
+          </div>
+        </div>
+      )}
+
+      {filteredEvents.length === 0 ? (
         <div className="text-center py-12 text-gray-500">
           <p>No hay registros aún.</p>
         </div>
       ) : (
         <div className="space-y-6">
-          {Object.entries(groupedEvents).map(([date, dayEvents]) => (
+          {Object.entries(groupedEvents).map(([date, dayEvents]: [string, BabyEvent[]]) => (
             <div key={date} className="space-y-3">
               <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider sticky top-0 bg-gray-50 py-2 z-10">
                 {date}
@@ -185,7 +235,7 @@ export function History() {
                         event.notes && <p className="text-xs text-gray-500 mt-1 italic">"{event.notes}"</p>
                       )}
                     </div>
-                    <div className="ml-2 flex flex-col space-y-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="ml-2 flex flex-col space-y-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                       <button 
                         onClick={() => handleEdit(event)}
                         className="p-1.5 text-blue-400 hover:bg-blue-50 rounded-lg transition-colors"

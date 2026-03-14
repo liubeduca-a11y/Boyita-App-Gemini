@@ -1,0 +1,76 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "A user of the app",
+      "type": "object",
+      "properties": {
+        "familyId": { "type": "string" },
+        "email": { "type": "string" },
+        "name": { "type": "string" }
+      },
+      "required": ["familyId", "email"]
+    },
+    "Family": {
+      "title": "Family",
+      "description": "A family unit tracking a baby",
+      "type": "object",
+      "properties": {
+        "members": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "babyProfile": {
+          "type": "object",
+          "properties": {
+            "name": { "type": "string" },
+            "birthDate": { "type": "string" },
+            "photoUrl": { "type": "string" }
+          }
+        },
+        "activeFeeding": {
+          "type": "object",
+          "properties": {
+            "startTime": { "type": "number" },
+            "type": { "type": "string" }
+          }
+        },
+        "activeSleep": {
+          "type": "object",
+          "properties": {
+            "startTime": { "type": "number" }
+          }
+        }
+      },
+      "required": ["members"]
+    },
+    "BabyEvent": {
+      "title": "BabyEvent",
+      "description": "An event tracked for the baby",
+      "type": "object",
+      "properties": {
+        "type": { "type": "string" },
+        "timestamp": { "type": "number" },
+        "endTimestamp": { "type": "number" },
+        "details": { "type": "object" },
+        "notes": { "type": "string" },
+        "authorId": { "type": "string" }
+      },
+      "required": ["type", "timestamp", "authorId"]
+    }
+  },
+  "firestore": {
+    "users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "User profiles"
+    },
+    "families/{familyId}": {
+      "schema": { "$ref": "#/entities/Family" },
+      "description": "Family units"
+    },
+    "families/{familyId}/events/{eventId}": {
+      "schema": { "$ref": "#/entities/BabyEvent" },
+      "description": "Events for a family"
+    }
+  }
+}
