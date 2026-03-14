@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useStore } from '../store';
-import { Clock, Droplets, Moon, Wind, Check, X } from 'lucide-react';
+import { Clock, Droplets, Moon, Wind, Check, X, Camera } from 'lucide-react';
 import { cn } from '../components/Layout';
 
 function formatDuration(ms: number) {
@@ -154,6 +154,46 @@ function HygieneModule() {
   const [level, setLevel] = useState<'poco' | 'mucho' | 'lleno' | null>(null);
   const [texture, setTexture] = useState<'liquido' | 'pastoso' | 'duro' | null>(null);
   const [notes, setNotes] = useState('');
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Compress image before saving to avoid hitting Firestore 1MB limit
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 800;
+          const MAX_HEIGHT = 800;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width;
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width *= MAX_HEIGHT / height;
+              height = MAX_HEIGHT;
+            }
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.6); // 60% quality JPEG
+          setPhotoUrl(dataUrl);
+        };
+        img.src = reader.result as string;
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleSave = () => {
     if (!type) return;
@@ -164,6 +204,7 @@ function HygieneModule() {
         hygieneType: type,
         level: type === 'pee' ? level || undefined : undefined,
         texture: type === 'poo' ? texture || undefined : undefined,
+        photoUrl: type === 'poo' && photoUrl ? photoUrl : undefined,
       },
       notes
     });
@@ -172,6 +213,7 @@ function HygieneModule() {
     setLevel(null);
     setTexture(null);
     setNotes('');
+    setPhotoUrl(null);
   };
 
   return (
@@ -186,7 +228,7 @@ function HygieneModule() {
       <div className="space-y-4">
         <div className="flex space-x-3">
           <button
-            onClick={() => { setType('pee'); setTexture(null); }}
+            onClick={() => { setType('pee'); setTexture(null); setPhotoUrl(null); }}
             className={cn(
               "flex-1 py-3 rounded-xl font-medium border transition-all",
               type === 'pee' ? "bg-theme-base border-theme-dark text-theme-text" : "bg-gray-50 border-gray-200 text-gray-600"
@@ -226,21 +268,54 @@ function HygieneModule() {
         )}
 
         {type === 'poo' && (
-          <div className="animate-in slide-in-from-top-2 duration-200">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Textura</label>
-            <div className="flex space-x-2">
-              {['liquido', 'pastoso', 'duro'].map((t) => (
+          <div className="animate-in slide-in-from-top-2 duration-200 space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Textura</label>
+              <div className="flex space-x-2">
+                {['liquido', 'pastoso', 'duro'].map((t) => (
+                  <button
+                    key={t}
+                    onClick={() => setTexture(t as any)}
+                    className={cn(
+                      "flex-1 py-2 rounded-lg text-sm font-medium border capitalize transition-all",
+                      texture === t ? "bg-theme-light border-theme-base text-theme-dark" : "bg-white border-gray-200 text-gray-600"
+                    )}
+                  >
+                    {t}
+                  </button>
+                ))}
+              </div>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Foto (Opcional)</label>
+              {photoUrl ? (
+                <div className="relative rounded-xl overflow-hidden border border-gray-200 h-32 bg-gray-50">
+                  <img src={photoUrl} alt="Popó" className="w-full h-full object-cover" />
+                  <button 
+                    onClick={() => setPhotoUrl(null)}
+                    className="absolute top-2 right-2 p-1.5 bg-black/50 text-white rounded-full hover:bg-black/70"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
                 <button
-                  key={t}
-                  onClick={() => setTexture(t as any)}
-                  className={cn(
-                    "flex-1 py-2 rounded-lg text-sm font-medium border capitalize transition-all",
-                    texture === t ? "bg-theme-light border-theme-base text-theme-dark" : "bg-white border-gray-200 text-gray-600"
-                  )}
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full py-4 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 hover:bg-gray-50 hover:border-gray-400 transition-all flex flex-col items-center justify-center space-y-2"
                 >
-                  {t}
+                  <Camera className="w-6 h-6" />
+                  <span className="text-sm font-medium">Tomar foto o subir imagen</span>
                 </button>
-              ))}
+              )}
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                onChange={handlePhotoChange} 
+                accept="image/*" 
+                capture="environment"
+                className="hidden" 
+              />
             </div>
           </div>
         )}

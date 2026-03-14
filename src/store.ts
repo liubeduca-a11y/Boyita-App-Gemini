@@ -15,6 +15,7 @@ export interface BabyEvent {
     hygieneType?: 'pee' | 'poo';
     level?: 'poco' | 'mucho' | 'lleno';
     texture?: 'liquido' | 'pastoso' | 'duro';
+    photoUrl?: string; // base64 photo of the poop
   };
   notes?: string;
   authorId?: string;

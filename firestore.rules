@@ -69,7 +69,8 @@ service cloud.firestore {
              data.timestamp is number &&
              data.authorId == request.auth.uid &&
              (!('endTimestamp' in data) || data.endTimestamp is number) &&
-             (!('notes' in data) || (data.notes is string && data.notes.size() < 1000));
+             (!('notes' in data) || (data.notes is string && data.notes.size() < 1000)) &&
+             (!('details' in data) || data.details is map);
     }
 
     match /users/{userId} {

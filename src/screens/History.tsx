@@ -214,6 +214,12 @@ export function History() {
                       </div>
                       <p className="text-sm text-gray-600 mt-0.5">{getEventDescription(event)}</p>
                       
+                      {event.details?.photoUrl && (
+                        <div className="mt-2 rounded-lg overflow-hidden border border-gray-100 w-24 h-24">
+                          <img src={event.details.photoUrl} alt="Foto del evento" className="w-full h-full object-cover" />
+                        </div>
+                      )}
+
                       {editingId === event.id ? (
                         <div className="mt-2 flex items-center space-x-2">
                           <input 
