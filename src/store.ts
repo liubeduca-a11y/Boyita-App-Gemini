@@ -87,7 +87,8 @@ export const useStore = create<AppState>()(
 
         if (familyId && auth.currentUser) {
           try {
-            await setDoc(doc(db, `families/${familyId}/events/${newId}`), newEvent);
+            const firestoreEvent = JSON.parse(JSON.stringify(newEvent));
+            await setDoc(doc(db, `families/${familyId}/events/${newId}`), firestoreEvent);
           } catch (error) {
             console.error("Error adding event to Firebase", error);
           }
@@ -104,7 +105,8 @@ export const useStore = create<AppState>()(
 
         if (familyId && auth.currentUser) {
           try {
-            await updateDoc(doc(db, `families/${familyId}/events/${id}`), updatedEvent);
+            const firestoreUpdate = JSON.parse(JSON.stringify(updatedEvent));
+            await updateDoc(doc(db, `families/${familyId}/events/${id}`), firestoreUpdate);
           } catch (error) {
             console.error("Error updating event in Firebase", error);
           }
@@ -206,7 +208,8 @@ export const useStore = create<AppState>()(
 
         if (familyId && auth.currentUser) {
           try {
-            await updateDoc(doc(db, `families/${familyId}`), { babyProfile: newProfile });
+            const firestoreProfile = JSON.parse(JSON.stringify(newProfile));
+            await updateDoc(doc(db, `families/${familyId}`), { babyProfile: firestoreProfile });
           } catch (error) {
             console.error("Error updating profile", error);
           }

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { auth, db } from '../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc, setDoc, onSnapshot, collection, query, writeBatch } from 'firebase/firestore';
+import { doc, getDoc, setDoc, onSnapshot, collection, query, writeBatch, getDocs } from 'firebase/firestore';
 import { useStore, BabyEvent } from '../store';
 
 export function FirebaseProvider({ children }: { children: React.ReactNode }) {
@@ -41,7 +41,8 @@ export function FirebaseProvider({ children }: { children: React.ReactNode }) {
               const batch = writeBatch(db);
               state.events.forEach(event => {
                 const eventRef = doc(db, `families/${currentFamilyId}/events/${event.id}`);
-                batch.set(eventRef, { ...event, authorId: user.uid });
+                const cleanEvent = JSON.parse(JSON.stringify({ ...event, authorId: user.uid }));
+                batch.set(eventRef, cleanEvent);
               });
               await batch.commit();
             }
@@ -66,6 +67,33 @@ export function FirebaseProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!isAuthReady || !familyId || !auth.currentUser) return;
+
+    // Sync missing local events to Firestore (fixes independent records issue)
+    const syncMissingEvents = async () => {
+      try {
+        const localEvents = useStore.getState().events;
+        if (localEvents.length === 0) return;
+        
+        const q = query(collection(db, `families/${familyId}/events`));
+        const snap = await getDocs(q);
+        const firestoreIds = new Set(snap.docs.map(d => d.id));
+        
+        const missing = localEvents.filter(e => !firestoreIds.has(e.id));
+        if (missing.length > 0) {
+          const batch = writeBatch(db);
+          missing.forEach(event => {
+            const eventRef = doc(db, `families/${familyId}/events/${event.id}`);
+            const cleanEvent = JSON.parse(JSON.stringify({ ...event, authorId: auth.currentUser!.uid }));
+            batch.set(eventRef, cleanEvent);
+          });
+          await batch.commit();
+        }
+      } catch (error) {
+        console.error("Error syncing missing events:", error);
+      }
+    };
+    
+    syncMissingEvents();
 
     // Listen to family document (profile, active states)
     const unsubFamily = onSnapshot(doc(db, 'families', familyId), (docSnap) => {
