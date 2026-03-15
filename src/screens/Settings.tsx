@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useStore, ThemeColor } from '../store';
-import { Camera, Save, Palette, User, Calendar, Cloud, LogOut, LogIn } from 'lucide-react';
+import { Camera, Save, Palette, User, Calendar, Cloud, LogOut, LogIn, RefreshCw } from 'lucide-react';
 import { cn } from '../components/Layout';
 import { differenceInMonths, differenceInDays } from 'date-fns';
-import { auth, loginWithGoogle, logout } from '../firebase';
+import { auth, loginWithGoogle, logout, db } from '../firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
+import { collection, query, getDocs, writeBatch, doc } from 'firebase/firestore';
 
 const THEMES: { id: ThemeColor; name: string; color: string }[] = [
   { id: 'blue', name: 'Azul Pastel', color: '#AEC6CF' },
@@ -21,6 +22,7 @@ export function Settings() {
   const [photoUrl, setPhotoUrl] = useState(profile.photoUrl);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [user, setUser] = useState<FirebaseUser | null>(null);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -57,6 +59,36 @@ export function Settings() {
     }
   };
 
+  const handleForceSync = async () => {
+    if (!user || !familyId) return;
+    setIsSyncing(true);
+    try {
+      const localEvents = useStore.getState().events;
+      const q = query(collection(db, `families/${familyId}/events`));
+      const snap = await getDocs(q);
+      const firestoreIds = new Set(snap.docs.map(d => d.id));
+      
+      const missing = localEvents.filter(e => !firestoreIds.has(e.id));
+      
+      if (missing.length > 0) {
+        const batch = writeBatch(db);
+        missing.forEach(event => {
+          const eventRef = doc(db, `families/${familyId}/events/${event.id}`);
+          const cleanEvent = JSON.parse(JSON.stringify({ ...event, authorId: user.uid }));
+          batch.set(eventRef, cleanEvent);
+        });
+        await batch.commit();
+        alert(`¡Éxito! Se sincronizaron ${missing.length} registros pendientes a la nube.`);
+      } else {
+        alert('Todo está al día. No hay registros pendientes por subir en este teléfono.');
+      }
+    } catch (error: any) {
+      alert('Error al sincronizar: ' + error.message);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   return (
     <div className="p-4 space-y-6 max-w-md mx-auto pb-8">
       <h2 className="text-2xl font-bold text-gray-800">Ajustes</h2>
@@ -77,18 +109,29 @@ export function Settings() {
               <div className="flex-1 overflow-hidden">
                 <p className="text-sm font-medium text-gray-800 truncate">{user.displayName}</p>
                 <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                <p className="text-[10px] text-gray-400 truncate mt-1">ID: {familyId}</p>
               </div>
             </div>
             <p className="text-xs text-gray-500 text-center">
-              Tus datos se están sincronizando en la nube. Para compartir con tu pareja, inicien sesión con la misma cuenta de Google.
+              Tus datos se están sincronizando en la nube.
             </p>
-            <button
-              onClick={logout}
-              className="w-full py-2.5 mt-2 bg-red-50 text-red-600 rounded-xl font-medium flex items-center justify-center space-x-2 hover:bg-red-100 transition-all"
-            >
-              <LogOut className="w-4 h-4" />
-              <span>Cerrar Sesión</span>
-            </button>
+            <div className="flex flex-col space-y-2">
+              <button
+                onClick={handleForceSync}
+                disabled={isSyncing}
+                className="w-full py-2.5 bg-theme-base text-white rounded-xl font-medium flex items-center justify-center space-x-2 hover:bg-theme-dark transition-all disabled:opacity-50"
+              >
+                <RefreshCw className={cn("w-4 h-4", isSyncing && "animate-spin")} />
+                <span>{isSyncing ? 'Sincronizando...' : 'Forzar Sincronización'}</span>
+              </button>
+              <button
+                onClick={logout}
+                className="w-full py-2.5 bg-red-50 text-red-600 rounded-xl font-medium flex items-center justify-center space-x-2 hover:bg-red-100 transition-all"
+              >
+                <LogOut className="w-4 h-4" />
+                <span>Cerrar Sesión</span>
+              </button>
+            </div>
           </div>
         ) : (
           <div className="space-y-4">
