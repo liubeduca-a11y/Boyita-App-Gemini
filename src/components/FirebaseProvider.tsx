@@ -48,6 +48,19 @@ export function FirebaseProvider({ children }: { children: React.ReactNode }) {
             }
           } else {
             currentFamilyId = userSnap.data().familyId;
+            
+            // Ensure family document exists even if user existed before
+            const familyRef = doc(db, 'families', currentFamilyId);
+            const familySnap = await getDoc(familyRef);
+            if (!familySnap.exists()) {
+              const state = useStore.getState();
+              await setDoc(familyRef, {
+                members: [user.uid],
+                babyProfile: state.profile,
+                activeFeeding: state.activeFeeding || null,
+                activeSleep: state.activeSleep || null,
+              });
+            }
           }
 
           setFamilyId(currentFamilyId);
@@ -103,6 +116,8 @@ export function FirebaseProvider({ children }: { children: React.ReactNode }) {
         if (data.activeFeeding !== undefined) setActiveFeeding(data.activeFeeding);
         if (data.activeSleep !== undefined) setActiveSleep(data.activeSleep);
       }
+    }, (error) => {
+      console.error("Error in family snapshot:", error);
     });
 
     // Listen to events
@@ -115,6 +130,8 @@ export function FirebaseProvider({ children }: { children: React.ReactNode }) {
       // Sort in memory to avoid needing a composite index immediately
       events.sort((a, b) => b.timestamp - a.timestamp);
       setEvents(events);
+    }, (error) => {
+      console.error("Error in events snapshot:", error);
     });
 
     return () => {

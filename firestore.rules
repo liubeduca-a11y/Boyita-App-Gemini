@@ -41,9 +41,11 @@ service cloud.firestore {
     }
     
     function isFamilyMember(familyId) {
-      return isAuthenticated() && 
-             exists(/databases/$(database)/documents/families/$(familyId)) &&
-             request.auth.uid in get(/databases/$(database)/documents/families/$(familyId)).data.members;
+      return isAuthenticated() && (
+        request.auth.uid == familyId ||
+        (exists(/databases/$(database)/documents/families/$(familyId)) &&
+         request.auth.uid in get(/databases/$(database)/documents/families/$(familyId)).data.members)
+      );
     }
 
     function isValidUser() {
