@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useStore } from '../store';
 import { Share2, Calendar, Filter } from 'lucide-react';
 import { subHours, subDays, startOfMonth, isAfter, isBefore, startOfDay, endOfDay, format } from 'date-fns';
-import html2canvas from 'html2canvas';
+import { toBlob } from 'html-to-image';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell
@@ -87,23 +87,24 @@ export function Analytics() {
   const handleShare = async () => {
     if (!analyticsRef.current) return;
     try {
-      const canvas = await html2canvas(analyticsRef.current, { scale: 2, useCORS: true });
-      canvas.toBlob(async (blob) => {
-        if (!blob) return;
-        const file = new File([blob], 'analisis-boyita.png', { type: 'image/png' });
-        if (navigator.share && navigator.canShare({ files: [file] })) {
-          await navigator.share({
-            title: 'Análisis Boyita',
-            files: [file]
-          });
-        } else {
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = 'analisis-boyita.png';
-          a.click();
-        }
-      });
+      const blob = await toBlob(analyticsRef.current, { cacheBust: true, backgroundColor: '#f9fafb' });
+      if (!blob) throw new Error('No se pudo generar la imagen');
+      
+      const file = new File([blob], 'analisis-boyita.png', { type: 'image/png' });
+      
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          title: 'Análisis Boyita',
+          files: [file]
+        });
+      } else {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'analisis-boyita.png';
+        a.click();
+        URL.revokeObjectURL(url);
+      }
     } catch (error) {
       console.error('Error sharing:', error);
       alert('Hubo un error al generar la imagen.');
