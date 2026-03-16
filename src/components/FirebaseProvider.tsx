@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { auth, db } from '../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc, setDoc, onSnapshot, collection, query, writeBatch, getDocs } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, onSnapshot, collection, query, writeBatch, getDocs } from 'firebase/firestore';
 import { useStore, BabyEvent } from '../store';
 
 export function FirebaseProvider({ children }: { children: React.ReactNode }) {
@@ -48,6 +48,11 @@ export function FirebaseProvider({ children }: { children: React.ReactNode }) {
             }
           } else {
             currentFamilyId = userSnap.data().familyId;
+            
+            if (!currentFamilyId) {
+              currentFamilyId = user.uid;
+              await updateDoc(userRef, { familyId: currentFamilyId });
+            }
             
             // Ensure family document exists even if user existed before
             const familyRef = doc(db, 'families', currentFamilyId);
@@ -117,7 +122,7 @@ export function FirebaseProvider({ children }: { children: React.ReactNode }) {
         if (data.activeSleep !== undefined) setActiveSleep(data.activeSleep);
       }
     }, (error) => {
-      console.error("Error in family snapshot:", error);
+      console.error(`Error in family snapshot for familyId ${familyId}:`, error);
     });
 
     // Listen to events
@@ -131,7 +136,7 @@ export function FirebaseProvider({ children }: { children: React.ReactNode }) {
       events.sort((a, b) => b.timestamp - a.timestamp);
       setEvents(events);
     }, (error) => {
-      console.error("Error in events snapshot:", error);
+      console.error(`Error in events snapshot for familyId ${familyId}:`, error);
     });
 
     return () => {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useStore } from '../store';
-import { Clock, Droplets, Moon, Wind, Check, X, Camera } from 'lucide-react';
+import { Clock, Droplets, Moon, Wind, Check, X, Camera, Edit3, Timer } from 'lucide-react';
 import { cn } from '../components/Layout';
 
 function formatDuration(ms: number) {
@@ -27,6 +27,7 @@ function FeedingModule() {
   const [showModal, setShowModal] = useState(false);
   const [oz, setOz] = useState('');
   const [notes, setNotes] = useState('');
+  const [mode, setMode] = useState<'timer' | 'manual'>('manual');
 
   useEffect(() => {
     let interval: number;
@@ -44,9 +45,21 @@ function FeedingModule() {
     setShowModal(true);
   };
 
-  const handleSave = () => {
+  const handleSaveTimer = () => {
     stopFeeding(Number(oz), notes);
     setShowModal(false);
+    setOz('');
+    setNotes('');
+  };
+
+  const handleSaveManual = () => {
+    if (!oz) return;
+    addEvent({
+      type: 'feeding',
+      timestamp: Date.now(),
+      details: { amount: Number(oz) },
+      notes
+    });
     setOz('');
     setNotes('');
   };
@@ -60,33 +73,84 @@ function FeedingModule() {
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
-      <div className="flex items-center space-x-3 mb-4">
-        <div className="p-2 bg-theme-light rounded-xl text-theme-dark">
-          <Droplets className="w-6 h-6" />
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center space-x-3">
+          <div className="p-2 bg-theme-light rounded-xl text-theme-dark">
+            <Droplets className="w-6 h-6" />
+          </div>
+          <h2 className="text-lg font-semibold text-gray-800">Alimentación</h2>
         </div>
-        <h2 className="text-lg font-semibold text-gray-800">Alimentación</h2>
+        <div className="flex bg-gray-100 p-1 rounded-lg">
+          <button
+            onClick={() => setMode('manual')}
+            className={cn("p-1.5 rounded-md transition-all", mode === 'manual' ? "bg-white shadow-sm text-theme-dark" : "text-gray-500")}
+          >
+            <Edit3 className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => setMode('timer')}
+            className={cn("p-1.5 rounded-md transition-all", mode === 'timer' ? "bg-white shadow-sm text-theme-dark" : "text-gray-500")}
+          >
+            <Timer className="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
       <div className="space-y-4">
-        {activeFeeding ? (
-          <div className="flex flex-col items-center p-6 bg-theme-light/50 rounded-xl border border-theme-base/20">
-            <span className="text-3xl font-mono font-medium text-theme-dark mb-4">
-              {formatDuration(elapsed)}
-            </span>
+        {mode === 'timer' ? (
+          activeFeeding ? (
+            <div className="flex flex-col items-center p-6 bg-theme-light/50 rounded-xl border border-theme-base/20">
+              <span className="text-3xl font-mono font-medium text-theme-dark mb-4">
+                {formatDuration(elapsed)}
+              </span>
+              <button
+                onClick={handleStop}
+                className="w-full py-4 bg-red-500 hover:bg-red-600 active:bg-red-700 text-white rounded-xl font-semibold text-lg transition-colors shadow-sm"
+              >
+                Finalizar Toma
+              </button>
+            </div>
+          ) : (
             <button
-              onClick={handleStop}
-              className="w-full py-4 bg-red-500 hover:bg-red-600 active:bg-red-700 text-white rounded-xl font-semibold text-lg transition-colors shadow-sm"
+              onClick={startFeeding}
+              className="w-full py-4 bg-theme-base hover:bg-theme-dark active:scale-[0.98] text-theme-text rounded-xl font-semibold text-lg transition-all shadow-sm flex items-center justify-center space-x-2"
             >
-              Finalizar Toma
+              <Timer className="w-5 h-5" />
+              <span>Iniciar Cronómetro</span>
+            </button>
+          )
+        ) : (
+          <div className="space-y-3 animate-in fade-in duration-200">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Onzas Consumidas</label>
+              <input
+                type="number"
+                step="0.5"
+                value={oz}
+                onChange={(e) => setOz(e.target.value)}
+                className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-theme-base outline-none text-lg"
+                placeholder="Ej. 4.5"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Comentarios del padre</label>
+              <input
+                type="text"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Observaciones..."
+                className="w-full p-3 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-theme-base outline-none"
+              />
+            </div>
+            <button
+              onClick={handleSaveManual}
+              disabled={!oz}
+              className="w-full py-3 bg-theme-dark text-white rounded-xl font-semibold flex items-center justify-center space-x-2 disabled:opacity-50"
+            >
+              <Check className="w-5 h-5" />
+              <span>Registrar Toma</span>
             </button>
           </div>
-        ) : (
-          <button
-            onClick={startFeeding}
-            className="w-full py-4 bg-theme-base hover:bg-theme-dark active:scale-[0.98] text-theme-text rounded-xl font-semibold text-lg transition-all shadow-sm"
-          >
-            Iniciar Toma
-          </button>
         )}
 
         <button
@@ -133,7 +197,7 @@ function FeedingModule() {
                   Cancelar
                 </button>
                 <button
-                  onClick={handleSave}
+                  onClick={handleSaveTimer}
                   disabled={!oz}
                   className="flex-1 py-3 bg-theme-base text-theme-text rounded-xl font-semibold disabled:opacity-50"
                 >
@@ -151,7 +215,7 @@ function FeedingModule() {
 function HygieneModule() {
   const { addEvent } = useStore();
   const [type, setType] = useState<'pee' | 'poo' | null>(null);
-  const [level, setLevel] = useState<'poco' | 'mucho' | 'lleno' | null>(null);
+  const [level, setLevel] = useState<'poco' | 'medio' | 'lleno' | null>(null);
   const [texture, setTexture] = useState<'liquido' | 'pastoso' | 'duro' | null>(null);
   const [notes, setNotes] = useState('');
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
@@ -251,7 +315,7 @@ function HygieneModule() {
           <div className="animate-in slide-in-from-top-2 duration-200">
             <label className="block text-sm font-medium text-gray-700 mb-2">Nivel</label>
             <div className="flex space-x-2">
-              {['poco', 'mucho', 'lleno'].map((l) => (
+              {['poco', 'medio', 'lleno'].map((l) => (
                 <button
                   key={l}
                   onClick={() => setLevel(l as any)}
@@ -344,10 +408,13 @@ function HygieneModule() {
 }
 
 function SleepModule() {
-  const { activeSleep, startSleep, stopSleep } = useStore();
+  const { activeSleep, startSleep, stopSleep, addEvent } = useStore();
   const [elapsed, setElapsed] = useState(0);
   const [showModal, setShowModal] = useState(false);
   const [notes, setNotes] = useState('');
+  const [mode, setMode] = useState<'timer' | 'manual'>('timer');
+  const [manualStart, setManualStart] = useState('');
+  const [manualEnd, setManualEnd] = useState('');
 
   useEffect(() => {
     let interval: number;
@@ -361,41 +428,119 @@ function SleepModule() {
     return () => clearInterval(interval);
   }, [activeSleep]);
 
-  const handleSave = () => {
+  const handleSaveTimer = () => {
     stopSleep(notes);
     setShowModal(false);
     setNotes('');
   };
 
+  const handleSaveManual = () => {
+    if (!manualStart || !manualEnd) return;
+    const start = new Date(manualStart).getTime();
+    const end = new Date(manualEnd).getTime();
+    if (end <= start) {
+      alert('La hora de fin debe ser mayor a la de inicio');
+      return;
+    }
+    addEvent({
+      type: 'sleep',
+      timestamp: start,
+      endTimestamp: end,
+      notes
+    });
+    setManualStart('');
+    setManualEnd('');
+    setNotes('');
+  };
+
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-8">
-      <div className="flex items-center space-x-3 mb-4">
-        <div className="p-2 bg-theme-light rounded-xl text-theme-dark">
-          <Moon className="w-6 h-6" />
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center space-x-3">
+          <div className="p-2 bg-theme-light rounded-xl text-theme-dark">
+            <Moon className="w-6 h-6" />
+          </div>
+          <h2 className="text-lg font-semibold text-gray-800">Sueño</h2>
         </div>
-        <h2 className="text-lg font-semibold text-gray-800">Sueño</h2>
+        <div className="flex bg-gray-100 p-1 rounded-lg">
+          <button
+            onClick={() => setMode('timer')}
+            className={cn("p-1.5 rounded-md transition-all", mode === 'timer' ? "bg-white shadow-sm text-theme-dark" : "text-gray-500")}
+          >
+            <Timer className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => setMode('manual')}
+            className={cn("p-1.5 rounded-md transition-all", mode === 'manual' ? "bg-white shadow-sm text-theme-dark" : "text-gray-500")}
+          >
+            <Edit3 className="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
       <div className="space-y-4">
-        {activeSleep ? (
-          <div className="flex flex-col items-center p-6 bg-theme-light/50 rounded-xl border border-theme-base/20">
-            <span className="text-3xl font-mono font-medium text-theme-dark mb-4">
-              {formatDuration(elapsed)}
-            </span>
+        {mode === 'timer' ? (
+          activeSleep ? (
+            <div className="flex flex-col items-center p-6 bg-theme-light/50 rounded-xl border border-theme-base/20">
+              <span className="text-3xl font-mono font-medium text-theme-dark mb-4">
+                {formatDuration(elapsed)}
+              </span>
+              <button
+                onClick={() => setShowModal(true)}
+                className="w-full py-4 bg-indigo-500 hover:bg-indigo-600 active:bg-indigo-700 text-white rounded-xl font-semibold text-lg transition-colors shadow-sm"
+              >
+                Despertar
+              </button>
+            </div>
+          ) : (
             <button
-              onClick={() => setShowModal(true)}
-              className="w-full py-4 bg-indigo-500 hover:bg-indigo-600 active:bg-indigo-700 text-white rounded-xl font-semibold text-lg transition-colors shadow-sm"
+              onClick={startSleep}
+              className="w-full py-4 bg-indigo-50 hover:bg-indigo-100 active:scale-[0.98] text-indigo-700 border border-indigo-200 rounded-xl font-semibold text-lg transition-all shadow-sm flex items-center justify-center space-x-2"
             >
-              Despertar
+              <Timer className="w-5 h-5" />
+              <span>A Dormir</span>
+            </button>
+          )
+        ) : (
+          <div className="space-y-3 animate-in fade-in duration-200">
+            <div className="flex space-x-3">
+              <div className="flex-1">
+                <label className="block text-xs font-medium text-gray-700 mb-1">Inicio</label>
+                <input
+                  type="datetime-local"
+                  value={manualStart}
+                  onChange={(e) => setManualStart(e.target.value)}
+                  className="w-full p-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                />
+              </div>
+              <div className="flex-1">
+                <label className="block text-xs font-medium text-gray-700 mb-1">Fin</label>
+                <input
+                  type="datetime-local"
+                  value={manualEnd}
+                  onChange={(e) => setManualEnd(e.target.value)}
+                  className="w-full p-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                />
+              </div>
+            </div>
+            <div>
+              <input
+                type="text"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Observaciones..."
+                className="w-full p-3 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+              />
+            </div>
+            <button
+              onClick={handleSaveManual}
+              disabled={!manualStart || !manualEnd}
+              className="w-full py-3 bg-indigo-600 text-white rounded-xl font-semibold flex items-center justify-center space-x-2 disabled:opacity-50"
+            >
+              <Check className="w-5 h-5" />
+              <span>Registrar Sueño</span>
             </button>
           </div>
-        ) : (
-          <button
-            onClick={startSleep}
-            className="w-full py-4 bg-indigo-50 hover:bg-indigo-100 active:scale-[0.98] text-indigo-700 border border-indigo-200 rounded-xl font-semibold text-lg transition-all shadow-sm"
-          >
-            A Dormir
-          </button>
         )}
       </div>
 
@@ -422,7 +567,7 @@ function SleepModule() {
                   Cancelar
                 </button>
                 <button
-                  onClick={handleSave}
+                  onClick={handleSaveTimer}
                   className="flex-1 py-3 bg-indigo-500 text-white rounded-xl font-semibold"
                 >
                   Guardar

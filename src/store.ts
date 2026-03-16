@@ -13,7 +13,7 @@ export interface BabyEvent {
   details?: {
     amount?: number; // oz for feeding
     hygieneType?: 'pee' | 'poo';
-    level?: 'poco' | 'mucho' | 'lleno';
+    level?: 'poco' | 'medio' | 'lleno';
     texture?: 'liquido' | 'pastoso' | 'duro';
     photoUrl?: string; // base64 photo of the poop
   };

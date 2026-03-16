@@ -2,13 +2,14 @@ import React, { useState, useMemo } from 'react';
 import { useStore } from '../store';
 import { Share2, Calendar, Filter } from 'lucide-react';
 import { subHours, subDays, startOfMonth, isAfter, isBefore, startOfDay, endOfDay, format } from 'date-fns';
+import html2canvas from 'html2canvas';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell
 } from 'recharts';
 import { cn } from '../components/Layout';
 
-type FilterType = '24h' | '7d' | 'month' | 'custom';
+type FilterType = '1d' | '24h' | '7d' | 'month' | 'custom';
 
 export function Analytics() {
   const [filter, setFilter] = useState<FilterType>('24h');
@@ -16,10 +17,13 @@ export function Analytics() {
   const [customEnd, setCustomEnd] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
   const events = useStore(state => state.events);
 
+  const analyticsRef = React.useRef<HTMLDivElement>(null);
+
   const filteredEvents = useMemo(() => {
     const now = new Date();
     let cutoffDate = now;
     
+    if (filter === '1d') cutoffDate = startOfDay(now);
     if (filter === '24h') cutoffDate = subHours(now, 24);
     if (filter === '7d') cutoffDate = subDays(now, 7);
     if (filter === 'month') cutoffDate = startOfMonth(now);
@@ -80,13 +84,34 @@ export function Analytics() {
 
   const formatSleepHours = (ms: number) => (ms / (1000 * 60 * 60)).toFixed(1);
 
-  const handleShare = () => {
-    // In a real app, we'd use html2canvas or native share API
-    alert('Funcionalidad de compartir (Snapshot) en desarrollo.');
+  const handleShare = async () => {
+    if (!analyticsRef.current) return;
+    try {
+      const canvas = await html2canvas(analyticsRef.current, { scale: 2, useCORS: true });
+      canvas.toBlob(async (blob) => {
+        if (!blob) return;
+        const file = new File([blob], 'analisis-boyita.png', { type: 'image/png' });
+        if (navigator.share && navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            title: 'Análisis Boyita',
+            files: [file]
+          });
+        } else {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'analisis-boyita.png';
+          a.click();
+        }
+      });
+    } catch (error) {
+      console.error('Error sharing:', error);
+      alert('Hubo un error al generar la imagen.');
+    }
   };
 
   return (
-    <div className="p-4 space-y-6 max-w-md mx-auto pb-8">
+    <div ref={analyticsRef} className="p-4 space-y-6 max-w-md mx-auto pb-8 bg-gray-50 min-h-screen">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold text-gray-800">Análisis</h2>
         <button onClick={handleShare} className="p-2 bg-theme-light text-theme-dark rounded-full hover:bg-theme-base hover:text-white transition-colors">
@@ -94,8 +119,9 @@ export function Analytics() {
         </button>
       </div>
 
-      <div className="flex space-x-2 bg-gray-100 p-1 rounded-xl">
+      <div className="flex space-x-2 bg-gray-100 p-1 rounded-xl overflow-x-auto whitespace-nowrap scrollbar-hide">
         {[
+          { id: '1d', label: 'Hoy' },
           { id: '24h', label: '24h' },
           { id: '7d', label: '7 Días' },
           { id: 'month', label: 'Mes' },
@@ -105,7 +131,7 @@ export function Analytics() {
             key={f.id}
             onClick={() => setFilter(f.id as FilterType)}
             className={cn(
-              "flex-1 py-1.5 text-sm font-medium rounded-lg transition-all",
+              "px-3 py-1.5 text-sm font-medium rounded-lg transition-all",
               filter === f.id ? "bg-white text-theme-dark shadow-sm" : "text-gray-500 hover:text-gray-700"
             )}
           >
@@ -155,7 +181,7 @@ export function Analytics() {
             {/* Fill level based on an arbitrary max (e.g., 30oz per day) */}
             <div 
               className="absolute bottom-0 w-full bg-theme-base transition-all duration-1000 ease-out"
-              style={{ height: `${Math.min(100, (totalOz / (filter === '24h' ? 30 : filter === '7d' ? 210 : 900)) * 100)}%` }}
+              style={{ height: `${Math.min(100, (totalOz / (filter === '1d' || filter === '24h' ? 30 : filter === '7d' ? 210 : 900)) * 100)}%` }}
             />
             {/* Measurement lines */}
             <div className="absolute inset-0 flex flex-col justify-between py-2 opacity-20">

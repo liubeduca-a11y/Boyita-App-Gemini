@@ -93,62 +93,6 @@ export function Settings() {
     <div className="p-4 space-y-6 max-w-md mx-auto pb-8">
       <h2 className="text-2xl font-bold text-gray-800">Ajustes</h2>
 
-      {/* Sincronización en la Nube */}
-      <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-        <div className="flex items-center space-x-3 mb-4">
-          <div className="p-2 bg-blue-100 rounded-xl text-blue-600">
-            <Cloud className="w-6 h-6" />
-          </div>
-          <h3 className="text-lg font-semibold text-gray-800">Sincronización Familiar</h3>
-        </div>
-        
-        {user ? (
-          <div className="space-y-4">
-            <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-xl">
-              <img src={user.photoURL || ''} alt="User" className="w-10 h-10 rounded-full" />
-              <div className="flex-1 overflow-hidden">
-                <p className="text-sm font-medium text-gray-800 truncate">{user.displayName}</p>
-                <p className="text-xs text-gray-500 truncate">{user.email}</p>
-                <p className="text-[10px] text-gray-400 truncate mt-1">ID: {familyId}</p>
-              </div>
-            </div>
-            <p className="text-xs text-gray-500 text-center">
-              Tus datos se están sincronizando en la nube.
-            </p>
-            <div className="flex flex-col space-y-2">
-              <button
-                onClick={handleForceSync}
-                disabled={isSyncing}
-                className="w-full py-2.5 bg-theme-base text-white rounded-xl font-medium flex items-center justify-center space-x-2 hover:bg-theme-dark transition-all disabled:opacity-50"
-              >
-                <RefreshCw className={cn("w-4 h-4", isSyncing && "animate-spin")} />
-                <span>{isSyncing ? 'Sincronizando...' : 'Forzar Sincronización'}</span>
-              </button>
-              <button
-                onClick={logout}
-                className="w-full py-2.5 bg-red-50 text-red-600 rounded-xl font-medium flex items-center justify-center space-x-2 hover:bg-red-100 transition-all"
-              >
-                <LogOut className="w-4 h-4" />
-                <span>Cerrar Sesión</span>
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            <p className="text-sm text-gray-600">
-              Inicia sesión para guardar tus datos en la nube y compartirlos en tiempo real con tu pareja.
-            </p>
-            <button
-              onClick={loginWithGoogle}
-              className="w-full py-3 bg-white border border-gray-200 text-gray-700 rounded-xl font-semibold flex items-center justify-center space-x-2 hover:bg-gray-50 transition-all shadow-sm"
-            >
-              <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="w-5 h-5" />
-              <span>Continuar con Google</span>
-            </button>
-          </div>
-        )}
-      </div>
-
       {/* Perfil del Bebé */}
       <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
         <div className="flex items-center space-x-3 mb-6">
@@ -256,6 +200,62 @@ export function Settings() {
             </button>
           ))}
         </div>
+      </div>
+
+      {/* Sincronización en la Nube */}
+      <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+        <div className="flex items-center space-x-3 mb-4">
+          <div className="p-2 bg-blue-100 rounded-xl text-blue-600">
+            <Cloud className="w-6 h-6" />
+          </div>
+          <h3 className="text-lg font-semibold text-gray-800">Sincronización Familiar</h3>
+        </div>
+        
+        {user ? (
+          <div className="space-y-4">
+            <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-xl">
+              <img src={user.photoURL || ''} alt="User" className="w-10 h-10 rounded-full" />
+              <div className="flex-1 overflow-hidden">
+                <p className="text-sm font-medium text-gray-800 truncate">{user.displayName}</p>
+                <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                <p className="text-[10px] text-gray-400 truncate mt-1">ID: {familyId}</p>
+              </div>
+            </div>
+            <p className="text-xs text-gray-500 text-center">
+              Tus datos se están sincronizando en la nube.
+            </p>
+            <div className="flex flex-col space-y-2">
+              <button
+                onClick={handleForceSync}
+                disabled={isSyncing}
+                className="w-full py-2.5 bg-theme-base text-white rounded-xl font-medium flex items-center justify-center space-x-2 hover:bg-theme-dark transition-all disabled:opacity-50"
+              >
+                <RefreshCw className={cn("w-4 h-4", isSyncing && "animate-spin")} />
+                <span>{isSyncing ? 'Sincronizando...' : 'Forzar Sincronización'}</span>
+              </button>
+              <button
+                onClick={logout}
+                className="w-full py-2.5 bg-red-50 text-red-600 rounded-xl font-medium flex items-center justify-center space-x-2 hover:bg-red-100 transition-all"
+              >
+                <LogOut className="w-4 h-4" />
+                <span>Cerrar Sesión</span>
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <p className="text-sm text-gray-600">
+              Inicia sesión para guardar tus datos en la nube y compartirlos en tiempo real con tu pareja.
+            </p>
+            <button
+              onClick={loginWithGoogle}
+              className="w-full py-3 bg-white border border-gray-200 text-gray-700 rounded-xl font-semibold flex items-center justify-center space-x-2 hover:bg-gray-50 transition-all shadow-sm"
+            >
+              <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="w-5 h-5" />
+              <span>Continuar con Google</span>
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

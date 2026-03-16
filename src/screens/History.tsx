@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useStore, BabyEvent } from '../store';
 import { format, isAfter, isBefore, startOfDay, endOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Trash2, Edit2, Download, FileText, FileSpreadsheet, Check, X, Calendar } from 'lucide-react';
+import { Trash2, Edit2, Download, FileText, FileSpreadsheet, Check, X, Calendar, Filter } from 'lucide-react';
 import { cn } from '../components/Layout';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
@@ -11,27 +11,34 @@ import Papa from 'papaparse';
 export function History() {
   const { events, deleteEvent, updateEvent } = useStore();
   const [showExport, setShowExport] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editNotes, setEditNotes] = useState('');
+  const [editingEvent, setEditingEvent] = useState<BabyEvent | null>(null);
 
   const [filterType, setFilterType] = useState<'all' | 'custom'>('all');
+  const [eventTypeFilter, setEventTypeFilter] = useState<'all' | 'feeding' | 'hygiene' | 'sleep' | 'burp'>('all');
   const [customStart, setCustomStart] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
   const [customEnd, setCustomEnd] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
 
   const filteredEvents = useMemo(() => {
-    if (filterType === 'all') return events;
+    let result = events;
     
-    const start = startOfDay(new Date(customStart));
-    const end = endOfDay(new Date(customEnd));
-    
-    return events.filter(e => {
-      const eventDate = new Date(e.timestamp);
-      return isAfter(eventDate, start) && isBefore(eventDate, end);
-    });
-  }, [events, filterType, customStart, customEnd]);
+    if (filterType === 'custom') {
+      const start = startOfDay(new Date(customStart));
+      const end = endOfDay(new Date(customEnd));
+      result = result.filter(e => {
+        const eventDate = new Date(e.timestamp);
+        return isAfter(eventDate, start) && isBefore(eventDate, end);
+      });
+    }
+
+    if (eventTypeFilter !== 'all') {
+      result = result.filter(e => e.type === eventTypeFilter);
+    }
+
+    return result;
+  }, [events, filterType, customStart, customEnd, eventTypeFilter]);
 
   const formatEventTime = (timestamp: number) => {
-    return format(new Date(timestamp), "HH:mm", { locale: es });
+    return format(new Date(timestamp), "hh:mm a", { locale: es });
   };
 
   const formatEventDate = (timestamp: number) => {
@@ -114,13 +121,12 @@ export function History() {
   };
 
   const handleEdit = (event: BabyEvent) => {
-    setEditingId(event.id);
-    setEditNotes(event.notes || '');
+    setEditingEvent(event);
   };
 
-  const handleSaveEdit = (id: string) => {
-    updateEvent(id, { notes: editNotes });
-    setEditingId(null);
+  const handleSaveEdit = (id: string, data: Partial<BabyEvent>) => {
+    updateEvent(id, data);
+    setEditingEvent(null);
   };
 
   // Group events by date
@@ -165,6 +171,27 @@ export function History() {
             )}
           </div>
         </div>
+      </div>
+
+      <div className="flex space-x-2 bg-gray-100 p-1 rounded-xl overflow-x-auto whitespace-nowrap scrollbar-hide">
+        {[
+          { id: 'all', label: 'Todos' },
+          { id: 'feeding', label: 'Alimentación' },
+          { id: 'hygiene', label: 'Higiene' },
+          { id: 'sleep', label: 'Sueño' },
+          { id: 'burp', label: 'Eructos' }
+        ].map(f => (
+          <button
+            key={f.id}
+            onClick={() => setEventTypeFilter(f.id as any)}
+            className={cn(
+              "px-3 py-1.5 text-sm font-medium rounded-lg transition-all",
+              eventTypeFilter === f.id ? "bg-white text-theme-dark shadow-sm" : "text-gray-500 hover:text-gray-700"
+            )}
+          >
+            {f.label}
+          </button>
+        ))}
       </div>
 
       {filterType === 'custom' && (
@@ -220,26 +247,7 @@ export function History() {
                         </div>
                       )}
 
-                      {editingId === event.id ? (
-                        <div className="mt-2 flex items-center space-x-2">
-                          <input 
-                            type="text" 
-                            value={editNotes} 
-                            onChange={(e) => setEditNotes(e.target.value)}
-                            className="flex-1 text-sm p-1 border border-gray-300 rounded focus:outline-none focus:border-theme-base"
-                            placeholder="Observaciones..."
-                            autoFocus
-                          />
-                          <button onClick={() => handleSaveEdit(event.id)} className="p-1 text-green-500 hover:bg-green-50 rounded">
-                            <Check className="w-4 h-4" />
-                          </button>
-                          <button onClick={() => setEditingId(null)} className="p-1 text-gray-400 hover:bg-gray-50 rounded">
-                            <X className="w-4 h-4" />
-                          </button>
-                        </div>
-                      ) : (
-                        event.notes && <p className="text-xs text-gray-500 mt-1 italic">"{event.notes}"</p>
-                      )}
+                      {event.notes && <p className="text-xs text-gray-500 mt-1 italic">"{event.notes}"</p>}
                     </div>
                     <div className="ml-2 flex flex-col space-y-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                       <button 
@@ -262,6 +270,169 @@ export function History() {
           ))}
         </div>
       )}
+
+      {editingEvent && (
+        <EditEventModal 
+          event={editingEvent} 
+          onClose={() => setEditingEvent(null)} 
+          onSave={handleSaveEdit} 
+        />
+      )}
+    </div>
+  );
+}
+
+function EditEventModal({ event, onClose, onSave }: { event: BabyEvent, onClose: () => void, onSave: (id: string, data: Partial<BabyEvent>) => void }) {
+  const [type, setType] = useState<BabyEvent['type']>(event.type);
+  const [timestamp, setTimestamp] = useState(format(new Date(event.timestamp), "yyyy-MM-dd'T'HH:mm"));
+  const [notes, setNotes] = useState(event.notes || '');
+  
+  // Details state
+  const [amount, setAmount] = useState(event.details?.amount?.toString() || '');
+  const [hygieneType, setHygieneType] = useState<'pee' | 'poo'>(event.details?.hygieneType || 'pee');
+  const [level, setLevel] = useState<'poco' | 'medio' | 'lleno'>(event.details?.level || 'medio');
+  const [texture, setTexture] = useState<'liquido' | 'pastoso' | 'duro'>(event.details?.texture || 'pastoso');
+  const [endTimestamp, setEndTimestamp] = useState(event.endTimestamp ? format(new Date(event.endTimestamp), "yyyy-MM-dd'T'HH:mm") : '');
+
+  const handleSave = () => {
+    const data: Partial<BabyEvent> = {
+      type,
+      timestamp: new Date(timestamp).getTime(),
+      notes,
+    };
+
+    if (type === 'feeding') {
+      data.details = { amount: Number(amount) };
+    } else if (type === 'hygiene') {
+      data.details = { 
+        hygieneType, 
+        level: hygieneType === 'pee' ? level : undefined,
+        texture: hygieneType === 'poo' ? texture : undefined,
+        photoUrl: event.details?.photoUrl // keep existing photo
+      };
+    } else if (type === 'sleep') {
+      data.endTimestamp = endTimestamp ? new Date(endTimestamp).getTime() : undefined;
+    }
+
+    onSave(event.id, data);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl max-h-[90vh] overflow-y-auto">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-xl font-semibold text-gray-800">Editar Registro</h3>
+          <button onClick={onClose} className="p-1 text-gray-400 hover:bg-gray-100 rounded-full">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de Evento</label>
+            <select 
+              value={type} 
+              onChange={(e) => setType(e.target.value as any)}
+              className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-theme-base outline-none"
+            >
+              <option value="feeding">Alimentación</option>
+              <option value="hygiene">Higiene</option>
+              <option value="sleep">Sueño</option>
+              <option value="burp">Eructo</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Fecha y Hora</label>
+            <input 
+              type="datetime-local" 
+              value={timestamp}
+              onChange={(e) => setTimestamp(e.target.value)}
+              className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-theme-base outline-none"
+            />
+          </div>
+
+          {type === 'feeding' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Onzas Consumidas</label>
+              <input 
+                type="number" 
+                step="0.5"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-theme-base outline-none"
+              />
+            </div>
+          )}
+
+          {type === 'hygiene' && (
+            <div className="space-y-3">
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => setHygieneType('pee')}
+                  className={cn("flex-1 py-2 rounded-lg text-sm font-medium border", hygieneType === 'pee' ? "bg-theme-base border-theme-dark text-white" : "bg-gray-50 border-gray-200 text-gray-600")}
+                >Pipí</button>
+                <button
+                  onClick={() => setHygieneType('poo')}
+                  className={cn("flex-1 py-2 rounded-lg text-sm font-medium border", hygieneType === 'poo' ? "bg-theme-base border-theme-dark text-white" : "bg-gray-50 border-gray-200 text-gray-600")}
+                >Popó</button>
+              </div>
+              
+              {hygieneType === 'pee' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Nivel</label>
+                  <select value={level} onChange={(e) => setLevel(e.target.value as any)} className="w-full p-3 border border-gray-200 rounded-xl outline-none">
+                    <option value="poco">Poco</option>
+                    <option value="medio">Medio</option>
+                    <option value="lleno">Lleno</option>
+                  </select>
+                </div>
+              )}
+
+              {hygieneType === 'poo' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Textura</label>
+                  <select value={texture} onChange={(e) => setTexture(e.target.value as any)} className="w-full p-3 border border-gray-200 rounded-xl outline-none">
+                    <option value="liquido">Líquido</option>
+                    <option value="pastoso">Pastoso</option>
+                    <option value="duro">Duro</option>
+                  </select>
+                </div>
+              )}
+            </div>
+          )}
+
+          {type === 'sleep' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Fin del Sueño</label>
+              <input 
+                type="datetime-local" 
+                value={endTimestamp}
+                onChange={(e) => setEndTimestamp(e.target.value)}
+                className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-theme-base outline-none"
+              />
+            </div>
+          )}
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Observaciones</label>
+            <textarea 
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-theme-base outline-none resize-none"
+              rows={2}
+            />
+          </div>
+
+          <button
+            onClick={handleSave}
+            className="w-full py-3 bg-theme-dark text-white rounded-xl font-semibold flex items-center justify-center space-x-2"
+          >
+            <Check className="w-5 h-5" />
+            <span>Guardar Cambios</span>
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
