@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useStore, ThemeColor } from '../store';
-import { Camera, Save, Palette, User, Calendar, Cloud, LogOut, LogIn, RefreshCw } from 'lucide-react';
+import { useStore, ThemeColor, ColorMode } from '../store';
+import { Camera, Save, Palette, User, Calendar, Cloud, LogOut, LogIn, RefreshCw, Moon, Sun, Monitor } from 'lucide-react';
 import { cn } from '../components/Layout';
 import { differenceInMonths, differenceInDays } from 'date-fns';
 import { auth, loginWithGoogle, logout, db } from '../firebase';
@@ -16,7 +16,7 @@ const THEMES: { id: ThemeColor; name: string; color: string }[] = [
 ];
 
 export function Settings() {
-  const { profile, updateProfile, theme, setTheme, familyId } = useStore();
+  const { profile, updateProfile, theme, setTheme, colorMode, setColorMode, familyId } = useStore();
   const [name, setName] = useState(profile.name);
   const [birthDate, setBirthDate] = useState(profile.birthDate);
   const [photoUrl, setPhotoUrl] = useState(profile.photoUrl);
@@ -90,21 +90,21 @@ export function Settings() {
   };
 
   return (
-    <div className="p-4 space-y-6 max-w-md mx-auto pb-8">
-      <h2 className="text-2xl font-bold text-gray-800">Ajustes</h2>
+    <div className="p-4 space-y-6 max-w-md mx-auto pb-8 bg-gray-50 dark:bg-gray-900 min-h-screen">
+      <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Ajustes</h2>
 
       {/* Perfil del Bebé */}
-      <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-700">
         <div className="flex items-center space-x-3 mb-6">
-          <div className="p-2 bg-theme-light rounded-xl text-theme-dark">
+          <div className="p-2 bg-theme-light dark:bg-theme-dark/20 rounded-xl text-theme-dark dark:text-theme-base">
             <User className="w-6 h-6" />
           </div>
-          <h3 className="text-lg font-semibold text-gray-800">Perfil del Bebé</h3>
+          <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Perfil del Bebé</h3>
         </div>
 
         <div className="flex flex-col items-center mb-6">
           <div className="relative group">
-            <div className="w-24 h-24 rounded-full bg-gray-100 border-4 border-theme-light overflow-hidden shadow-inner">
+            <div className="w-24 h-24 rounded-full bg-gray-100 dark:bg-gray-700 border-4 border-theme-light dark:border-theme-dark/30 overflow-hidden shadow-inner">
               {photoUrl ? (
                 <img src={photoUrl} alt="Bebé" className="w-full h-full object-cover" />
               ) : (
@@ -113,7 +113,7 @@ export function Settings() {
             </div>
             <button 
               onClick={() => fileInputRef.current?.click()}
-              className="absolute bottom-0 right-0 p-2 bg-theme-base text-white rounded-full shadow-md hover:bg-theme-dark transition-colors"
+              className="absolute bottom-0 right-0 p-2 bg-theme-base dark:bg-theme-dark text-white rounded-full shadow-md hover:bg-theme-dark dark:hover:bg-theme-base transition-colors"
             >
               <Camera className="w-4 h-4" />
             </button>
@@ -126,7 +126,7 @@ export function Settings() {
             />
           </div>
           {birthDate && (
-            <p className="mt-3 text-sm font-medium text-theme-dark bg-theme-light px-3 py-1 rounded-full">
+            <p className="mt-3 text-sm font-medium text-theme-dark dark:text-theme-base bg-theme-light dark:bg-theme-dark/20 px-3 py-1 rounded-full">
               Edad: {calculateAge()}
             </p>
           )}
@@ -134,30 +134,30 @@ export function Settings() {
 
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nombre</label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-theme-base outline-none transition-all"
+              className="w-full p-3 border border-gray-200 dark:border-gray-500 bg-white dark:bg-gray-800 rounded-xl focus:ring-2 focus:ring-theme-base outline-none transition-all text-gray-900 dark:text-gray-50 placeholder-gray-400 dark:placeholder-gray-300"
               placeholder="Nombre del bebé"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Fecha de Nacimiento</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Fecha de Nacimiento</label>
             <div className="relative">
               <input
                 type="date"
                 value={birthDate}
                 onChange={(e) => setBirthDate(e.target.value)}
-                className="w-full p-3 pl-10 border border-gray-200 rounded-xl focus:ring-2 focus:ring-theme-base outline-none transition-all"
+                className="w-full p-3 pl-10 border border-gray-200 dark:border-gray-500 bg-white dark:bg-gray-800 rounded-xl focus:ring-2 focus:ring-theme-base outline-none transition-all text-gray-900 dark:text-gray-50"
               />
               <Calendar className="w-5 h-5 text-gray-400 absolute left-3 top-3.5" />
             </div>
           </div>
           <button
             onClick={handleSaveProfile}
-            className="w-full py-3 mt-2 bg-theme-dark text-white rounded-xl font-semibold flex items-center justify-center space-x-2 hover:bg-opacity-90 transition-all"
+            className="w-full py-3 mt-2 bg-theme-dark dark:bg-theme-base text-white rounded-xl font-semibold flex items-center justify-center space-x-2 hover:bg-opacity-90 transition-all"
           >
             <Save className="w-5 h-5" />
             <span>Guardar Perfil</span>
@@ -166,62 +166,75 @@ export function Settings() {
       </div>
 
       {/* Sistema de Temas */}
-      <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-700">
         <div className="flex items-center space-x-3 mb-6">
-          <div className="p-2 bg-theme-light rounded-xl text-theme-dark">
+          <div className="p-2 bg-theme-light dark:bg-theme-dark/20 rounded-xl text-theme-dark dark:text-theme-base">
             <Palette className="w-6 h-6" />
           </div>
-          <h3 className="text-lg font-semibold text-gray-800">Apariencia</h3>
+          <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Apariencia</h3>
         </div>
 
-        <div className="grid grid-cols-5 gap-3">
-          {THEMES.map((t) => (
-            <button
-              key={t.id}
-              onClick={() => setTheme(t.id)}
-              className={cn(
-                "flex flex-col items-center space-y-2 group transition-all",
-                theme === t.id ? "scale-110" : "hover:scale-105 opacity-70 hover:opacity-100"
-              )}
-            >
-              <div 
+        <div className="mb-6">
+          <button
+            onClick={() => setColorMode(colorMode === 'dark' ? 'light' : 'dark')}
+            className="w-full py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-xl font-semibold flex items-center justify-center space-x-2 hover:bg-gray-200 dark:hover:bg-gray-600 transition-all shadow-sm"
+          >
+            {colorMode === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+            <span>{colorMode === 'dark' ? 'Cambiar a Modo Claro' : 'Cambiar a Modo Oscuro'}</span>
+          </button>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Color Principal</label>
+          <div className="grid grid-cols-5 gap-3">
+            {THEMES.map((t) => (
+              <button
+                key={t.id}
+                onClick={() => setTheme(t.id)}
                 className={cn(
-                  "w-12 h-12 rounded-full shadow-sm border-2 transition-all",
-                  theme === t.id ? "border-gray-800 shadow-md" : "border-transparent"
+                  "flex flex-col items-center space-y-2 group transition-all",
+                  theme === t.id ? "scale-110" : "hover:scale-105 opacity-70 hover:opacity-100"
                 )}
-                style={{ backgroundColor: t.color }}
-              />
-              <span className={cn(
-                "text-[10px] font-medium text-center leading-tight",
-                theme === t.id ? "text-gray-900" : "text-gray-500"
-              )}>
-                {t.name}
-              </span>
-            </button>
-          ))}
+              >
+                <div 
+                  className={cn(
+                    "w-12 h-12 rounded-full shadow-sm border-2 transition-all",
+                    theme === t.id ? "border-gray-800 dark:border-gray-200 shadow-md" : "border-transparent"
+                  )}
+                  style={{ backgroundColor: t.color }}
+                />
+                <span className={cn(
+                  "text-[10px] font-medium text-center leading-tight",
+                  theme === t.id ? "text-gray-900 dark:text-gray-100" : "text-gray-500 dark:text-gray-400"
+                )}>
+                  {t.name}
+                </span>
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
       {/* Sincronización en la Nube */}
-      <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-700">
         <div className="flex items-center space-x-3 mb-4">
-          <div className="p-2 bg-blue-100 rounded-xl text-blue-600">
+          <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-xl text-blue-600 dark:text-blue-400">
             <Cloud className="w-6 h-6" />
           </div>
-          <h3 className="text-lg font-semibold text-gray-800">Sincronización Familiar</h3>
+          <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Sincronización Familiar</h3>
         </div>
         
         {user ? (
           <div className="space-y-4">
-            <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-xl">
+            <div className="flex items-center space-x-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
               <img src={user.photoURL || ''} alt="User" className="w-10 h-10 rounded-full" />
               <div className="flex-1 overflow-hidden">
-                <p className="text-sm font-medium text-gray-800 truncate">{user.displayName}</p>
-                <p className="text-xs text-gray-500 truncate">{user.email}</p>
-                <p className="text-[10px] text-gray-400 truncate mt-1">ID: {familyId}</p>
+                <p className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">{user.displayName}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{user.email}</p>
+                <p className="text-[10px] text-gray-400 dark:text-gray-500 truncate mt-1">ID: {familyId}</p>
               </div>
             </div>
-            <p className="text-xs text-gray-500 text-center">
+            <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
               Tus datos se están sincronizando en la nube.
             </p>
             <div className="flex flex-col space-y-2">
@@ -235,7 +248,7 @@ export function Settings() {
               </button>
               <button
                 onClick={logout}
-                className="w-full py-2.5 bg-red-50 text-red-600 rounded-xl font-medium flex items-center justify-center space-x-2 hover:bg-red-100 transition-all"
+                className="w-full py-2.5 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-xl font-medium flex items-center justify-center space-x-2 hover:bg-red-100 dark:hover:bg-red-900/40 transition-all"
               >
                 <LogOut className="w-4 h-4" />
                 <span>Cerrar Sesión</span>
@@ -244,12 +257,12 @@ export function Settings() {
           </div>
         ) : (
           <div className="space-y-4">
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
               Inicia sesión para guardar tus datos en la nube y compartirlos en tiempo real con tu pareja.
             </p>
             <button
               onClick={loginWithGoogle}
-              className="w-full py-3 bg-white border border-gray-200 text-gray-700 rounded-xl font-semibold flex items-center justify-center space-x-2 hover:bg-gray-50 transition-all shadow-sm"
+              className="w-full py-3 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 rounded-xl font-semibold flex items-center justify-center space-x-2 hover:bg-gray-50 dark:hover:bg-gray-600 transition-all shadow-sm"
             >
               <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="w-5 h-5" />
               <span>Continuar con Google</span>

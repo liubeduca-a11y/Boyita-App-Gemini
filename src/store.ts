@@ -22,6 +22,7 @@ export interface BabyEvent {
 }
 
 export type ThemeColor = 'blue' | 'pink' | 'mint' | 'yellow' | 'lavender';
+export type ColorMode = 'system' | 'light' | 'dark';
 
 export interface BabyProfile {
   name: string;
@@ -36,6 +37,7 @@ interface AppState {
   activeSleep: { startTime: number } | null;
   profile: BabyProfile;
   theme: ThemeColor;
+  colorMode: ColorMode;
   
   // Actions
   setFamilyId: (id: string | null) => void;
@@ -56,6 +58,7 @@ interface AppState {
   
   updateProfile: (profile: Partial<BabyProfile>) => Promise<void>;
   setTheme: (theme: ThemeColor) => void;
+  setColorMode: (mode: ColorMode) => void;
 }
 
 export const useStore = create<AppState>()(
@@ -70,6 +73,7 @@ export const useStore = create<AppState>()(
         birthDate: new Date().toISOString().split('T')[0],
       },
       theme: 'blue',
+      colorMode: 'system',
 
       setFamilyId: (id) => set({ familyId: id }),
       setEvents: (events) => set({ events }),
@@ -147,14 +151,14 @@ export const useStore = create<AppState>()(
       stopFeeding: async (amount, notes) => {
         const { activeFeeding, addEvent, familyId } = get();
         if (activeFeeding) {
-          await addEvent({
+          set({ activeFeeding: null });
+          addEvent({
             type: 'feeding',
             timestamp: activeFeeding.startTime,
             endTimestamp: Date.now(),
             details: { amount },
             notes
           });
-          set({ activeFeeding: null });
 
           if (familyId && auth.currentUser) {
             try {
@@ -183,13 +187,13 @@ export const useStore = create<AppState>()(
       stopSleep: async (notes) => {
         const { activeSleep, addEvent, familyId } = get();
         if (activeSleep) {
-          await addEvent({
+          set({ activeSleep: null });
+          addEvent({
             type: 'sleep',
             timestamp: activeSleep.startTime,
             endTimestamp: Date.now(),
             notes
           });
-          set({ activeSleep: null });
 
           if (familyId && auth.currentUser) {
             try {
@@ -217,6 +221,7 @@ export const useStore = create<AppState>()(
       },
 
       setTheme: (theme) => set({ theme }),
+      setColorMode: (mode) => set({ colorMode: mode }),
     }),
     {
       name: 'boyita-storage',

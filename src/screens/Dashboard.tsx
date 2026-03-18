@@ -64,32 +64,36 @@ function FeedingModule() {
     setNotes('');
   };
 
+  const [showBurpSuccess, setShowBurpSuccess] = useState(false);
+
   const handleBurp = () => {
     addEvent({
       type: 'burp',
       timestamp: Date.now(),
     });
+    setShowBurpSuccess(true);
+    setTimeout(() => setShowBurpSuccess(false), 1000);
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-5">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center space-x-3">
-          <div className="p-2 bg-theme-light rounded-xl text-theme-dark">
+          <div className="p-2 bg-theme-light dark:bg-theme-dark/20 rounded-xl text-theme-dark dark:text-theme-base">
             <Droplets className="w-6 h-6" />
           </div>
-          <h2 className="text-lg font-semibold text-gray-800">Alimentación</h2>
+          <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Alimentación</h2>
         </div>
-        <div className="flex bg-gray-100 p-1 rounded-lg">
+        <div className="flex bg-gray-100 dark:bg-gray-700 p-1 rounded-lg">
           <button
             onClick={() => setMode('manual')}
-            className={cn("p-1.5 rounded-md transition-all", mode === 'manual' ? "bg-white shadow-sm text-theme-dark" : "text-gray-500")}
+            className={cn("p-1.5 rounded-md transition-all", mode === 'manual' ? "bg-white dark:bg-gray-600 shadow-sm text-theme-dark dark:text-theme-base" : "text-gray-500 dark:text-gray-400")}
           >
             <Edit3 className="w-4 h-4" />
           </button>
           <button
             onClick={() => setMode('timer')}
-            className={cn("p-1.5 rounded-md transition-all", mode === 'timer' ? "bg-white shadow-sm text-theme-dark" : "text-gray-500")}
+            className={cn("p-1.5 rounded-md transition-all", mode === 'timer' ? "bg-white dark:bg-gray-600 shadow-sm text-theme-dark dark:text-theme-base" : "text-gray-500 dark:text-gray-400")}
           >
             <Timer className="w-4 h-4" />
           </button>
@@ -99,8 +103,8 @@ function FeedingModule() {
       <div className="space-y-4">
         {mode === 'timer' ? (
           activeFeeding ? (
-            <div className="flex flex-col items-center p-6 bg-theme-light/50 rounded-xl border border-theme-base/20">
-              <span className="text-3xl font-mono font-medium text-theme-dark mb-4">
+            <div className="flex flex-col items-center p-6 bg-theme-light/50 dark:bg-theme-dark/10 rounded-xl border border-theme-base/20 dark:border-theme-base/10">
+              <span className="text-3xl font-mono font-medium text-theme-dark dark:text-theme-base mb-4">
                 {formatDuration(elapsed)}
               </span>
               <button
@@ -113,7 +117,7 @@ function FeedingModule() {
           ) : (
             <button
               onClick={startFeeding}
-              className="w-full py-4 bg-theme-base hover:bg-theme-dark active:scale-[0.98] text-theme-text rounded-xl font-semibold text-lg transition-all shadow-sm flex items-center justify-center space-x-2"
+              className="w-full py-4 bg-theme-base hover:bg-theme-dark dark:hover:bg-theme-light active:scale-[0.98] text-theme-text rounded-xl font-semibold text-lg transition-all shadow-sm flex items-center justify-center space-x-2"
             >
               <Timer className="w-5 h-5" />
               <span>Iniciar Cronómetro</span>
@@ -122,24 +126,24 @@ function FeedingModule() {
         ) : (
           <div className="space-y-3 animate-in fade-in duration-200">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Onzas Consumidas</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Onzas Consumidas</label>
               <input
                 type="number"
                 step="0.5"
                 value={oz}
                 onChange={(e) => setOz(e.target.value)}
-                className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-theme-base outline-none text-lg"
+                className="w-full p-3 border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-xl focus:ring-2 focus:ring-theme-base outline-none text-lg text-gray-900 dark:text-white"
                 placeholder="Ej. 4.5"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Comentarios del padre</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Comentarios del padre</label>
               <input
                 type="text"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Observaciones..."
-                className="w-full p-3 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-theme-base outline-none"
+                className="w-full p-3 border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-xl text-sm focus:ring-2 focus:ring-theme-base outline-none text-gray-900 dark:text-white"
               />
             </div>
             <button
@@ -155,36 +159,41 @@ function FeedingModule() {
 
         <button
           onClick={handleBurp}
-          className="w-full py-3 bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-700 rounded-xl font-medium flex items-center justify-center space-x-2 active:scale-[0.98] transition-all"
+          className={cn(
+            "w-full py-3 rounded-xl font-medium flex items-center justify-center space-x-2 transition-all duration-300",
+            showBurpSuccess 
+              ? "bg-green-100 border-green-200 text-green-700 dark:bg-green-900/30 dark:border-green-800 dark:text-green-400 scale-95" 
+              : "bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-700 dark:bg-gray-800/50 dark:hover:bg-gray-700 dark:border-gray-700 dark:text-gray-300 active:scale-[0.98]"
+          )}
         >
-          <Wind className="w-5 h-5" />
-          <span>Registrar Eructo</span>
+          {showBurpSuccess ? <Check className="w-5 h-5" /> : <Wind className="w-5 h-5" />}
+          <span>{showBurpSuccess ? "¡Registrado!" : "Registrar Eructo"}</span>
         </button>
       </div>
 
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl animate-in fade-in zoom-in-95 duration-200">
-            <h3 className="text-xl font-semibold mb-4 text-gray-800">Finalizar Toma</h3>
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-sm shadow-xl animate-in fade-in zoom-in-95 duration-200">
+            <h3 className="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-100">Finalizar Toma</h3>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Onzas Consumidas</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Onzas Consumidas</label>
                 <input
                   type="number"
                   step="0.5"
                   value={oz}
                   onChange={(e) => setOz(e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-theme-base focus:border-theme-base outline-none text-lg"
+                  className="w-full p-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-xl focus:ring-2 focus:ring-theme-base focus:border-theme-base outline-none text-lg text-gray-900 dark:text-white"
                   placeholder="Ej. 4.5"
                   autoFocus
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Observaciones</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Observaciones</label>
                 <textarea
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-theme-base outline-none resize-none"
+                  className="w-full p-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-xl focus:ring-2 focus:ring-theme-base outline-none resize-none text-gray-900 dark:text-white"
                   rows={2}
                   placeholder="Opcional..."
                 />
@@ -192,7 +201,7 @@ function FeedingModule() {
               <div className="flex space-x-3 pt-2">
                 <button
                   onClick={() => setShowModal(false)}
-                  className="flex-1 py-3 bg-gray-100 text-gray-700 rounded-xl font-medium"
+                  className="flex-1 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-medium"
                 >
                   Cancelar
                 </button>
@@ -281,12 +290,12 @@ function HygieneModule() {
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-5">
       <div className="flex items-center space-x-3 mb-4">
-        <div className="p-2 bg-theme-light rounded-xl text-theme-dark">
+        <div className="p-2 bg-theme-light dark:bg-theme-dark/20 rounded-xl text-theme-dark dark:text-theme-base">
           <Droplets className="w-6 h-6" />
         </div>
-        <h2 className="text-lg font-semibold text-gray-800">Higiene</h2>
+        <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Higiene</h2>
       </div>
 
       <div className="space-y-4">
@@ -295,7 +304,7 @@ function HygieneModule() {
             onClick={() => { setType('pee'); setTexture(null); setPhotoUrl(null); }}
             className={cn(
               "flex-1 py-3 rounded-xl font-medium border transition-all",
-              type === 'pee' ? "bg-theme-base border-theme-dark text-theme-text" : "bg-gray-50 border-gray-200 text-gray-600"
+              type === 'pee' ? "bg-yellow-100 border-yellow-300 text-yellow-800 dark:bg-yellow-900/30 dark:border-yellow-700 dark:text-yellow-300" : "bg-gray-50 border-gray-200 text-gray-600 dark:bg-gray-800/50 dark:border-gray-700 dark:text-gray-400"
             )}
           >
             Pipí
@@ -304,7 +313,7 @@ function HygieneModule() {
             onClick={() => { setType('poo'); setLevel(null); }}
             className={cn(
               "flex-1 py-3 rounded-xl font-medium border transition-all",
-              type === 'poo' ? "bg-theme-base border-theme-dark text-theme-text" : "bg-gray-50 border-gray-200 text-gray-600"
+              type === 'poo' ? "bg-orange-100 border-orange-300 text-orange-900 dark:bg-orange-900/30 dark:border-orange-700 dark:text-orange-300" : "bg-gray-50 border-gray-200 text-gray-600 dark:bg-gray-800/50 dark:border-gray-700 dark:text-gray-400"
             )}
           >
             Popó
@@ -313,7 +322,7 @@ function HygieneModule() {
 
         {type === 'pee' && (
           <div className="animate-in slide-in-from-top-2 duration-200">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Nivel</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Nivel</label>
             <div className="flex space-x-2">
               {['poco', 'medio', 'lleno'].map((l) => (
                 <button
@@ -321,7 +330,7 @@ function HygieneModule() {
                   onClick={() => setLevel(l as any)}
                   className={cn(
                     "flex-1 py-2 rounded-lg text-sm font-medium border capitalize transition-all",
-                    level === l ? "bg-theme-light border-theme-base text-theme-dark" : "bg-white border-gray-200 text-gray-600"
+                    level === l ? "bg-yellow-100 border-yellow-300 text-yellow-800 dark:bg-yellow-900/30 dark:border-yellow-700 dark:text-yellow-300" : "bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300"
                   )}
                 >
                   {l}
@@ -334,7 +343,7 @@ function HygieneModule() {
         {type === 'poo' && (
           <div className="animate-in slide-in-from-top-2 duration-200 space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Textura</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Textura</label>
               <div className="flex space-x-2">
                 {['liquido', 'pastoso', 'duro'].map((t) => (
                   <button
@@ -342,7 +351,7 @@ function HygieneModule() {
                     onClick={() => setTexture(t as any)}
                     className={cn(
                       "flex-1 py-2 rounded-lg text-sm font-medium border capitalize transition-all",
-                      texture === t ? "bg-theme-light border-theme-base text-theme-dark" : "bg-white border-gray-200 text-gray-600"
+                      texture === t ? "bg-orange-100 border-orange-300 text-orange-900 dark:bg-orange-900/30 dark:border-orange-700 dark:text-orange-300" : "bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300"
                     )}
                   >
                     {t}
@@ -352,9 +361,9 @@ function HygieneModule() {
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Foto (Opcional)</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Foto (Opcional)</label>
               {photoUrl ? (
-                <div className="relative rounded-xl overflow-hidden border border-gray-200 h-32 bg-gray-50">
+                <div className="relative rounded-xl overflow-hidden border border-gray-200 dark:border-gray-600 h-32 bg-gray-50 dark:bg-gray-700">
                   <img src={photoUrl} alt="Popó" className="w-full h-full object-cover" />
                   <button 
                     onClick={() => setPhotoUrl(null)}
@@ -366,7 +375,7 @@ function HygieneModule() {
               ) : (
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className="w-full py-4 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 hover:bg-gray-50 hover:border-gray-400 transition-all flex flex-col items-center justify-center space-y-2"
+                  className="w-full py-4 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-400 transition-all flex flex-col items-center justify-center space-y-2"
                 >
                   <Camera className="w-6 h-6" />
                   <span className="text-sm font-medium">Tomar foto o subir imagen</span>
@@ -391,7 +400,7 @@ function HygieneModule() {
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Observaciones..."
-              className="w-full p-3 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-theme-base outline-none"
+              className="w-full p-3 border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-xl text-sm focus:ring-2 focus:ring-theme-base outline-none text-gray-900 dark:text-white"
             />
             <button
               onClick={handleSave}
@@ -454,24 +463,24 @@ function SleepModule() {
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-8">
+    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-5 mb-8">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center space-x-3">
-          <div className="p-2 bg-theme-light rounded-xl text-theme-dark">
+          <div className="p-2 bg-theme-light dark:bg-theme-dark/20 rounded-xl text-theme-dark dark:text-theme-base">
             <Moon className="w-6 h-6" />
           </div>
-          <h2 className="text-lg font-semibold text-gray-800">Sueño</h2>
+          <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Sueño</h2>
         </div>
-        <div className="flex bg-gray-100 p-1 rounded-lg">
+        <div className="flex bg-gray-100 dark:bg-gray-700 p-1 rounded-lg">
           <button
             onClick={() => setMode('timer')}
-            className={cn("p-1.5 rounded-md transition-all", mode === 'timer' ? "bg-white shadow-sm text-theme-dark" : "text-gray-500")}
+            className={cn("p-1.5 rounded-md transition-all", mode === 'timer' ? "bg-white dark:bg-gray-600 shadow-sm text-theme-dark dark:text-theme-base" : "text-gray-500 dark:text-gray-400")}
           >
             <Timer className="w-4 h-4" />
           </button>
           <button
             onClick={() => setMode('manual')}
-            className={cn("p-1.5 rounded-md transition-all", mode === 'manual' ? "bg-white shadow-sm text-theme-dark" : "text-gray-500")}
+            className={cn("p-1.5 rounded-md transition-all", mode === 'manual' ? "bg-white dark:bg-gray-600 shadow-sm text-theme-dark dark:text-theme-base" : "text-gray-500 dark:text-gray-400")}
           >
             <Edit3 className="w-4 h-4" />
           </button>
@@ -481,8 +490,8 @@ function SleepModule() {
       <div className="space-y-4">
         {mode === 'timer' ? (
           activeSleep ? (
-            <div className="flex flex-col items-center p-6 bg-theme-light/50 rounded-xl border border-theme-base/20">
-              <span className="text-3xl font-mono font-medium text-theme-dark mb-4">
+            <div className="flex flex-col items-center p-6 bg-theme-light/50 dark:bg-theme-dark/10 rounded-xl border border-theme-base/20 dark:border-theme-base/10">
+              <span className="text-3xl font-mono font-medium text-theme-dark dark:text-theme-base mb-4">
                 {formatDuration(elapsed)}
               </span>
               <button
@@ -495,7 +504,7 @@ function SleepModule() {
           ) : (
             <button
               onClick={startSleep}
-              className="w-full py-4 bg-indigo-50 hover:bg-indigo-100 active:scale-[0.98] text-indigo-700 border border-indigo-200 rounded-xl font-semibold text-lg transition-all shadow-sm flex items-center justify-center space-x-2"
+              className="w-full py-4 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/30 dark:hover:bg-indigo-900/50 active:scale-[0.98] text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 rounded-xl font-semibold text-lg transition-all shadow-sm flex items-center justify-center space-x-2"
             >
               <Timer className="w-5 h-5" />
               <span>A Dormir</span>
@@ -505,21 +514,21 @@ function SleepModule() {
           <div className="space-y-3 animate-in fade-in duration-200">
             <div className="flex space-x-3">
               <div className="flex-1">
-                <label className="block text-xs font-medium text-gray-700 mb-1">Inicio</label>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Inicio</label>
                 <input
                   type="datetime-local"
                   value={manualStart}
                   onChange={(e) => setManualStart(e.target.value)}
-                  className="w-full p-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                  className="w-full p-2 border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none text-gray-900 dark:text-white"
                 />
               </div>
               <div className="flex-1">
-                <label className="block text-xs font-medium text-gray-700 mb-1">Fin</label>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Fin</label>
                 <input
                   type="datetime-local"
                   value={manualEnd}
                   onChange={(e) => setManualEnd(e.target.value)}
-                  className="w-full p-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                  className="w-full p-2 border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none text-gray-900 dark:text-white"
                 />
               </div>
             </div>
@@ -529,7 +538,7 @@ function SleepModule() {
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Observaciones..."
-                className="w-full p-3 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                className="w-full p-3 border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none text-gray-900 dark:text-white"
               />
             </div>
             <button
@@ -546,15 +555,15 @@ function SleepModule() {
 
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl animate-in fade-in zoom-in-95 duration-200">
-            <h3 className="text-xl font-semibold mb-4 text-gray-800">Fin del Sueño</h3>
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-sm shadow-xl animate-in fade-in zoom-in-95 duration-200">
+            <h3 className="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-100">Fin del Sueño</h3>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Observaciones</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Observaciones</label>
                 <textarea
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-theme-base outline-none resize-none"
+                  className="w-full p-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-xl focus:ring-2 focus:ring-theme-base outline-none resize-none text-gray-900 dark:text-white"
                   rows={2}
                   placeholder="Opcional..."
                 />
@@ -562,7 +571,7 @@ function SleepModule() {
               <div className="flex space-x-3 pt-2">
                 <button
                   onClick={() => setShowModal(false)}
-                  className="flex-1 py-3 bg-gray-100 text-gray-700 rounded-xl font-medium"
+                  className="flex-1 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-medium"
                 >
                   Cancelar
                 </button>
