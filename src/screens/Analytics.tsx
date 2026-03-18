@@ -8,6 +8,7 @@ import {
   PieChart, Pie, Cell, LineChart, Line, CartesianGrid, Legend
 } from 'recharts';
 import { cn } from '../components/Layout';
+import { PediatricianChat } from '../components/PediatricianChat';
 
 type FilterType = '24h' | '7d' | 'month' | 'custom';
 
@@ -372,6 +373,7 @@ export function Analytics() {
         </div>
       </div>
 
+      <PediatricianChat />
     </div>
   );
 }
