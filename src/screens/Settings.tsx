@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useStore, ThemeColor, ColorMode } from '../store';
-import { Camera, Save, Palette, User, Calendar, Cloud, LogOut, LogIn, RefreshCw, Moon, Sun, Monitor } from 'lucide-react';
+import { useStore, ThemeColor, ColorMode, MedicalHistory, MedicalCondition, ScreeningHistory, ScreeningTest } from '../store';
+import { Camera, Save, Palette, User, Calendar, Cloud, LogOut, LogIn, RefreshCw, Moon, Sun, Monitor, AlertCircle, Accessibility, Dna, Scissors, Wind, PlusCircle, ChevronDown, ChevronUp, Droplet, Ear, Eye, HeartPulse, Bone } from 'lucide-react';
 import { cn } from '../components/Layout';
 import { differenceInMonths, differenceInDays } from 'date-fns';
 import { auth, loginWithGoogle, logout, db } from '../firebase';
@@ -20,6 +20,35 @@ export function Settings() {
   const [name, setName] = useState(profile.name);
   const [birthDate, setBirthDate] = useState(profile.birthDate);
   const [photoUrl, setPhotoUrl] = useState(profile.photoUrl);
+  
+  const [birthType, setBirthType] = useState(profile.birthType || '');
+  const [birthLength, setBirthLength] = useState(profile.birthLength?.toString() || '');
+  const [birthLengthUnit, setBirthLengthUnit] = useState(profile.birthLengthUnit || 'cm');
+  const [birthWeight, setBirthWeight] = useState(profile.birthWeight?.toString() || '');
+  const [birthWeightUnit, setBirthWeightUnit] = useState(profile.birthWeightUnit || 'kg');
+  const [pregnancyComplications, setPregnancyComplications] = useState(profile.pregnancyComplications || '');
+  const [birthComplications, setBirthComplications] = useState(profile.birthComplications || '');
+  
+  const [medicalHistory, setMedicalHistory] = useState(profile.medicalHistory || {
+    alergias: { name: '', diagnosisAge: '', diagnosisAgeUnit: 'meses', treatment: '' },
+    discapacidad: { name: '', diagnosisAge: '', diagnosisAgeUnit: 'meses', treatment: '' },
+    malformaciones: { name: '', diagnosisAge: '', diagnosisAgeUnit: 'meses', treatment: '' },
+    cirugias: { name: '', diagnosisAge: '', diagnosisAgeUnit: 'meses', treatment: '' },
+    tuberculosis: { name: '', diagnosisAge: '', diagnosisAgeUnit: 'meses', treatment: '' },
+    otras: { name: '', diagnosisAge: '', diagnosisAgeUnit: 'meses', treatment: '' },
+  });
+
+  const [expandedCondition, setExpandedCondition] = useState<string | null>(null);
+
+  const [screeningHistory, setScreeningHistory] = useState(profile.screeningHistory || {
+    metabolico: { dueDate: '', applied: false, comments: '' },
+    auditivo: { dueDate: '', applied: false, comments: '' },
+    oftalmologico: { dueDate: '', applied: false, comments: '' },
+    cardiaco: { dueDate: '', applied: false, comments: '' },
+    cadera: { dueDate: '', applied: false, comments: '' },
+  });
+  const [expandedScreening, setExpandedScreening] = useState<string | null>(null);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -44,8 +73,41 @@ export function Settings() {
   };
 
   const handleSaveProfile = () => {
-    updateProfile({ name, birthDate, photoUrl });
+    updateProfile({ 
+      name, 
+      birthDate, 
+      photoUrl,
+      birthType: birthType as any,
+      birthLength: birthLength ? Number(birthLength) : undefined,
+      birthLengthUnit: birthLengthUnit as any,
+      birthWeight: birthWeight ? Number(birthWeight) : undefined,
+      birthWeightUnit: birthWeightUnit as any,
+      pregnancyComplications: pregnancyComplications as any,
+      birthComplications: birthComplications as any,
+      medicalHistory,
+      screeningHistory
+    });
     alert('Perfil guardado correctamente');
+  };
+
+  const handleMedicalHistoryChange = (key: keyof MedicalHistory, field: keyof MedicalCondition, value: string) => {
+    setMedicalHistory(prev => ({
+      ...prev,
+      [key]: {
+        ...prev[key],
+        [field]: value
+      }
+    }));
+  };
+
+  const handleScreeningChange = (key: keyof ScreeningHistory, field: keyof ScreeningTest, value: any) => {
+    setScreeningHistory(prev => ({
+      ...prev,
+      [key]: {
+        ...prev[key],
+        [field]: value
+      }
+    }));
   };
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -155,6 +217,260 @@ export function Settings() {
               <Calendar className="w-5 h-5 text-gray-400 absolute left-3 top-3.5" />
             </div>
           </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tipo de parto</label>
+            <select
+              value={birthType}
+              onChange={(e) => setBirthType(e.target.value)}
+              className="w-full p-3 border border-gray-200 dark:border-gray-500 bg-white dark:bg-gray-800 rounded-xl focus:ring-2 focus:ring-theme-base outline-none transition-all text-gray-900 dark:text-gray-50"
+            >
+              <option value="">Seleccionar...</option>
+              <option value="natural">Natural</option>
+              <option value="cesarea">Cesárea</option>
+            </select>
+          </div>
+
+          <div className="flex space-x-3">
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Talla al nacer</label>
+              <div className="flex">
+                <input
+                  type="number"
+                  value={birthLength}
+                  onChange={(e) => setBirthLength(e.target.value)}
+                  className="w-full p-3 border border-gray-200 dark:border-gray-500 bg-white dark:bg-gray-800 rounded-l-xl focus:ring-2 focus:ring-theme-base outline-none transition-all text-gray-900 dark:text-gray-50"
+                  placeholder="0"
+                />
+                <select
+                  value={birthLengthUnit}
+                  onChange={(e) => setBirthLengthUnit(e.target.value)}
+                  className="p-3 border-y border-r border-gray-200 dark:border-gray-500 bg-gray-50 dark:bg-gray-700 rounded-r-xl focus:ring-2 focus:ring-theme-base outline-none transition-all text-gray-900 dark:text-gray-50"
+                >
+                  <option value="cm">cm</option>
+                  <option value="in">in</option>
+                </select>
+              </div>
+            </div>
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Peso al nacer</label>
+              <div className="flex">
+                <input
+                  type="number"
+                  value={birthWeight}
+                  onChange={(e) => setBirthWeight(e.target.value)}
+                  className="w-full p-3 border border-gray-200 dark:border-gray-500 bg-white dark:bg-gray-800 rounded-l-xl focus:ring-2 focus:ring-theme-base outline-none transition-all text-gray-900 dark:text-gray-50"
+                  placeholder="0"
+                />
+                <select
+                  value={birthWeightUnit}
+                  onChange={(e) => setBirthWeightUnit(e.target.value)}
+                  className="p-3 border-y border-r border-gray-200 dark:border-gray-500 bg-gray-50 dark:bg-gray-700 rounded-r-xl focus:ring-2 focus:ring-theme-base outline-none transition-all text-gray-900 dark:text-gray-50"
+                >
+                  <option value="kg">kg</option>
+                  <option value="lb">lb</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex space-x-3">
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Complicaciones (Embarazo)</label>
+              <select
+                value={pregnancyComplications}
+                onChange={(e) => setPregnancyComplications(e.target.value)}
+                className="w-full p-3 border border-gray-200 dark:border-gray-500 bg-white dark:bg-gray-800 rounded-xl focus:ring-2 focus:ring-theme-base outline-none transition-all text-gray-900 dark:text-gray-50"
+              >
+                <option value="">Seleccionar...</option>
+                <option value="si">Sí</option>
+                <option value="no">No</option>
+              </select>
+            </div>
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Complicaciones (Nacer)</label>
+              <select
+                value={birthComplications}
+                onChange={(e) => setBirthComplications(e.target.value)}
+                className="w-full p-3 border border-gray-200 dark:border-gray-500 bg-white dark:bg-gray-800 rounded-xl focus:ring-2 focus:ring-theme-base outline-none transition-all text-gray-900 dark:text-gray-50"
+              >
+                <option value="">Seleccionar...</option>
+                <option value="si">Sí</option>
+                <option value="no">No</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="mt-6">
+            <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-100 mb-3">Historial Médico</h4>
+            <div className="space-y-3">
+              {[
+                { key: 'alergias', label: 'Alergias', icon: AlertCircle },
+                { key: 'discapacidad', label: 'Discapacidad', icon: Accessibility },
+                { key: 'malformaciones', label: 'Malformaciones congénitas', icon: Dna },
+                { key: 'cirugias', label: 'Cirugías', icon: Scissors },
+                { key: 'tuberculosis', label: 'Tuberculosis', icon: Wind },
+                { key: 'otras', label: 'Otras enfermedades', icon: PlusCircle }
+              ].map((cat) => {
+                const isExpanded = expandedCondition === cat.key;
+                const conditionData = medicalHistory[cat.key as keyof MedicalHistory];
+                const hasData = Boolean(conditionData.name || conditionData.diagnosisAge || conditionData.treatment);
+                const Icon = cat.icon;
+
+                return (
+                  <div key={cat.key} className="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden bg-white dark:bg-gray-800">
+                    <button
+                      onClick={() => setExpandedCondition(isExpanded ? null : cat.key)}
+                      className="w-full flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/30 hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors"
+                    >
+                      <div className="flex items-center space-x-3">
+                        <div className={cn("p-2 rounded-lg", hasData ? "bg-theme-base/20 text-theme-dark dark:text-theme-base" : "bg-gray-200 dark:bg-gray-600 text-gray-500 dark:text-gray-400")}>
+                          <Icon className="w-4 h-4" />
+                        </div>
+                        <span className="font-medium text-gray-800 dark:text-gray-200">{cat.label}</span>
+                        {hasData && <span className="w-2 h-2 rounded-full bg-theme-base"></span>}
+                      </div>
+                      {isExpanded ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
+                    </button>
+
+                    {isExpanded && (
+                      <div className="p-4 space-y-4 border-t border-gray-100 dark:border-gray-700 animate-in slide-in-from-top-2">
+                        <div>
+                          <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">¿Cuál?</label>
+                          <input
+                            type="text"
+                            value={conditionData.name}
+                            onChange={(e) => handleMedicalHistoryChange(cat.key as keyof MedicalHistory, 'name', e.target.value)}
+                            className="w-full p-3 border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-xl focus:ring-2 focus:ring-theme-base outline-none transition-all text-sm text-gray-900 dark:text-white"
+                            placeholder="Especificar condición"
+                          />
+                        </div>
+                        <div className="flex space-x-3">
+                          <div className="flex-1">
+                            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Edad de diagnóstico</label>
+                            <div className="flex">
+                              <input
+                                type="number"
+                                value={conditionData.diagnosisAge}
+                                onChange={(e) => handleMedicalHistoryChange(cat.key as keyof MedicalHistory, 'diagnosisAge', e.target.value)}
+                                className="w-full p-3 border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-l-xl focus:ring-2 focus:ring-theme-base outline-none transition-all text-sm text-gray-900 dark:text-white"
+                                placeholder="0"
+                                min="0"
+                              />
+                              <select
+                                value={conditionData.diagnosisAgeUnit || 'meses'}
+                                onChange={(e) => handleMedicalHistoryChange(cat.key as keyof MedicalHistory, 'diagnosisAgeUnit', e.target.value)}
+                                className="p-3 border-y border-r border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 rounded-r-xl focus:ring-2 focus:ring-theme-base outline-none transition-all text-sm text-gray-900 dark:text-white"
+                              >
+                                <option value="meses">meses</option>
+                                <option value="años">años</option>
+                              </select>
+                            </div>
+                          </div>
+                          <div className="flex-1">
+                            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Tratamiento</label>
+                            <input
+                              type="text"
+                              value={conditionData.treatment}
+                              onChange={(e) => handleMedicalHistoryChange(cat.key as keyof MedicalHistory, 'treatment', e.target.value)}
+                              className="w-full p-3 border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-xl focus:ring-2 focus:ring-theme-base outline-none transition-all text-sm text-gray-900 dark:text-white"
+                              placeholder="Ej. Terapia"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="mt-6">
+            <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-100 mb-3">Tamizaje</h4>
+            <div className="space-y-3">
+              {[
+                { key: 'metabolico', label: 'Tamiz metabólico neonatal', icon: Droplet, recommendation: 'Entre el tercer y quinto día de vida' },
+                { key: 'auditivo', label: 'Tamiz auditivo', icon: Ear, recommendation: 'Primeros 3 meses de vida' },
+                { key: 'oftalmologico', label: 'Tamiz oftalmológica', icon: Eye, recommendation: 'Primer mes de vida' },
+                { key: 'cardiaco', label: 'Tamiz cardíaco', icon: HeartPulse, recommendation: 'Después de las primeras 24 horas y antes de los 3 días de vida' },
+                { key: 'cadera', label: 'Tamiz de cadera', icon: Bone, recommendation: 'Entre primer y cuarto mes de vida' }
+              ].map((cat) => {
+                const isExpanded = expandedScreening === cat.key;
+                const testData = screeningHistory[cat.key as keyof ScreeningHistory];
+                const hasData = Boolean(testData.dueDate || testData.applied || testData.comments);
+                const Icon = cat.icon;
+
+                return (
+                  <div key={cat.key} className="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden bg-white dark:bg-gray-800">
+                    <button
+                      onClick={() => setExpandedScreening(isExpanded ? null : cat.key)}
+                      className="w-full flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/30 hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors"
+                    >
+                      <div className="flex items-center space-x-3 text-left">
+                        <div className={cn("p-2 rounded-lg shrink-0", hasData ? "bg-theme-base/20 text-theme-dark dark:text-theme-base" : "bg-gray-200 dark:bg-gray-600 text-gray-500 dark:text-gray-400")}>
+                          <Icon className="w-4 h-4" />
+                        </div>
+                        <span className="font-medium text-gray-800 dark:text-gray-200 text-sm">{cat.label}</span>
+                        {hasData && <span className="w-2 h-2 rounded-full bg-theme-base shrink-0"></span>}
+                      </div>
+                      {isExpanded ? <ChevronUp className="w-5 h-5 text-gray-400 shrink-0" /> : <ChevronDown className="w-5 h-5 text-gray-400 shrink-0" />}
+                    </button>
+
+                    {isExpanded && (
+                      <div className="p-4 space-y-4 border-t border-gray-100 dark:border-gray-700 animate-in slide-in-from-top-2">
+                        <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-100 dark:border-blue-800/30">
+                          <p className="text-xs text-blue-800 dark:text-blue-300 flex items-start">
+                            <span className="font-semibold mr-1">Recomendación:</span> {cat.recommendation}
+                          </p>
+                        </div>
+                        
+                        <div className="flex items-center justify-between space-x-4">
+                          <div className="flex-1">
+                            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Fecha programada</label>
+                            <div className="relative">
+                              <input
+                                type="date"
+                                value={testData.dueDate}
+                                onChange={(e) => handleScreeningChange(cat.key as keyof ScreeningHistory, 'dueDate', e.target.value)}
+                                className="w-full p-3 pl-10 border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-xl focus:ring-2 focus:ring-theme-base outline-none transition-all text-sm text-gray-900 dark:text-white"
+                              />
+                              <Calendar className="w-4 h-4 text-gray-400 absolute left-3 top-3.5" />
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center space-x-2 pt-5">
+                            <input
+                              type="checkbox"
+                              id={`applied-${cat.key}`}
+                              checked={testData.applied}
+                              onChange={(e) => handleScreeningChange(cat.key as keyof ScreeningHistory, 'applied', e.target.checked)}
+                              className="w-5 h-5 text-theme-base rounded border-gray-300 focus:ring-theme-base dark:border-gray-600 dark:bg-gray-700"
+                            />
+                            <label htmlFor={`applied-${cat.key}`} className="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer">
+                              Aplicado
+                            </label>
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Comentarios</label>
+                          <textarea
+                            value={testData.comments}
+                            onChange={(e) => handleScreeningChange(cat.key as keyof ScreeningHistory, 'comments', e.target.value)}
+                            className="w-full p-3 border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-xl focus:ring-2 focus:ring-theme-base outline-none transition-all text-sm text-gray-900 dark:text-white resize-none"
+                            placeholder="Anotaciones del padre/madre..."
+                            rows={2}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
           <button
             onClick={handleSaveProfile}
             className="w-full py-3 mt-2 bg-theme-dark dark:bg-theme-base text-white rounded-xl font-semibold flex items-center justify-center space-x-2 hover:bg-opacity-90 transition-all"

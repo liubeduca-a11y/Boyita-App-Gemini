@@ -24,10 +24,49 @@ export interface BabyEvent {
 export type ThemeColor = 'blue' | 'pink' | 'mint' | 'yellow' | 'lavender';
 export type ColorMode = 'system' | 'light' | 'dark';
 
+export interface MedicalCondition {
+  name: string;
+  diagnosisAge: string;
+  diagnosisAgeUnit?: 'meses' | 'años' | '';
+  treatment: string;
+}
+
+export interface MedicalHistory {
+  alergias: MedicalCondition;
+  discapacidad: MedicalCondition;
+  malformaciones: MedicalCondition;
+  cirugias: MedicalCondition;
+  tuberculosis: MedicalCondition;
+  otras: MedicalCondition;
+}
+
+export interface ScreeningTest {
+  dueDate: string; // YYYY-MM-DD
+  applied: boolean;
+  comments: string;
+}
+
+export interface ScreeningHistory {
+  metabolico: ScreeningTest;
+  auditivo: ScreeningTest;
+  oftalmologico: ScreeningTest;
+  cardiaco: ScreeningTest;
+  cadera: ScreeningTest;
+}
+
 export interface BabyProfile {
   name: string;
   birthDate: string; // YYYY-MM-DD
   photoUrl?: string;
+  birthType?: 'cesarea' | 'natural' | '';
+  birthLength?: number;
+  birthLengthUnit?: 'cm' | 'in';
+  birthWeight?: number;
+  birthWeightUnit?: 'kg' | 'lb';
+  pregnancyComplications?: 'si' | 'no' | '';
+  birthComplications?: 'si' | 'no' | '';
+  medicalHistory?: MedicalHistory;
+  screeningHistory?: ScreeningHistory;
 }
 
 interface AppState {
