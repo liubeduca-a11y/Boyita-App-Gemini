@@ -13,7 +13,7 @@ function formatDuration(ms: number) {
 
 export function Dashboard() {
   return (
-    <div className="p-4 space-y-6 max-w-md mx-auto">
+    <div className="p-4 md:p-8 max-w-md md:max-w-none mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       <FeedingModule />
       <HygieneModule />
       <SleepModule />

@@ -56,19 +56,55 @@ export function Layout({ children, activeTab, onTabChange }: LayoutProps) {
   ] as const;
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900 overflow-hidden">
-      <header className="bg-theme-base dark:bg-theme-dark/40 text-theme-text dark:text-theme-base px-4 py-4 shadow-sm z-10 flex items-center justify-between">
+    <div className="flex h-screen bg-gray-50 dark:bg-gray-900 overflow-hidden flex-col md:flex-row">
+      {/* Mobile Header */}
+      <header className="md:hidden bg-theme-base dark:bg-theme-dark/40 text-theme-text dark:text-theme-base px-4 py-4 shadow-sm z-10 flex items-center justify-between shrink-0">
         <h1 className="text-xl font-semibold tracking-tight">Boyita App</h1>
         <div className="w-8 h-8 rounded-full bg-white/30 dark:bg-black/20 flex items-center justify-center">
           <span className="text-sm font-bold">👶</span>
         </div>
       </header>
 
-      <main className="flex-1 overflow-y-auto pb-20">
-        {children}
+      {/* Sidebar (Tablet/Desktop) */}
+      <aside className="hidden md:flex flex-col w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 z-20 shrink-0">
+        <div className="p-6 flex items-center space-x-3 bg-theme-base dark:bg-theme-dark/40 text-theme-text dark:text-theme-base">
+          <div className="w-10 h-10 rounded-full bg-white/30 dark:bg-black/20 flex items-center justify-center">
+            <span className="text-lg font-bold">👶</span>
+          </div>
+          <h1 className="text-2xl font-semibold tracking-tight">Boyita App</h1>
+        </div>
+        <nav className="flex-1 px-4 py-6 space-y-2">
+          {tabs.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => onTabChange(tab.id)}
+                className={cn(
+                  "flex items-center w-full px-4 py-3 rounded-xl transition-colors space-x-3",
+                  isActive 
+                    ? "bg-theme-base/20 text-theme-dark dark:text-theme-base" 
+                    : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700/50"
+                )}
+              >
+                <Icon className={cn("w-6 h-6", isActive && "fill-theme-dark dark:fill-theme-base")} />
+                <span className="font-medium text-base">{tab.label}</span>
+              </button>
+            );
+          })}
+        </nav>
+      </aside>
+
+      {/* Main Content Area */}
+      <main className="flex-1 overflow-y-auto pb-20 md:pb-0 relative w-full">
+        <div className="max-w-4xl mx-auto w-full h-full">
+          {children}
+        </div>
       </main>
 
-      <nav className="fixed bottom-0 w-full bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 shadow-lg pb-safe z-20">
+      {/* Bottom Nav (Mobile) */}
+      <nav className="md:hidden fixed bottom-0 w-full bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] pb-safe z-20">
         <div className="flex justify-around items-center h-16">
           {tabs.map((tab) => {
             const Icon = tab.icon;

@@ -138,7 +138,7 @@ export function History() {
   }, {} as Record<string, BabyEvent[]>);
 
   return (
-    <div className="p-4 space-y-6 max-w-md mx-auto pb-8">
+    <div className="p-4 space-y-6 max-w-md md:max-w-4xl mx-auto pb-8">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold text-gray-800">Historial</h2>
         <div className="flex items-center space-x-2">
@@ -228,9 +228,9 @@ export function History() {
               <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider sticky top-0 bg-gray-50 py-2 z-10">
                 {date}
               </h3>
-              <div className="space-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {dayEvents.map((event) => (
-                  <div key={event.id} className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex items-start group transition-all hover:shadow-md">
+                  <div key={event.id} className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex items-start group transition-all hover:shadow-md h-full">
                     <div className="w-10 h-10 rounded-full bg-theme-light flex items-center justify-center text-xl shrink-0">
                       {getEventIcon(event.type)}
                     </div>
