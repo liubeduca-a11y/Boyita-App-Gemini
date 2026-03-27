@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Home, BarChart2, List, Settings } from 'lucide-react';
+import { Home, BarChart2, List, Settings, Trophy } from 'lucide-react';
 import { useStore } from '../store';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -10,8 +10,8 @@ export function cn(...inputs: ClassValue[]) {
 
 interface LayoutProps {
   children: React.ReactNode;
-  activeTab: 'dashboard' | 'analytics' | 'history' | 'settings';
-  onTabChange: (tab: 'dashboard' | 'analytics' | 'history' | 'settings') => void;
+  activeTab: 'dashboard' | 'analytics' | 'history' | 'settings' | 'trophyPath';
+  onTabChange: (tab: 'dashboard' | 'analytics' | 'history' | 'settings' | 'trophyPath') => void;
 }
 
 export function Layout({ children, activeTab, onTabChange }: LayoutProps) {
@@ -52,11 +52,12 @@ export function Layout({ children, activeTab, onTabChange }: LayoutProps) {
     { id: 'dashboard', icon: Home, label: 'Registro' },
     { id: 'analytics', icon: BarChart2, label: 'Análisis' },
     { id: 'history', icon: List, label: 'Historial' },
+    { id: 'trophyPath', icon: Trophy, label: 'Logros' },
     { id: 'settings', icon: Settings, label: 'Ajustes' },
   ] as const;
 
   return (
-    <div className="flex h-screen bg-gray-50 dark:bg-gray-900 overflow-hidden flex-col md:flex-row">
+    <div className="flex h-[100dvh] bg-gray-50 dark:bg-gray-900 overflow-hidden flex-col md:flex-row">
       {/* Mobile Header */}
       <header className="md:hidden bg-theme-base dark:bg-theme-dark/40 text-theme-text dark:text-theme-base px-4 py-4 shadow-sm z-10 flex items-center justify-between shrink-0">
         <h1 className="text-xl font-semibold tracking-tight">Boyita App</h1>
@@ -98,7 +99,7 @@ export function Layout({ children, activeTab, onTabChange }: LayoutProps) {
 
       {/* Main Content Area */}
       <main className="flex-1 overflow-y-auto pb-20 md:pb-0 relative w-full">
-        <div className="max-w-4xl mx-auto w-full h-full">
+        <div className="max-w-4xl mx-auto w-full min-h-full">
           {children}
         </div>
       </main>
@@ -118,7 +119,7 @@ export function Layout({ children, activeTab, onTabChange }: LayoutProps) {
                   isActive ? "text-theme-dark dark:text-theme-base" : "text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-400"
                 )}
               >
-                <Icon className={cn("w-6 h-6", isActive && "fill-theme-light dark:fill-theme-dark/30")} />
+                <Icon className={cn("w-6 h-6", isActive && "fill-theme-dark dark:fill-theme-base")} />
                 <span className="text-[10px] font-medium">{tab.label}</span>
               </button>
             );

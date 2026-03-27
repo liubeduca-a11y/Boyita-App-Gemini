@@ -12,9 +12,9 @@ export interface BabyEvent {
   endTimestamp?: number;
   details?: {
     amount?: number; // oz for feeding
-    hygieneType?: 'pee' | 'poo';
+    hygieneType?: 'pee' | 'poo' | 'constipation';
     level?: 'poco' | 'medio' | 'lleno';
-    texture?: 'liquido' | 'pastoso' | 'duro';
+    texture?: 'liquido' | 'viscoso' | 'pastoso' | 'duro' | 'diarrea';
     photoUrl?: string; // base64 photo of the poop
   };
   notes?: string;
@@ -54,6 +54,12 @@ export interface ScreeningHistory {
   cadera: ScreeningTest;
 }
 
+export interface CompletedMilestone {
+  id: string;
+  timestamp: number;
+  evidenceUrl?: string;
+}
+
 export interface BabyProfile {
   name: string;
   birthDate: string; // YYYY-MM-DD
@@ -77,11 +83,15 @@ interface AppState {
   profile: BabyProfile;
   theme: ThemeColor;
   colorMode: ColorMode;
+  completedMilestones: Record<string, CompletedMilestone>;
+  activeAlarms: string[];
   
   // Actions
   setFamilyId: (id: string | null) => void;
   setEvents: (events: BabyEvent[]) => void;
   setProfile: (profile: BabyProfile) => void;
+  setCompletedMilestones: (milestones: Record<string, CompletedMilestone>) => void;
+  setActiveAlarms: (alarms: string[]) => void;
   setActiveFeeding: (active: { startTime: number } | null) => void;
   setActiveSleep: (active: { startTime: number } | null) => void;
 
@@ -98,6 +108,11 @@ interface AppState {
   updateProfile: (profile: Partial<BabyProfile>) => Promise<void>;
   setTheme: (theme: ThemeColor) => void;
   setColorMode: (mode: ColorMode) => void;
+
+  completeMilestone: (id: string, evidenceUrl?: string) => Promise<void>;
+  removeMilestone: (id: string) => Promise<void>;
+  removeMilestoneEvidence: (id: string) => Promise<void>;
+  toggleAlarm: (id: string) => Promise<void>;
 }
 
 export const useStore = create<AppState>()(
@@ -113,10 +128,14 @@ export const useStore = create<AppState>()(
       },
       theme: 'blue',
       colorMode: 'system',
+      completedMilestones: {},
+      activeAlarms: [],
 
       setFamilyId: (id) => set({ familyId: id }),
       setEvents: (events) => set({ events }),
       setProfile: (profile) => set({ profile }),
+      setCompletedMilestones: (milestones) => set({ completedMilestones: milestones }),
+      setActiveAlarms: (alarms) => set({ activeAlarms: alarms }),
       setActiveFeeding: (activeFeeding) => set({ activeFeeding }),
       setActiveSleep: (activeSleep) => set({ activeSleep }),
 
@@ -261,6 +280,86 @@ export const useStore = create<AppState>()(
 
       setTheme: (theme) => set({ theme }),
       setColorMode: (mode) => set({ colorMode: mode }),
+
+      completeMilestone: async (id, evidenceUrl) => {
+        const { familyId, completedMilestones } = get();
+        const newMilestone: CompletedMilestone = {
+          id,
+          timestamp: Date.now(),
+        };
+        if (evidenceUrl) {
+          newMilestone.evidenceUrl = evidenceUrl;
+        }
+        const newMilestones = { ...completedMilestones, [id]: newMilestone };
+        set({ completedMilestones: newMilestones });
+
+        if (familyId && auth.currentUser) {
+          try {
+            const firestoreMilestones = JSON.parse(JSON.stringify(newMilestones));
+            await updateDoc(doc(db, `families/${familyId}`), { completedMilestones: firestoreMilestones });
+          } catch (error) {
+            console.error("Error updating milestones", error);
+          }
+        }
+      },
+
+      removeMilestone: async (id) => {
+        const { familyId, completedMilestones } = get();
+        if (!completedMilestones[id]) return;
+        
+        const newMilestones = { ...completedMilestones };
+        delete newMilestones[id];
+        
+        set({ completedMilestones: newMilestones });
+
+        if (familyId && auth.currentUser) {
+          try {
+            const firestoreMilestones = JSON.parse(JSON.stringify(newMilestones));
+            await updateDoc(doc(db, `families/${familyId}`), { completedMilestones: firestoreMilestones });
+          } catch (error) {
+            console.error("Error updating milestones", error);
+          }
+        }
+      },
+
+      removeMilestoneEvidence: async (id) => {
+        const { familyId, completedMilestones } = get();
+        if (!completedMilestones[id]) return;
+        
+        const newMilestone = { ...completedMilestones[id] };
+        delete newMilestone.evidenceUrl;
+        
+        const newMilestones = { ...completedMilestones, [id]: newMilestone };
+        set({ completedMilestones: newMilestones });
+
+        if (familyId && auth.currentUser) {
+          try {
+            const firestoreMilestones = JSON.parse(JSON.stringify(newMilestones));
+            await updateDoc(doc(db, `families/${familyId}`), { completedMilestones: firestoreMilestones });
+          } catch (error) {
+            console.error("Error updating milestones", error);
+          }
+        }
+      },
+
+      toggleAlarm: async (id) => {
+        const { familyId, activeAlarms } = get();
+        let newAlarms = [...activeAlarms];
+        if (newAlarms.includes(id)) {
+          newAlarms = newAlarms.filter(a => a !== id);
+        } else {
+          newAlarms.push(id);
+        }
+        set({ activeAlarms: newAlarms });
+
+        if (familyId && auth.currentUser) {
+          try {
+            await updateDoc(doc(db, `families/${familyId}`), { activeAlarms: newAlarms });
+          } catch (error) {
+            console.error("Error updating alarms", error);
+          }
+        }
+      },
     }),
     {
       name: 'boyita-storage',

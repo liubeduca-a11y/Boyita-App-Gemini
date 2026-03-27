@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useStore, BabyEvent } from '../store';
 import { format, isAfter, isBefore, startOfDay, endOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Trash2, Edit2, Download, FileText, FileSpreadsheet, Check, X, Calendar, Filter } from 'lucide-react';
+import { Trash2, Edit2, Download, FileText, FileSpreadsheet, Check, X, Calendar, Filter, Search } from 'lucide-react';
 import { cn } from '../components/Layout';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
@@ -17,6 +17,29 @@ export function History() {
   const [eventTypeFilter, setEventTypeFilter] = useState<'all' | 'feeding' | 'hygiene' | 'sleep' | 'burp'>('all');
   const [customStart, setCustomStart] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
   const [customEnd, setCustomEnd] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const getEventDescription = (event: BabyEvent) => {
+    switch (event.type) {
+      case 'feeding':
+        return `${event.details?.amount} oz consumidas`;
+      case 'burp':
+        return 'Eructo registrado';
+      case 'hygiene':
+        if (event.details?.hygieneType === 'pee') return `Pipí (${event.details.level || 'N/A'})`;
+        if (event.details?.hygieneType === 'poo') return `Popó (${event.details.texture || 'N/A'})`;
+        if (event.details?.hygieneType === 'constipation') return '1 día de estreñimiento';
+        return 'Cambio de pañal';
+      case 'sleep':
+        if (event.endTimestamp) {
+          const duration = Math.round((event.endTimestamp - event.timestamp) / 60000);
+          return `Durmió ${Math.floor(duration / 60)}h ${duration % 60}m`;
+        }
+        return 'Durmiendo...';
+      default:
+        return 'Evento desconocido';
+    }
+  };
 
   const filteredEvents = useMemo(() => {
     let result = events;
@@ -34,8 +57,28 @@ export function History() {
       result = result.filter(e => e.type === eventTypeFilter);
     }
 
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(e => {
+        const typeMatch = e.type.toLowerCase().includes(query);
+        const notesMatch = e.notes?.toLowerCase().includes(query);
+        const descMatch = getEventDescription(e).toLowerCase().includes(query);
+        
+        // Translate type for better search matching
+        let translatedType = '';
+        if (e.type === 'feeding') translatedType = 'alimentacion alimentación';
+        if (e.type === 'hygiene') translatedType = 'higiene';
+        if (e.type === 'sleep') translatedType = 'sueño sueno';
+        if (e.type === 'burp') translatedType = 'eructo';
+        
+        const translatedTypeMatch = translatedType.includes(query);
+
+        return typeMatch || notesMatch || descMatch || translatedTypeMatch;
+      });
+    }
+
     return result;
-  }, [events, filterType, customStart, customEnd, eventTypeFilter]);
+  }, [events, filterType, customStart, customEnd, eventTypeFilter, searchQuery]);
 
   const formatEventTime = (timestamp: number) => {
     return format(new Date(timestamp), "hh:mm a", { locale: es });
@@ -52,27 +95,6 @@ export function History() {
       case 'hygiene': return '🧻';
       case 'sleep': return '💤';
       default: return '📝';
-    }
-  };
-
-  const getEventDescription = (event: BabyEvent) => {
-    switch (event.type) {
-      case 'feeding':
-        return `${event.details?.amount} oz consumidas`;
-      case 'burp':
-        return 'Eructo registrado';
-      case 'hygiene':
-        if (event.details?.hygieneType === 'pee') return `Pipí (${event.details.level || 'N/A'})`;
-        if (event.details?.hygieneType === 'poo') return `Popó (${event.details.texture || 'N/A'})`;
-        return 'Cambio de pañal';
-      case 'sleep':
-        if (event.endTimestamp) {
-          const duration = Math.round((event.endTimestamp - event.timestamp) / 60000);
-          return `Durmió ${Math.floor(duration / 60)}h ${duration % 60}m`;
-        }
-        return 'Durmiendo...';
-      default:
-        return 'Evento desconocido';
     }
   };
 
@@ -171,6 +193,19 @@ export function History() {
             )}
           </div>
         </div>
+      </div>
+
+      <div className="relative">
+        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+          <Search className="h-5 w-5 text-gray-400" />
+        </div>
+        <input
+          type="text"
+          placeholder="Buscar en registros y observaciones..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="block w-full pl-10 pr-3 py-2 border border-gray-200 rounded-xl leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-theme-base focus:border-theme-base sm:text-sm transition-colors"
+        />
       </div>
 
       <div className="flex space-x-2 bg-gray-100 p-1 rounded-xl overflow-x-auto whitespace-nowrap scrollbar-hide">
@@ -291,7 +326,7 @@ function EditEventModal({ event, onClose, onSave }: { event: BabyEvent, onClose:
   const [amount, setAmount] = useState(event.details?.amount?.toString() || '');
   const [hygieneType, setHygieneType] = useState<'pee' | 'poo'>(event.details?.hygieneType || 'pee');
   const [level, setLevel] = useState<'poco' | 'medio' | 'lleno'>(event.details?.level || 'medio');
-  const [texture, setTexture] = useState<'liquido' | 'pastoso' | 'duro'>(event.details?.texture || 'pastoso');
+  const [texture, setTexture] = useState<'liquido' | 'viscoso' | 'pastoso' | 'duro' | 'diarrea'>(event.details?.texture || 'pastoso');
   const [endTimestamp, setEndTimestamp] = useState(event.endTimestamp ? format(new Date(event.endTimestamp), "yyyy-MM-dd'T'HH:mm") : '');
 
   const handleSave = () => {
@@ -394,8 +429,10 @@ function EditEventModal({ event, onClose, onSave }: { event: BabyEvent, onClose:
                   <label className="block text-sm font-medium text-gray-700 mb-1">Textura</label>
                   <select value={texture} onChange={(e) => setTexture(e.target.value as any)} className="w-full p-3 border border-gray-200 rounded-xl outline-none">
                     <option value="liquido">Líquido</option>
+                    <option value="viscoso">Viscoso</option>
                     <option value="pastoso">Pastoso</option>
                     <option value="duro">Duro</option>
+                    <option value="diarrea">Diarrea</option>
                   </select>
                 </div>
               )}

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useStore } from '../store';
-import { Clock, Droplets, Moon, Wind, Check, X, Camera, Edit3, Timer } from 'lucide-react';
+import { Clock, Droplets, Moon, Wind, Check, X, Camera, Edit3, Timer, Sparkles, AlertTriangle, Save } from 'lucide-react';
 import { cn } from '../components/Layout';
+import confetti from 'canvas-confetti';
 
 function formatDuration(ms: number) {
   const totalSeconds = Math.floor(ms / 1000);
@@ -12,6 +13,52 @@ function formatDuration(ms: number) {
 }
 
 export function Dashboard() {
+  const { events, addEvent } = useStore();
+
+  useEffect(() => {
+    const checkConstipation = () => {
+      const now = Date.now();
+      const oneDayMs = 24 * 60 * 60 * 1000;
+
+      // Find the last poo event
+      const lastPooEvent = [...events]
+        .filter(e => e.type === 'hygiene' && e.details?.hygieneType === 'poo')
+        .sort((a, b) => b.timestamp - a.timestamp)[0];
+
+      // Find the last constipation event
+      const lastConstipationEvent = [...events]
+        .filter(e => e.type === 'hygiene' && e.details?.hygieneType === 'constipation')
+        .sort((a, b) => b.timestamp - a.timestamp)[0];
+
+      if (lastPooEvent) {
+        const timeSinceLastPoo = now - lastPooEvent.timestamp;
+        const timeSinceLastConstipation = lastConstipationEvent ? now - lastConstipationEvent.timestamp : Infinity;
+
+        // If it's been more than 24h since last poo AND we haven't added a constipation event in the last 24h
+        if (timeSinceLastPoo > oneDayMs && timeSinceLastConstipation > oneDayMs) {
+          addEvent({
+            type: 'hygiene',
+            timestamp: now,
+            details: { hygieneType: 'constipation' },
+            notes: '1 día de estreñimiento (Automático)'
+          });
+          
+          // Show alert notification
+          if (window.Notification && Notification.permission === 'granted') {
+            new Notification('Alerta de Estreñimiento', {
+              body: 'Ha pasado más de 1 día sin registros de popó.',
+              icon: '/favicon.ico'
+            });
+          } else {
+            alert('Alerta: Ha pasado más de 1 día sin registros de popó. Se ha añadido un registro de estreñimiento.');
+          }
+        }
+      }
+    };
+
+    checkConstipation();
+  }, [events, addEvent]);
+
   return (
     <div className="p-4 md:p-8 max-w-md md:max-w-none mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       <FeedingModule />
@@ -52,6 +99,8 @@ function FeedingModule() {
     setNotes('');
   };
 
+  const [showSaveSuccess, setShowSaveSuccess] = useState(false);
+
   const handleSaveManual = () => {
     if (!oz) return;
     addEvent({
@@ -62,6 +111,8 @@ function FeedingModule() {
     });
     setOz('');
     setNotes('');
+    setShowSaveSuccess(true);
+    setTimeout(() => setShowSaveSuccess(false), 1000);
   };
 
   const [showBurpSuccess, setShowBurpSuccess] = useState(false);
@@ -148,11 +199,16 @@ function FeedingModule() {
             </div>
             <button
               onClick={handleSaveManual}
-              disabled={!oz}
-              className="w-full py-3 bg-theme-dark text-white rounded-xl font-semibold flex items-center justify-center space-x-2 disabled:opacity-50"
+              disabled={!oz || showSaveSuccess}
+              className={cn(
+                "w-full py-3 rounded-xl font-semibold flex items-center justify-center space-x-2 transition-all duration-300",
+                showSaveSuccess 
+                  ? "bg-green-100 border-green-200 text-green-700 dark:bg-green-900/30 dark:border-green-800 dark:text-green-400 scale-95" 
+                  : "bg-theme-dark text-white disabled:opacity-50"
+              )}
             >
               <Check className="w-5 h-5" />
-              <span>Registrar Toma</span>
+              <span>{showSaveSuccess ? "¡Registrado!" : "Registrar Toma"}</span>
             </button>
           </div>
         )}
@@ -225,7 +281,7 @@ function HygieneModule() {
   const { addEvent } = useStore();
   const [type, setType] = useState<'pee' | 'poo' | null>(null);
   const [level, setLevel] = useState<'poco' | 'medio' | 'lleno' | null>(null);
-  const [texture, setTexture] = useState<'liquido' | 'pastoso' | 'duro' | null>(null);
+  const [texture, setTexture] = useState<'liquido' | 'viscoso' | 'pastoso' | 'duro' | 'diarrea' | null>(null);
   const [notes, setNotes] = useState('');
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -268,6 +324,8 @@ function HygieneModule() {
     }
   };
 
+  const [showSaveSuccess, setShowSaveSuccess] = useState(false);
+
   const handleSave = () => {
     if (!type) return;
     addEvent({
@@ -281,19 +339,31 @@ function HygieneModule() {
       },
       notes
     });
-    // Reset
-    setType(null);
-    setLevel(null);
-    setTexture(null);
-    setNotes('');
-    setPhotoUrl(null);
+    
+    confetti({
+      particleCount: 50,
+      spread: 60,
+      origin: { y: 0.8 },
+      colors: ['#3b82f6', '#60a5fa', '#93c5fd']
+    });
+
+    setShowSaveSuccess(true);
+    setTimeout(() => {
+      setShowSaveSuccess(false);
+      // Reset after animation
+      setType(null);
+      setLevel(null);
+      setTexture(null);
+      setNotes('');
+      setPhotoUrl(null);
+    }, 1000);
   };
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-5">
       <div className="flex items-center space-x-3 mb-4">
         <div className="p-2 bg-theme-light dark:bg-theme-dark/20 rounded-xl text-theme-dark dark:text-theme-base">
-          <Droplets className="w-6 h-6" />
+          <Sparkles className="w-6 h-6" />
         </div>
         <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Higiene</h2>
       </div>
@@ -344,8 +414,22 @@ function HygieneModule() {
           <div className="animate-in slide-in-from-top-2 duration-200 space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Textura</label>
+              
+              <button
+                onClick={() => setTexture('diarrea')}
+                className={cn(
+                  "w-full mb-3 py-3 rounded-xl font-bold border transition-all flex items-center justify-center space-x-2",
+                  texture === 'diarrea' 
+                    ? "bg-red-100 border-red-400 text-red-800 dark:bg-red-900/40 dark:border-red-600 dark:text-red-300 shadow-sm" 
+                    : "bg-red-50/50 border-red-200 text-red-600 hover:bg-red-50 dark:bg-red-900/10 dark:border-red-800/50 dark:text-red-400 dark:hover:bg-red-900/20"
+                )}
+              >
+                <AlertTriangle className="w-5 h-5" />
+                <span>Diarrea</span>
+              </button>
+
               <div className="flex space-x-2">
-                {['liquido', 'pastoso', 'duro'].map((t) => (
+                {['liquido', 'viscoso', 'pastoso', 'duro'].map((t) => (
                   <button
                     key={t}
                     onClick={() => setTexture(t as any)}
@@ -404,10 +488,16 @@ function HygieneModule() {
             />
             <button
               onClick={handleSave}
-              className="w-full py-3 bg-theme-dark text-white rounded-xl font-semibold flex items-center justify-center space-x-2"
+              disabled={!type || showSaveSuccess}
+              className={cn(
+                "w-full py-3 rounded-xl font-semibold flex items-center justify-center space-x-2 transition-all duration-300",
+                showSaveSuccess 
+                  ? "bg-green-100 border-green-200 text-green-700 dark:bg-green-900/30 dark:border-green-800 dark:text-green-400 scale-95" 
+                  : "bg-theme-dark text-white disabled:opacity-50"
+              )}
             >
-              <Check className="w-5 h-5" />
-              <span>Guardar Registro</span>
+              {showSaveSuccess ? <Check className="w-5 h-5" /> : <Save className="w-5 h-5" />}
+              <span>{showSaveSuccess ? "¡Registrado!" : "Guardar Registro"}</span>
             </button>
           </div>
         )}
@@ -437,10 +527,16 @@ function SleepModule() {
     return () => clearInterval(interval);
   }, [activeSleep]);
 
+  const [showSaveSuccess, setShowSaveSuccess] = useState(false);
+
   const handleSaveTimer = () => {
     stopSleep(notes);
-    setShowModal(false);
-    setNotes('');
+    setShowSaveSuccess(true);
+    setTimeout(() => {
+      setShowSaveSuccess(false);
+      setShowModal(false);
+      setNotes('');
+    }, 1000);
   };
 
   const handleSaveManual = () => {
@@ -460,6 +556,8 @@ function SleepModule() {
     setManualStart('');
     setManualEnd('');
     setNotes('');
+    setShowSaveSuccess(true);
+    setTimeout(() => setShowSaveSuccess(false), 1000);
   };
 
   return (
@@ -543,11 +641,16 @@ function SleepModule() {
             </div>
             <button
               onClick={handleSaveManual}
-              disabled={!manualStart || !manualEnd}
-              className="w-full py-3 bg-indigo-600 text-white rounded-xl font-semibold flex items-center justify-center space-x-2 disabled:opacity-50"
+              disabled={!manualStart || !manualEnd || showSaveSuccess}
+              className={cn(
+                "w-full py-3 rounded-xl font-semibold flex items-center justify-center space-x-2 transition-all duration-300",
+                showSaveSuccess 
+                  ? "bg-green-100 border-green-200 text-green-700 dark:bg-green-900/30 dark:border-green-800 dark:text-green-400 scale-95" 
+                  : "bg-indigo-600 text-white disabled:opacity-50"
+              )}
             >
-              <Check className="w-5 h-5" />
-              <span>Registrar Sueño</span>
+              {showSaveSuccess ? <Check className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+              <span>{showSaveSuccess ? "¡Registrado!" : "Registrar Sueño"}</span>
             </button>
           </div>
         )}
@@ -577,9 +680,16 @@ function SleepModule() {
                 </button>
                 <button
                   onClick={handleSaveTimer}
-                  className="flex-1 py-3 bg-indigo-500 text-white rounded-xl font-semibold"
+                  disabled={showSaveSuccess}
+                  className={cn(
+                    "flex-1 py-3 rounded-xl font-semibold transition-all duration-300 flex items-center justify-center space-x-2",
+                    showSaveSuccess
+                      ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 scale-95"
+                      : "bg-indigo-500 text-white"
+                  )}
                 >
-                  Guardar
+                  {showSaveSuccess ? <Check className="w-5 h-5" /> : null}
+                  <span>{showSaveSuccess ? "¡Guardado!" : "Guardar"}</span>
                 </button>
               </div>
             </div>

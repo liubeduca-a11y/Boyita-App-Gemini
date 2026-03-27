@@ -45,10 +45,20 @@ export function PediatricianChat() {
       - Horas de sueño: ${(sleepMs / (1000 * 60 * 60)).toFixed(1)}
       `;
 
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+      const apiKey = process.env.GEMINI_API_KEY;
       
-      // We need to map our messages to the format expected by generateContent
-      const contents = messages.slice(1).map(m => ({
+      if (!apiKey) {
+        throw new Error("No se encontró la clave de API");
+      }
+
+      const ai = new GoogleGenAI({ apiKey });
+      
+      // Filter out any previous error messages from the model to avoid invalid history
+      const validMessages = messages.slice(1).filter(m => 
+        !(m.role === 'model' && m.text.includes('Hubo un error'))
+      );
+
+      const contents = validMessages.map(m => ({
         role: m.role,
         parts: [{ text: m.text }]
       }));

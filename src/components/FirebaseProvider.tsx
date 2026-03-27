@@ -5,7 +5,7 @@ import { doc, getDoc, setDoc, updateDoc, onSnapshot, collection, query, writeBat
 import { useStore, BabyEvent } from '../store';
 
 export function FirebaseProvider({ children }: { children: React.ReactNode }) {
-  const { setFamilyId, setEvents, setProfile, setActiveFeeding, setActiveSleep, profile } = useStore();
+  const { setFamilyId, setEvents, setProfile, setActiveFeeding, setActiveSleep, setCompletedMilestones, setActiveAlarms, profile } = useStore();
   const familyId = useStore(state => state.familyId);
   const [isAuthReady, setIsAuthReady] = useState(false);
 
@@ -120,6 +120,8 @@ export function FirebaseProvider({ children }: { children: React.ReactNode }) {
         if (data.babyProfile) setProfile(data.babyProfile);
         if (data.activeFeeding !== undefined) setActiveFeeding(data.activeFeeding);
         if (data.activeSleep !== undefined) setActiveSleep(data.activeSleep);
+        if (data.completedMilestones) setCompletedMilestones(data.completedMilestones);
+        if (data.activeAlarms) setActiveAlarms(data.activeAlarms);
       }
     }, (error) => {
       console.error(`Error in family snapshot for familyId ${familyId}:`, error);
@@ -143,7 +145,7 @@ export function FirebaseProvider({ children }: { children: React.ReactNode }) {
       unsubFamily();
       unsubEvents();
     };
-  }, [isAuthReady, familyId, setProfile, setActiveFeeding, setActiveSleep, setEvents]);
+  }, [isAuthReady, familyId, setProfile, setActiveFeeding, setActiveSleep, setEvents, setCompletedMilestones, setActiveAlarms]);
 
   return <>{children}</>;
 }
