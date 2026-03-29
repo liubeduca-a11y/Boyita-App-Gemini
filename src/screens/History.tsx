@@ -284,7 +284,7 @@ export function History() {
 
                       {event.notes && <p className="text-xs text-gray-500 mt-1 italic">"{event.notes}"</p>}
                     </div>
-                    <div className="ml-2 flex flex-col space-y-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                    <div className="ml-2 flex flex-col space-y-2 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
                       <button 
                         onClick={() => handleEdit(event)}
                         className="p-1.5 text-blue-400 hover:bg-blue-50 rounded-lg transition-colors"

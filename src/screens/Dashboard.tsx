@@ -339,13 +339,6 @@ function HygieneModule() {
       },
       notes
     });
-    
-    confetti({
-      particleCount: 50,
-      spread: 60,
-      origin: { y: 0.8 },
-      colors: ['#3b82f6', '#60a5fa', '#93c5fd']
-    });
 
     setShowSaveSuccess(true);
     setTimeout(() => {

@@ -140,6 +140,44 @@ export function Milestones() {
     });
   };
 
+  const handleContactPediatrician = () => {
+    alert('Funcionalidad de llamada no configurada. Por favor, contacte a su pediatra directamente.');
+  };
+
+  const handleExportReport = async () => {
+    // Generate a simple text report of active alarms
+    const allAlarms = [...ALARMS_0_5, ...ALARMS_6_8];
+    const activeAlarmTexts = allAlarms
+      .filter(alarm => activeAlarms.includes(alarm.id))
+      .map(alarm => `- ${alarm.text}`);
+
+    let reportContent = `Reporte de Signos de Alarma - ${profile.name || 'Bebé'}\n`;
+    reportContent += `Fecha: ${new Date().toLocaleDateString()}\n\n`;
+    
+    if (activeAlarmTexts.length > 0) {
+      reportContent += `Signos de alarma detectados:\n${activeAlarmTexts.join('\n')}\n\n`;
+      reportContent += `Por favor, comparta este reporte con su pediatra para una evaluación profesional.\n`;
+    } else {
+      reportContent += `No se han detectado signos de alarma.\n`;
+    }
+
+    try {
+      await navigator.clipboard.writeText(reportContent);
+      alert('Reporte copiado al portapapeles. Puedes pegarlo en un mensaje para tu pediatra.');
+    } catch (err) {
+      // Fallback if clipboard fails
+      const blob = new Blob([reportContent], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `Reporte_Alarmas_${profile.name || 'Bebe'}.txt`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    }
+  };
+
   const handleUndo = (id: string) => {
     removeMilestone(id);
   };
@@ -515,11 +553,17 @@ export function Milestones() {
                   <p>Has marcado signos de alarma. Te recomendamos contactar a tu pediatra para una evaluación.</p>
                 </div>
                 <div className="flex space-x-3">
-                  <button className="flex-1 py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold flex items-center justify-center space-x-2 transition-colors">
+                  <button 
+                    onClick={handleContactPediatrician}
+                    className="flex-1 py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold flex items-center justify-center space-x-2 transition-colors"
+                  >
                     <Phone className="w-5 h-5" />
                     <span>Contactar Pediatra</span>
                   </button>
-                  <button className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-xl font-bold flex items-center justify-center space-x-2 transition-colors">
+                  <button 
+                    onClick={handleExportReport}
+                    className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-xl font-bold flex items-center justify-center space-x-2 transition-colors"
+                  >
                     <Download className="w-5 h-5" />
                     <span>Exportar Reporte</span>
                   </button>

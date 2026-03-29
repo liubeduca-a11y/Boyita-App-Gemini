@@ -115,12 +115,20 @@ export function Layout({ children, activeTab, onTabChange }: LayoutProps) {
                 key={tab.id}
                 onClick={() => onTabChange(tab.id)}
                 className={cn(
-                  "flex flex-col items-center justify-center w-full h-full space-y-1 transition-colors",
+                  "flex flex-col items-center justify-center w-full h-full space-y-1 transition-colors relative",
                   isActive ? "text-theme-dark dark:text-theme-base" : "text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-400"
                 )}
               >
-                <Icon className={cn("w-6 h-6", isActive && "fill-theme-dark dark:fill-theme-base")} />
-                <span className="text-[10px] font-medium">{tab.label}</span>
+                <div className={cn(
+                  "p-1.5 rounded-full transition-colors",
+                  isActive ? "bg-theme-base/20 dark:bg-theme-base/10" : "bg-transparent"
+                )}>
+                  <Icon className={cn("w-6 h-6", isActive && "fill-theme-dark dark:fill-theme-base")} />
+                </div>
+                <span className={cn(
+                  "text-[10px] font-medium transition-all",
+                  isActive ? "font-bold" : ""
+                )}>{tab.label}</span>
               </button>
             );
           })}
