@@ -13,57 +13,49 @@ function formatDuration(ms: number) {
 }
 
 export function Dashboard() {
-  const { events, addEvent } = useStore();
+  const { events } = useStore();
+  const [showConstipationWarning, setShowConstipationWarning] = useState(false);
 
   useEffect(() => {
     const checkConstipation = () => {
       const now = Date.now();
       const oneDayMs = 24 * 60 * 60 * 1000;
 
-      // Find the last poo event
       const lastPooEvent = [...events]
         .filter(e => e.type === 'hygiene' && e.details?.hygieneType === 'poo')
         .sort((a, b) => b.timestamp - a.timestamp)[0];
 
-      // Find the last constipation event
-      const lastConstipationEvent = [...events]
-        .filter(e => e.type === 'hygiene' && e.details?.hygieneType === 'constipation')
-        .sort((a, b) => b.timestamp - a.timestamp)[0];
-
       if (lastPooEvent) {
         const timeSinceLastPoo = now - lastPooEvent.timestamp;
-        const timeSinceLastConstipation = lastConstipationEvent ? now - lastConstipationEvent.timestamp : Infinity;
-
-        // If it's been more than 24h since last poo AND we haven't added a constipation event in the last 24h
-        if (timeSinceLastPoo > oneDayMs && timeSinceLastConstipation > oneDayMs) {
-          addEvent({
-            type: 'hygiene',
-            timestamp: now,
-            details: { hygieneType: 'constipation' },
-            notes: '1 día de estreñimiento (Automático)'
-          });
-          
-          // Show alert notification
-          if (window.Notification && Notification.permission === 'granted') {
-            new Notification('Alerta de Estreñimiento', {
-              body: 'Ha pasado más de 1 día sin registros de popó.',
-              icon: '/favicon.ico'
-            });
-          } else {
-            alert('Alerta: Ha pasado más de 1 día sin registros de popó. Se ha añadido un registro de estreñimiento.');
-          }
+        if (timeSinceLastPoo > oneDayMs) {
+          setShowConstipationWarning(true);
+        } else {
+          setShowConstipationWarning(false);
         }
       }
     };
 
     checkConstipation();
-  }, [events, addEvent]);
+  }, [events]);
 
   return (
-    <div className="p-4 md:p-8 max-w-md md:max-w-none mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      <FeedingModule />
-      <HygieneModule />
-      <SleepModule />
+    <div className="p-4 md:p-8 max-w-md md:max-w-none mx-auto space-y-6">
+      {showConstipationWarning && (
+        <div className="bg-orange-50 dark:bg-orange-900/30 border-l-4 border-orange-500 p-4 rounded-r-xl flex items-start space-x-3 animate-in fade-in slide-in-from-top-4">
+          <AlertTriangle className="w-5 h-5 text-orange-500 mt-0.5 flex-shrink-0" />
+          <div>
+            <h3 className="text-sm font-bold text-orange-800 dark:text-orange-300">Alerta de Estreñimiento</h3>
+            <p className="text-sm text-orange-700 dark:text-orange-400 mt-1">
+              Ha pasado más de 1 día sin registros de popó. Si esto continúa, considera consultar al pediatra.
+            </p>
+          </div>
+        </div>
+      )}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <FeedingModule />
+        <HygieneModule />
+        <SleepModule />
+      </div>
     </div>
   );
 }

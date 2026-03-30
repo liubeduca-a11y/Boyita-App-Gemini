@@ -10,7 +10,7 @@ import {
 } from 'recharts';
 import { cn } from '../components/Layout';
 
-type FilterType = '24h' | '7d' | 'month' | 'custom';
+type FilterType = '24h' | 'yesterday' | '7d' | 'month' | 'custom';
 type CompareType = 'yesterday' | 'weekAvg';
 
 export function Analytics() {
@@ -47,6 +47,15 @@ export function Analytics() {
     const now = new Date();
     
     if (filter === '24h') {
+      const start = startOfDay(now);
+      const end = endOfDay(now);
+      return events.filter(e => {
+        const eventDate = new Date(e.timestamp);
+        return isAfter(eventDate, start) && isBefore(eventDate, end);
+      });
+    }
+
+    if (filter === 'yesterday') {
       const start = startOfDay(subDays(now, 1));
       const end = endOfDay(subDays(now, 1));
       return events.filter(e => {
@@ -118,6 +127,9 @@ export function Analytics() {
       // If filter is 7d, compare to the previous 7 days
       let start, end;
       if (filter === '24h') {
+        start = startOfDay(subDays(now, 1));
+        end = endOfDay(subDays(now, 1));
+      } else if (filter === 'yesterday') {
         start = startOfDay(subDays(now, 2));
         end = endOfDay(subDays(now, 2));
       } else if (filter === '7d') {
@@ -189,7 +201,7 @@ export function Analytics() {
 
   // --- Chart Data Aggregation ---
   const chartData = useMemo(() => {
-    const isSingleDay = filter === '24h' || (filter === 'custom' && customStart === customEnd);
+    const isSingleDay = filter === '24h' || filter === 'yesterday' || (filter === 'custom' && customStart === customEnd);
     const dataMap = new Map<string, any>();
 
     let cumulativeOz = 0;
@@ -350,7 +362,8 @@ export function Analytics() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex space-x-2 bg-white dark:bg-gray-800 p-1.5 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-x-auto whitespace-nowrap scrollbar-hide">
             {[
-              { id: '24h', label: 'Ayer' },
+              { id: '24h', label: 'Hoy' },
+              { id: 'yesterday', label: 'Ayer' },
               { id: '7d', label: '7 Días' },
               { id: 'month', label: '1 Mes' },
               { id: 'custom', label: 'Rango' }
