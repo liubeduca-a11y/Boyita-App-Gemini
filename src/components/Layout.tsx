@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Home, BarChart2, List, Settings, Trophy } from 'lucide-react';
+import { Home, BarChart2, List, Settings, Trophy, BookHeart } from 'lucide-react';
 import { useStore } from '../store';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -10,8 +10,8 @@ export function cn(...inputs: ClassValue[]) {
 
 interface LayoutProps {
   children: React.ReactNode;
-  activeTab: 'dashboard' | 'analytics' | 'history' | 'settings' | 'trophyPath';
-  onTabChange: (tab: 'dashboard' | 'analytics' | 'history' | 'settings' | 'trophyPath') => void;
+  activeTab: 'dashboard' | 'analytics' | 'history' | 'settings' | 'trophyPath' | 'bitacora';
+  onTabChange: (tab: 'dashboard' | 'analytics' | 'history' | 'settings' | 'trophyPath' | 'bitacora') => void;
 }
 
 export function Layout({ children, activeTab, onTabChange }: LayoutProps) {
@@ -50,8 +50,9 @@ export function Layout({ children, activeTab, onTabChange }: LayoutProps) {
 
   const tabs = [
     { id: 'dashboard', icon: Home, label: 'Registro' },
-    { id: 'analytics', icon: BarChart2, label: 'Análisis' },
     { id: 'history', icon: List, label: 'Historial' },
+    { id: 'bitacora', icon: BookHeart, label: 'Bitácora' },
+    { id: 'analytics', icon: BarChart2, label: 'Análisis' },
     { id: 'trophyPath', icon: Trophy, label: 'Logros' },
     { id: 'settings', icon: Settings, label: 'Ajustes' },
   ] as const;
