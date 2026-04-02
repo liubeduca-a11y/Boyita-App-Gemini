@@ -1,58 +1,93 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { MedicalRecord, PendingQuestion } from '../types';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Stethoscope, Scale, Ruler, CheckCircle2, Circle, Plus, HelpCircle } from 'lucide-react';
+import { Stethoscope, Scale, Ruler, CheckCircle2, Circle, Plus, HelpCircle, Search, Check } from 'lucide-react';
+import { useStore } from '../store';
+import { cn } from './Layout';
 
 export function MedicalView() {
-  const [records, setRecords] = useState<MedicalRecord[]>([
-    {
-      id: '1',
-      date: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-      weight: 5.2,
-      height: 58,
-      doctorNotes: 'Todo excelente. Continuar con lactancia a demanda. Siguiente vacuna a los 4 meses.',
-    }
-  ]);
-  
-  const [questions, setQuestions] = useState<PendingQuestion[]>([
-    { id: '1', text: '¿Es normal que regurgite después de cada toma?', isAnswered: false },
-    { id: '2', text: '¿Cuándo empezamos con la alimentación complementaria?', isAnswered: false },
-  ]);
+  const { 
+    medicalRecords, 
+    pendingQuestions, 
+    addMedicalRecord, 
+    addPendingQuestion, 
+    togglePendingQuestion 
+  } = useStore();
 
   const [newQuestion, setNewQuestion] = useState('');
   const [isAddingRecord, setIsAddingRecord] = useState(false);
   const [newRecord, setNewRecord] = useState({ weight: '', height: '', notes: '' });
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const filteredQuestions = useMemo(() => {
+    if (!searchTerm) return pendingQuestions;
+    const lowerSearch = searchTerm.toLowerCase();
+    return pendingQuestions.filter(q => q.text.toLowerCase().includes(lowerSearch));
+  }, [pendingQuestions, searchTerm]);
+
+  const filteredRecords = useMemo(() => {
+    if (!searchTerm) return medicalRecords;
+    const lowerSearch = searchTerm.toLowerCase();
+    return medicalRecords.filter(r => 
+      r.doctorNotes.toLowerCase().includes(lowerSearch)
+    );
+  }, [medicalRecords, searchTerm]);
+
+  const [showQuestionSuccess, setShowQuestionSuccess] = useState(false);
 
   const handleAddQuestion = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newQuestion.trim()) return;
-    setQuestions([...questions, { id: Date.now().toString(), text: newQuestion, isAnswered: false }]);
-    setNewQuestion('');
+    addPendingQuestion({ text: newQuestion, isAnswered: false });
+    
+    setShowQuestionSuccess(true);
+    setTimeout(() => {
+      setShowQuestionSuccess(false);
+      setNewQuestion('');
+    }, 1000);
   };
 
   const toggleQuestion = (id: string) => {
-    setQuestions(questions.map(q => q.id === id ? { ...q, isAnswered: !q.isAnswered } : q));
+    togglePendingQuestion(id);
   };
+
+  const [showSaveSuccess, setShowSaveSuccess] = useState(false);
 
   const handleAddRecord = () => {
     if (!newRecord.weight || !newRecord.height) return;
     
-    const record: MedicalRecord = {
-      id: Date.now().toString(),
+    addMedicalRecord({
       date: new Date().toISOString(),
       weight: parseFloat(newRecord.weight),
       height: parseFloat(newRecord.height),
       doctorNotes: newRecord.notes,
-    };
+    });
 
-    setRecords([record, ...records]);
-    setNewRecord({ weight: '', height: '', notes: '' });
-    setIsAddingRecord(false);
+    setShowSaveSuccess(true);
+    setTimeout(() => {
+      setShowSaveSuccess(false);
+      setNewRecord({ weight: '', height: '', notes: '' });
+      setIsAddingRecord(false);
+    }, 1000);
   };
 
   return (
     <div className="space-y-8">
+      {/* Search Bar */}
+      <div className="relative">
+        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+          <Search className="h-5 w-5 text-gray-400" />
+        </div>
+        <input
+          type="text"
+          placeholder="Buscar en consultas o preguntas..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="block w-full pl-10 pr-3 py-3 border border-gray-200 dark:border-gray-700 rounded-xl leading-5 bg-white dark:bg-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-theme-base focus:border-theme-base sm:text-sm transition-colors text-gray-900 dark:text-gray-100"
+        />
+      </div>
+
       {/* Pending Questions Section */}
       <div className="bg-theme-base/10 dark:bg-theme-base/5 rounded-2xl p-6 border border-theme-base/20 dark:border-theme-base/10">
         <div className="flex items-center gap-3 mb-4">
@@ -63,22 +98,26 @@ export function MedicalView() {
         </div>
 
         <div className="space-y-3 mb-4">
-          {questions.map(q => (
-            <div 
-              key={q.id} 
-              className={`flex items-start gap-3 p-3 rounded-xl bg-white dark:bg-gray-800 border transition-colors cursor-pointer ${
-                q.isAnswered ? 'border-theme-base/30 dark:border-theme-base/20 bg-theme-base/5 dark:bg-theme-base/5 opacity-75' : 'border-gray-200 dark:border-gray-700 hover:border-theme-base dark:hover:border-theme-dark'
-              }`}
-              onClick={() => toggleQuestion(q.id)}
-            >
-              <button className="mt-0.5 shrink-0 text-theme-dark dark:text-theme-base">
-                {q.isAnswered ? <CheckCircle2 className="w-5 h-5" /> : <Circle className="w-5 h-5" />}
-              </button>
-              <span className={`text-sm ${q.isAnswered ? 'text-gray-500 dark:text-gray-400 line-through' : 'text-gray-700 dark:text-gray-300'}`}>
-                {q.text}
-              </span>
-            </div>
-          ))}
+          {filteredQuestions.length === 0 && searchTerm ? (
+            <p className="text-sm text-gray-500 dark:text-gray-400">No se encontraron preguntas.</p>
+          ) : (
+            filteredQuestions.map(q => (
+              <div 
+                key={q.id} 
+                className={`flex items-start gap-3 p-3 rounded-xl bg-white dark:bg-gray-800 border transition-colors cursor-pointer ${
+                  q.isAnswered ? 'border-theme-base/30 dark:border-theme-base/20 bg-theme-base/5 dark:bg-theme-base/5 opacity-75' : 'border-gray-200 dark:border-gray-700 hover:border-theme-base dark:hover:border-theme-dark'
+                }`}
+                onClick={() => toggleQuestion(q.id)}
+              >
+                <button className="mt-0.5 shrink-0 text-theme-dark dark:text-theme-base">
+                  {q.isAnswered ? <CheckCircle2 className="w-5 h-5" /> : <Circle className="w-5 h-5" />}
+                </button>
+                <span className={`text-sm ${q.isAnswered ? 'text-gray-500 dark:text-gray-400 line-through' : 'text-gray-700 dark:text-gray-300'}`}>
+                  {q.text}
+                </span>
+              </div>
+            ))
+          )}
         </div>
 
         <form onSubmit={handleAddQuestion} className="flex gap-2">
@@ -91,10 +130,16 @@ export function MedicalView() {
           />
           <button 
             type="submit"
-            disabled={!newQuestion.trim()}
-            className="px-4 py-2 bg-theme-dark dark:bg-theme-base text-white dark:text-theme-text rounded-xl text-sm font-medium hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            disabled={!newQuestion.trim() || showQuestionSuccess}
+            className={cn(
+              "px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300 flex items-center justify-center space-x-2",
+              showQuestionSuccess 
+                ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 scale-95" 
+                : "bg-theme-dark dark:bg-theme-base text-white dark:text-theme-text hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+            )}
           >
-            Añadir
+            {showQuestionSuccess ? <Check className="w-4 h-4" /> : null}
+            <span>{showQuestionSuccess ? "¡Añadido!" : "Añadir"}</span>
           </button>
         </form>
       </div>
@@ -165,17 +210,29 @@ export function MedicalView() {
               </button>
               <button 
                 onClick={handleAddRecord}
-                className="px-4 py-2 text-sm font-medium bg-theme-dark dark:bg-theme-base text-white dark:text-theme-text rounded-lg hover:opacity-90 transition-colors shadow-sm"
+                disabled={showSaveSuccess}
+                className={cn(
+                  "px-4 py-2 text-sm font-medium rounded-lg transition-all duration-300 shadow-sm flex items-center justify-center space-x-2",
+                  showSaveSuccess 
+                    ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 scale-95" 
+                    : "bg-theme-dark dark:bg-theme-base text-white dark:text-theme-text hover:opacity-90 disabled:opacity-50"
+                )}
               >
-                Guardar Consulta
+                {showSaveSuccess ? <Check className="w-4 h-4" /> : null}
+                <span>{showSaveSuccess ? "¡Guardado!" : "Guardar Consulta"}</span>
               </button>
             </div>
           </div>
         )}
 
         <div className="space-y-4">
-          {records.map(record => (
-            <div key={record.id} className="bg-white dark:bg-gray-800 rounded-2xl p-5 border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow">
+          {filteredRecords.length === 0 ? (
+            <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+              {searchTerm ? 'No se encontraron consultas.' : 'Aún no hay consultas registradas.'}
+            </div>
+          ) : (
+            filteredRecords.map(record => (
+              <div key={record.id} className="bg-white dark:bg-gray-800 rounded-2xl p-5 border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow">
               <div className="flex items-center justify-between mb-4 pb-4 border-b border-gray-100 dark:border-gray-700">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-gray-50 dark:bg-gray-900 rounded-full text-gray-400 dark:text-gray-500">
@@ -214,7 +271,8 @@ export function MedicalView() {
                 </div>
               )}
             </div>
-          ))}
+          ))
+        )}
         </div>
       </div>
     </div>

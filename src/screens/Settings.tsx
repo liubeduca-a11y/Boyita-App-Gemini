@@ -1,11 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useStore, ThemeColor, ColorMode, MedicalHistory, MedicalCondition, ScreeningHistory, ScreeningTest } from '../store';
-import { Camera, Save, Palette, User, Calendar, Cloud, LogOut, LogIn, RefreshCw, Moon, Sun, Monitor, AlertCircle, Accessibility, Dna, Scissors, Wind, PlusCircle, ChevronDown, ChevronUp, Droplet, Ear, Eye, HeartPulse, Bone } from 'lucide-react';
+import { Camera, Save, Palette, User, Calendar, Cloud, LogOut, LogIn, RefreshCw, Moon, Sun, Monitor, AlertCircle, Accessibility, Dna, Scissors, Wind, PlusCircle, ChevronDown, ChevronUp, Droplet, Ear, Eye, HeartPulse, Bone, Check } from 'lucide-react';
 import { cn } from '../components/Layout';
 import { differenceInMonths, differenceInDays } from 'date-fns';
 import { auth, loginWithGoogle, logout, db } from '../firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { collection, query, getDocs, writeBatch, doc } from 'firebase/firestore';
+import { compressImage } from '../utils/image';
 
 const THEMES: { id: ThemeColor; name: string; color: string }[] = [
   { id: 'blue', name: 'Azul Pastel', color: '#AEC6CF' },
@@ -72,6 +73,8 @@ export function Settings() {
     return `${months} meses, ${days} días`;
   };
 
+  const [showSaveSuccess, setShowSaveSuccess] = useState(false);
+
   const handleSaveProfile = () => {
     updateProfile({ 
       name, 
@@ -87,7 +90,11 @@ export function Settings() {
       medicalHistory,
       screeningHistory
     });
-    alert('Perfil guardado correctamente');
+    
+    setShowSaveSuccess(true);
+    setTimeout(() => {
+      setShowSaveSuccess(false);
+    }, 1500);
   };
 
   const handleMedicalHistoryChange = (key: keyof MedicalHistory, field: keyof MedicalCondition, value: string) => {
@@ -110,14 +117,16 @@ export function Settings() {
     }));
   };
 
-  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPhotoUrl(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+      try {
+        const compressedBase64 = await compressImage(file);
+        setPhotoUrl(compressedBase64);
+      } catch (error) {
+        console.error("Error compressing image:", error);
+        alert("Hubo un error al procesar la imagen. Intenta con una más pequeña.");
+      }
     }
   };
 
@@ -475,10 +484,16 @@ export function Settings() {
 
               <button
                 onClick={handleSaveProfile}
-                className="w-full py-3 mt-2 bg-theme-dark dark:bg-theme-base text-white rounded-xl font-semibold flex items-center justify-center space-x-2 hover:bg-opacity-90 transition-all"
+                disabled={showSaveSuccess}
+                className={cn(
+                  "w-full py-3 mt-2 rounded-xl font-semibold flex items-center justify-center space-x-2 transition-all duration-300",
+                  showSaveSuccess 
+                    ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 scale-95" 
+                    : "bg-theme-dark dark:bg-theme-base text-white hover:bg-opacity-90 disabled:opacity-50"
+                )}
               >
-                <Save className="w-5 h-5" />
-                <span>Guardar Perfil</span>
+                {showSaveSuccess ? <Check className="w-5 h-5" /> : <Save className="w-5 h-5" />}
+                <span>{showSaveSuccess ? "¡Perfil Guardado!" : "Guardar Perfil"}</span>
               </button>
             </div>
           </div>

@@ -5,7 +5,7 @@ import { es } from 'date-fns/locale';
 import { Trash2, Edit2, Download, FileText, FileSpreadsheet, Check, X, Calendar, Filter, Search } from 'lucide-react';
 import { cn } from '../components/Layout';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 import Papa from 'papaparse';
 
 export function History() {
@@ -14,7 +14,7 @@ export function History() {
   const [editingEvent, setEditingEvent] = useState<BabyEvent | null>(null);
 
   const [filterType, setFilterType] = useState<'all' | 'custom'>('all');
-  const [eventTypeFilter, setEventTypeFilter] = useState<'all' | 'feeding' | 'hygiene' | 'sleep' | 'burp'>('all');
+  const [eventTypeFilter, setEventTypeFilter] = useState<'all' | 'feeding' | 'hygiene' | 'sleep' | 'burp' | 'bath'>('all');
   const [customStart, setCustomStart] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
   const [customEnd, setCustomEnd] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
   const [searchQuery, setSearchQuery] = useState('');
@@ -36,6 +36,8 @@ export function History() {
           return `Durmió ${Math.floor(duration / 60)}h ${duration % 60}m`;
         }
         return 'Durmiendo...';
+      case 'bath':
+        return 'Baño registrado';
       default:
         return 'Evento desconocido';
     }
@@ -70,6 +72,7 @@ export function History() {
         if (e.type === 'hygiene') translatedType = 'higiene';
         if (e.type === 'sleep') translatedType = 'sueño sueno';
         if (e.type === 'burp') translatedType = 'eructo';
+        if (e.type === 'bath') translatedType = 'baño bano';
         
         const translatedTypeMatch = translatedType.includes(query);
 
@@ -94,6 +97,7 @@ export function History() {
       case 'burp': return '💨';
       case 'hygiene': return '🧻';
       case 'sleep': return '💤';
+      case 'bath': return '🛁';
       default: return '📝';
     }
   };
@@ -110,7 +114,7 @@ export function History() {
       e.notes || ''
     ]);
 
-    (doc as any).autoTable({
+    autoTable(doc, {
       head: [['Fecha', 'Hora', 'Tipo', 'Detalle', 'Notas']],
       body: tableData,
       startY: 20,
@@ -214,7 +218,8 @@ export function History() {
           { id: 'feeding', label: 'Alimentación' },
           { id: 'hygiene', label: 'Higiene' },
           { id: 'sleep', label: 'Sueño' },
-          { id: 'burp', label: 'Eructos' }
+          { id: 'burp', label: 'Eructos' },
+          { id: 'bath', label: 'Baños' }
         ].map(f => (
           <button
             key={f.id}
@@ -271,7 +276,7 @@ export function History() {
                     </div>
                     <div className="ml-3 flex-1">
                       <div className="flex justify-between items-start">
-                        <p className="font-semibold text-gray-800 capitalize">{event.type === 'hygiene' ? 'Higiene' : event.type === 'feeding' ? 'Alimentación' : event.type === 'sleep' ? 'Sueño' : 'Eructo'}</p>
+                        <p className="font-semibold text-gray-800 capitalize">{event.type === 'hygiene' ? 'Higiene' : event.type === 'feeding' ? 'Alimentación' : event.type === 'sleep' ? 'Sueño' : event.type === 'bath' ? 'Baño' : 'Eructo'}</p>
                         <span className="text-xs text-gray-400 font-medium">{formatEventTime(event.timestamp)}</span>
                       </div>
                       <p className="text-sm text-gray-600 mt-0.5">{getEventDescription(event)}</p>
@@ -329,6 +334,8 @@ function EditEventModal({ event, onClose, onSave }: { event: BabyEvent, onClose:
   const [texture, setTexture] = useState<'liquido' | 'viscoso' | 'pastoso' | 'duro' | 'diarrea'>(event.details?.texture || 'pastoso');
   const [endTimestamp, setEndTimestamp] = useState(event.endTimestamp ? format(new Date(event.endTimestamp), "yyyy-MM-dd'T'HH:mm") : '');
 
+  const [showSaveSuccess, setShowSaveSuccess] = useState(false);
+
   const handleSave = () => {
     const data: Partial<BabyEvent> = {
       type,
@@ -349,7 +356,11 @@ function EditEventModal({ event, onClose, onSave }: { event: BabyEvent, onClose:
       data.endTimestamp = endTimestamp ? new Date(endTimestamp).getTime() : undefined;
     }
 
-    onSave(event.id, data);
+    setShowSaveSuccess(true);
+    setTimeout(() => {
+      setShowSaveSuccess(false);
+      onSave(event.id, data);
+    }, 1000);
   };
 
   return (
@@ -374,6 +385,7 @@ function EditEventModal({ event, onClose, onSave }: { event: BabyEvent, onClose:
               <option value="hygiene">Higiene</option>
               <option value="sleep">Sueño</option>
               <option value="burp">Eructo</option>
+              <option value="bath">Baño</option>
             </select>
           </div>
 
@@ -463,10 +475,16 @@ function EditEventModal({ event, onClose, onSave }: { event: BabyEvent, onClose:
 
           <button
             onClick={handleSave}
-            className="w-full py-3 bg-theme-dark text-white rounded-xl font-semibold flex items-center justify-center space-x-2"
+            disabled={showSaveSuccess}
+            className={cn(
+              "w-full py-3 rounded-xl font-semibold flex items-center justify-center space-x-2 transition-all duration-300",
+              showSaveSuccess 
+                ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 scale-95" 
+                : "bg-theme-dark text-white disabled:opacity-50"
+            )}
           >
             <Check className="w-5 h-5" />
-            <span>Guardar Cambios</span>
+            <span>{showSaveSuccess ? "¡Guardado!" : "Guardar Cambios"}</span>
           </button>
         </div>
       </div>

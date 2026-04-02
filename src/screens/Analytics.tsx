@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useStore } from '../store';
-import { Share2, TrendingUp, TrendingDown, Minus, Info } from 'lucide-react';
+import { Share2, TrendingUp, TrendingDown, Minus, Info, Download } from 'lucide-react';
 import { subDays, startOfMonth, isAfter, isBefore, startOfDay, endOfDay, format, startOfHour, differenceInMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { toBlob } from 'html-to-image';
@@ -86,6 +86,7 @@ export function Analytics() {
     let pee = 0;
     let poo = 0;
     let burps = 0;
+    let baths = 0;
     let sleepMs = 0;
 
     filteredEvents.forEach(e => {
@@ -95,6 +96,7 @@ export function Analytics() {
         if (e.details?.hygieneType === 'poo') poo += 1;
       }
       if (e.type === 'burp') burps += 1;
+      if (e.type === 'bath') baths += 1;
       if (e.type === 'sleep' && e.endTimestamp) sleepMs += (e.endTimestamp - e.timestamp);
     });
 
@@ -113,6 +115,7 @@ export function Analytics() {
       pee: pee / days, 
       poo: poo / days, 
       burps: burps / days, 
+      baths: baths / days,
       sleepHours: (sleepMs / (1000 * 60 * 60)) / days 
     };
   }, [filteredEvents, filter, customStart, customEnd]);
@@ -165,6 +168,7 @@ export function Analytics() {
     let pee = 0;
     let poo = 0;
     let burps = 0;
+    let baths = 0;
     let sleepMs = 0;
 
     compEvents.forEach(e => {
@@ -174,6 +178,7 @@ export function Analytics() {
         if (e.details?.hygieneType === 'poo') poo += 1;
       }
       if (e.type === 'burp') burps += 1;
+      if (e.type === 'bath') baths += 1;
       if (e.type === 'sleep' && e.endTimestamp) sleepMs += (e.endTimestamp - e.timestamp);
     });
 
@@ -195,6 +200,7 @@ export function Analytics() {
       pee: pee / days, 
       poo: poo / days, 
       burps: burps / days, 
+      baths: baths / days,
       sleepHours: (sleepMs / (1000 * 60 * 60)) / days 
     };
   }, [events, filter, customStart, customEnd, compareType]);
@@ -220,6 +226,7 @@ export function Analytics() {
           oz: 0, 
           cumulativeOz: cumulativeOz,
           burps: 0, 
+          baths: 0,
           pee: 0, 
           poo: 0,
           sleepMs: 0
@@ -233,6 +240,7 @@ export function Analytics() {
         entry.cumulativeOz = cumulativeOz;
       }
       if (e.type === 'burp') entry.burps += 1;
+      if (e.type === 'bath') entry.baths += 1;
       if (e.type === 'hygiene') {
         if (e.details?.hygieneType === 'pee') entry.pee += 1;
         if (e.details?.hygieneType === 'poo') entry.poo += 1;
@@ -242,39 +250,31 @@ export function Analytics() {
       }
     });
 
-    // For burps, we only want to show points where burps > 0
+    // For burps and baths, we only want to show points where > 0
     const finalData = Array.from(dataMap.values()).sort((a, b) => a.timestamp - b.timestamp);
     finalData.forEach(d => {
       if (d.burps === 0) d.burps = null; // Set to null so line chart doesn't plot 0
+      if (d.baths === 0) d.baths = null;
       d.sleepHours = d.sleepMs / (1000 * 60 * 60);
     });
 
     return finalData;
   }, [filteredEvents, filter, customStart, customEnd]);
 
-  const handleShare = async () => {
+  const handleDownload = async () => {
     if (!analyticsRef.current) return;
     try {
       const blob = await toBlob(analyticsRef.current, { cacheBust: true, backgroundColor: '#f9fafb' });
       if (!blob) throw new Error('No se pudo generar la imagen');
       
-      const file = new File([blob], 'analisis-boyita.png', { type: 'image/png' });
-      
-      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({
-          title: 'Análisis Boyita',
-          files: [file]
-        });
-      } else {
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'analisis-boyita.png';
-        a.click();
-        URL.revokeObjectURL(url);
-      }
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'analisis-boyita.png';
+      a.click();
+      URL.revokeObjectURL(url);
     } catch (error) {
-      console.error('Error sharing:', error);
+      console.error('Error downloading:', error);
       alert('Hubo un error al generar la imagen.');
     }
   };
@@ -352,8 +352,8 @@ export function Analytics() {
             {ageInMonths} meses de edad
           </p>
         </div>
-        <button onClick={handleShare} className="p-2 bg-white/50 dark:bg-black/20 text-theme-dark dark:text-theme-light rounded-full hover:bg-white dark:hover:bg-black/40 transition-colors">
-          <Share2 className="w-5 h-5" />
+        <button onClick={handleDownload} className="p-2 bg-white/50 dark:bg-black/20 text-theme-dark dark:text-theme-light rounded-full hover:bg-white dark:hover:bg-black/40 transition-colors" title="Descargar análisis">
+          <Download className="w-5 h-5" />
         </button>
       </div>
 
@@ -468,6 +468,18 @@ export function Analytics() {
           {renderTrend(currentStats.burps, comparisonStats.burps)}
         </div>
 
+        <div className="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 relative group">
+          <div className="absolute top-2 right-2 text-gray-400 hover:text-theme-base cursor-help">
+            <Info className="w-4 h-4" />
+            <div className="hidden group-hover:block absolute bottom-full right-0 mb-2 w-48 p-2 bg-gray-900 text-white text-xs rounded-lg shadow-xl z-10">
+              Frecuencia de baños.
+            </div>
+          </div>
+          <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1">Baños / Día</p>
+          <p className="text-2xl font-bold text-theme-dark dark:text-theme-base">{currentStats.baths.toFixed(1)}</p>
+          {renderTrend(currentStats.baths, comparisonStats.baths)}
+        </div>
+
         <div className="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 relative group col-span-2 lg:col-span-1">
           <div className="absolute top-2 right-2 text-gray-400 hover:text-theme-base cursor-help">
             <Info className="w-4 h-4" />
@@ -542,20 +554,38 @@ export function Analytics() {
           </div>
         </div>
 
-        {/* Eructos - Barras */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-700">
-          <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-4">Frecuencia de Eructos</h4>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
-                <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fill: '#6b7280', fontSize: 12 }} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#9ca3af', fontSize: 12 }} dx={-10} allowDecimals={false} />
-                <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(0,0,0,0.04)' }} />
-                <Legend content={renderLegend} verticalAlign="top" wrapperStyle={{ paddingBottom: '20px' }} />
-                <Bar hide={hiddenSeries.burps} dataKey="burps" name="Eructos" fill="#10b981" radius={[4, 4, 4, 4]} />
-              </BarChart>
-            </ResponsiveContainer>
+        {/* Eructos y Baños - Barras */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-700">
+            <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-4">Frecuencia de Eructos</h4>
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+                  <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fill: '#6b7280', fontSize: 12 }} dy={10} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fill: '#9ca3af', fontSize: 12 }} dx={-10} allowDecimals={false} />
+                  <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(0,0,0,0.04)' }} />
+                  <Legend content={renderLegend} verticalAlign="top" wrapperStyle={{ paddingBottom: '20px' }} />
+                  <Bar hide={hiddenSeries.burps} dataKey="burps" name="Eructos" fill="#10b981" radius={[4, 4, 4, 4]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-700">
+            <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-4">Frecuencia de Baños</h4>
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+                  <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fill: '#6b7280', fontSize: 12 }} dy={10} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fill: '#9ca3af', fontSize: 12 }} dx={-10} allowDecimals={false} />
+                  <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(0,0,0,0.04)' }} />
+                  <Legend content={renderLegend} verticalAlign="top" wrapperStyle={{ paddingBottom: '20px' }} />
+                  <Bar hide={hiddenSeries.baths} dataKey="baths" name="Baños" fill="#0ea5e9" radius={[4, 4, 4, 4]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </div>
         </div>
 

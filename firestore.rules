@@ -75,6 +75,34 @@ service cloud.firestore {
              (!('details' in data) || data.details is map);
     }
 
+    function isValidTimelineEntry() {
+      let data = request.resource.data;
+      return data.keys().hasAll(['id', 'date', 'text', 'tags']) &&
+             data.id is string &&
+             data.date is string &&
+             data.text is string && data.text.size() < 5000 &&
+             data.tags is list &&
+             (!('photoUrl' in data) || (data.photoUrl is string && data.photoUrl.size() < 1048576)); // 1MB limit for base64
+    }
+
+    function isValidMedicalRecord() {
+      let data = request.resource.data;
+      return data.keys().hasAll(['id', 'date', 'weight', 'height', 'doctorNotes']) &&
+             data.id is string &&
+             data.date is string &&
+             data.weight is number &&
+             data.height is number &&
+             data.doctorNotes is string && data.doctorNotes.size() < 5000;
+    }
+
+    function isValidPendingQuestion() {
+      let data = request.resource.data;
+      return data.keys().hasAll(['id', 'text', 'isAnswered']) &&
+             data.id is string &&
+             data.text is string && data.text.size() < 1000 &&
+             data.isAnswered is bool;
+    }
+
     match /users/{userId} {
       allow read: if isUser(userId);
       allow create: if isUser(userId) && isValidUser();
@@ -91,6 +119,27 @@ service cloud.firestore {
       allow read: if isFamilyMember(familyId);
       allow create: if isFamilyMember(familyId) && isValidEvent();
       allow update: if isFamilyMember(familyId) && isValidEvent();
+      allow delete: if isFamilyMember(familyId);
+    }
+
+    match /families/{familyId}/timelineEntries/{entryId} {
+      allow read: if isFamilyMember(familyId);
+      allow create: if isFamilyMember(familyId) && isValidTimelineEntry();
+      allow update: if isFamilyMember(familyId) && isValidTimelineEntry();
+      allow delete: if isFamilyMember(familyId);
+    }
+
+    match /families/{familyId}/medicalRecords/{recordId} {
+      allow read: if isFamilyMember(familyId);
+      allow create: if isFamilyMember(familyId) && isValidMedicalRecord();
+      allow update: if isFamilyMember(familyId) && isValidMedicalRecord();
+      allow delete: if isFamilyMember(familyId);
+    }
+
+    match /families/{familyId}/pendingQuestions/{questionId} {
+      allow read: if isFamilyMember(familyId);
+      allow create: if isFamilyMember(familyId) && isValidPendingQuestion();
+      allow update: if isFamilyMember(familyId) && isValidPendingQuestion();
       allow delete: if isFamilyMember(familyId);
     }
   }

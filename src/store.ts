@@ -3,7 +3,9 @@ import { persist } from 'zustand/middleware';
 import { db, auth } from './firebase';
 import { collection, doc, setDoc, deleteDoc, updateDoc } from 'firebase/firestore';
 
-export type EventType = 'feeding' | 'burp' | 'hygiene' | 'sleep';
+import { TimelineEntry, MedicalRecord, PendingQuestion } from './types';
+
+export type EventType = 'feeding' | 'burp' | 'hygiene' | 'sleep' | 'bath';
 
 export interface BabyEvent {
   id: string;
@@ -86,6 +88,11 @@ interface AppState {
   completedMilestones: Record<string, CompletedMilestone>;
   activeAlarms: string[];
   
+  // Bitacora State
+  timelineEntries: TimelineEntry[];
+  medicalRecords: MedicalRecord[];
+  pendingQuestions: PendingQuestion[];
+  
   // Actions
   setFamilyId: (id: string | null) => void;
   setEvents: (events: BabyEvent[]) => void;
@@ -113,6 +120,14 @@ interface AppState {
   removeMilestone: (id: string) => Promise<void>;
   removeMilestoneEvidence: (id: string) => Promise<void>;
   toggleAlarm: (id: string) => Promise<void>;
+  
+  // Bitacora Actions
+  addTimelineEntry: (entry: Omit<TimelineEntry, 'id'>) => Promise<void>;
+  updateTimelineEntry: (id: string, entry: Partial<TimelineEntry>) => Promise<void>;
+  deleteTimelineEntry: (id: string) => Promise<void>;
+  addMedicalRecord: (record: Omit<MedicalRecord, 'id'>) => Promise<void>;
+  addPendingQuestion: (question: Omit<PendingQuestion, 'id'>) => Promise<void>;
+  togglePendingQuestion: (id: string) => Promise<void>;
 }
 
 export const useStore = create<AppState>()(
@@ -130,6 +145,9 @@ export const useStore = create<AppState>()(
       colorMode: 'system',
       completedMilestones: {},
       activeAlarms: [],
+      timelineEntries: [],
+      medicalRecords: [],
+      pendingQuestions: [],
 
       setFamilyId: (id) => set({ familyId: id }),
       setEvents: (events) => set({ events }),
@@ -357,6 +375,112 @@ export const useStore = create<AppState>()(
             await updateDoc(doc(db, `families/${familyId}`), { activeAlarms: newAlarms });
           } catch (error) {
             console.error("Error updating alarms", error);
+          }
+        }
+      },
+
+      addTimelineEntry: async (entry) => {
+        const { familyId } = get();
+        const newId = crypto.randomUUID();
+        const newEntry = { ...entry, id: newId };
+        
+        set((state) => ({ timelineEntries: [newEntry, ...state.timelineEntries] }));
+
+        if (familyId && auth.currentUser) {
+          try {
+            const firestoreEntry = JSON.parse(JSON.stringify(newEntry));
+            await setDoc(doc(db, `families/${familyId}/timelineEntries/${newId}`), firestoreEntry);
+          } catch (error) {
+            console.error("Error adding timeline entry", error);
+          }
+        }
+      },
+
+      updateTimelineEntry: async (id, updatedEntry) => {
+        const { familyId } = get();
+        
+        set((state) => ({
+          timelineEntries: state.timelineEntries.map(e => e.id === id ? { ...e, ...updatedEntry } : e)
+        }));
+
+        if (familyId && auth.currentUser) {
+          try {
+            const firestoreUpdate = JSON.parse(JSON.stringify(updatedEntry));
+            await updateDoc(doc(db, `families/${familyId}/timelineEntries/${id}`), firestoreUpdate);
+          } catch (error) {
+            console.error("Error updating timeline entry", error);
+          }
+        }
+      },
+
+      deleteTimelineEntry: async (id) => {
+        const { familyId } = get();
+        
+        set((state) => ({
+          timelineEntries: state.timelineEntries.filter(e => e.id !== id)
+        }));
+
+        if (familyId && auth.currentUser) {
+          try {
+            await deleteDoc(doc(db, `families/${familyId}/timelineEntries/${id}`));
+          } catch (error) {
+            console.error("Error deleting timeline entry", error);
+          }
+        }
+      },
+
+      addMedicalRecord: async (record) => {
+        const { familyId } = get();
+        const newId = crypto.randomUUID();
+        const newRecord = { ...record, id: newId };
+        
+        set((state) => ({ medicalRecords: [newRecord, ...state.medicalRecords] }));
+
+        if (familyId && auth.currentUser) {
+          try {
+            const firestoreRecord = JSON.parse(JSON.stringify(newRecord));
+            await setDoc(doc(db, `families/${familyId}/medicalRecords/${newId}`), firestoreRecord);
+          } catch (error) {
+            console.error("Error adding medical record", error);
+          }
+        }
+      },
+
+      addPendingQuestion: async (question) => {
+        const { familyId } = get();
+        const newId = crypto.randomUUID();
+        const newQuestion = { ...question, id: newId };
+        
+        set((state) => ({ pendingQuestions: [...state.pendingQuestions, newQuestion] }));
+
+        if (familyId && auth.currentUser) {
+          try {
+            const firestoreQuestion = JSON.parse(JSON.stringify(newQuestion));
+            await setDoc(doc(db, `families/${familyId}/pendingQuestions/${newId}`), firestoreQuestion);
+          } catch (error) {
+            console.error("Error adding pending question", error);
+          }
+        }
+      },
+
+      togglePendingQuestion: async (id) => {
+        const { familyId, pendingQuestions } = get();
+        const updatedQuestions = pendingQuestions.map(q => 
+          q.id === id ? { ...q, isAnswered: !q.isAnswered } : q
+        );
+        
+        set({ pendingQuestions: updatedQuestions });
+
+        if (familyId && auth.currentUser) {
+          try {
+            const questionToUpdate = updatedQuestions.find(q => q.id === id);
+            if (questionToUpdate) {
+              await updateDoc(doc(db, `families/${familyId}/pendingQuestions/${id}`), {
+                isAnswered: questionToUpdate.isAnswered
+              });
+            }
+          } catch (error) {
+            console.error("Error toggling pending question", error);
           }
         }
       },

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useStore } from '../store';
-import { Clock, Droplets, Moon, Wind, Check, X, Camera, Edit3, Timer, Sparkles, AlertTriangle, Save } from 'lucide-react';
+import { Clock, Droplets, Moon, Wind, Check, X, Camera, Edit3, Timer, Sparkles, AlertTriangle, Save, Bath } from 'lucide-react';
 import { cn } from '../components/Layout';
 import confetti from 'canvas-confetti';
 
@@ -55,6 +55,7 @@ export function Dashboard() {
         <FeedingModule />
         <HygieneModule />
         <SleepModule />
+        <BathModule />
       </div>
     </div>
   );
@@ -486,6 +487,62 @@ function HygieneModule() {
             </button>
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+function BathModule() {
+  const { addEvent } = useStore();
+  const [notes, setNotes] = useState('');
+  const [showSaveSuccess, setShowSaveSuccess] = useState(false);
+
+  const handleSave = () => {
+    addEvent({
+      type: 'bath',
+      timestamp: Date.now(),
+      notes
+    });
+
+    setShowSaveSuccess(true);
+    setTimeout(() => {
+      setShowSaveSuccess(false);
+      setNotes('');
+    }, 1000);
+  };
+
+  return (
+    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-5 mb-8">
+      <div className="flex items-center space-x-3 mb-4">
+        <div className="p-2 bg-theme-light dark:bg-theme-dark/20 rounded-xl text-theme-dark dark:text-theme-base">
+          <Bath className="w-6 h-6" />
+        </div>
+        <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Baño</h2>
+      </div>
+
+      <div className="space-y-4">
+        <div className="animate-in fade-in duration-200 space-y-3">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Observaciones</label>
+          <textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="¿Cómo le fue en el baño? ¿Usaste algún jabón nuevo?..."
+            className="w-full p-3 border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-xl text-sm focus:ring-2 focus:ring-theme-base outline-none resize-none h-24 text-gray-900 dark:text-white"
+          />
+          <button
+            onClick={handleSave}
+            disabled={showSaveSuccess}
+            className={cn(
+              "w-full py-3 rounded-xl font-semibold flex items-center justify-center space-x-2 transition-all duration-300",
+              showSaveSuccess 
+                ? "bg-green-100 border-green-200 text-green-700 dark:bg-green-900/30 dark:border-green-800 dark:text-green-400 scale-95" 
+                : "bg-theme-dark text-white disabled:opacity-50"
+            )}
+          >
+            {showSaveSuccess ? <Check className="w-5 h-5" /> : <Save className="w-5 h-5" />}
+            <span>{showSaveSuccess ? "¡Registrado!" : "Registrar Baño"}</span>
+          </button>
+        </div>
       </div>
     </div>
   );
