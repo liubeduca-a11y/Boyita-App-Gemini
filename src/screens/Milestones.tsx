@@ -94,11 +94,27 @@ const ALARMS_6_8 = [
   { id: 'a11', text: 'Ha dejado de hacer cosas que ya hacía por su cuenta, como no orinar en la cama.' },
 ];
 
+import { compressImage } from '../utils/image';
+
 export function Milestones() {
-  const { completedMilestones, completeMilestone, removeMilestone, activeAlarms, toggleAlarm, profile } = useStore();
+  const { completedMilestones, completeMilestone, removeMilestone, removeMilestoneEvidence, activeAlarms, toggleAlarm, profile } = useStore();
   const [selectedMilestone, setSelectedMilestone] = useState<typeof MILESTONES[0] | null>(null);
   const [showAlarms, setShowAlarms] = useState(false);
   const [activeTab, setActiveTab] = useState<'path' | 'trophies'>('path');
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && selectedMilestone) {
+      try {
+        const compressedBase64 = await compressImage(file);
+        await completeMilestone(selectedMilestone.id, compressedBase64);
+      } catch (error) {
+        console.error("Error compressing image:", error);
+        alert("Hubo un error al procesar la imagen. Intenta con una más pequeña.");
+      }
+    }
+  };
 
   useEffect(() => {
     if (profile.birthDate) {
@@ -438,19 +454,29 @@ export function Milestones() {
                         <div className="relative rounded-xl overflow-hidden h-40">
                           <img src={completedMilestones[selectedMilestone.id].evidenceUrl} alt="Evidencia" className="w-full h-full object-cover" />
                           <button 
-                            onClick={() => {
-                              // Implement remove evidence
-                            }}
+                            onClick={() => removeMilestoneEvidence(selectedMilestone.id)}
                             className="absolute top-2 right-2 p-1.5 bg-black/50 text-white rounded-full hover:bg-black/70"
                           >
                             <X className="w-4 h-4" />
                           </button>
                         </div>
                       ) : (
-                        <button className="flex flex-col items-center justify-center w-full h-24 text-gray-500 dark:text-gray-400 hover:text-theme-base transition-colors">
-                          <Camera className="w-8 h-8 mb-2" />
-                          <span className="text-sm font-medium">Subir foto/video de recuerdo</span>
-                        </button>
+                        <div>
+                          <button 
+                            onClick={() => fileInputRef.current?.click()}
+                            className="flex flex-col items-center justify-center w-full h-24 text-gray-500 dark:text-gray-400 hover:text-theme-base transition-colors"
+                          >
+                            <Camera className="w-8 h-8 mb-2" />
+                            <span className="text-sm font-medium">Subir foto de recuerdo</span>
+                          </button>
+                          <input 
+                            type="file" 
+                            ref={fileInputRef} 
+                            onChange={handlePhotoUpload} 
+                            accept="image/*" 
+                            className="hidden" 
+                          />
+                        </div>
                       )}
                     </div>
                   </div>

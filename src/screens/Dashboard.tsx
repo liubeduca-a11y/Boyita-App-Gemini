@@ -3,6 +3,7 @@ import { useStore } from '../store';
 import { Clock, Droplets, Moon, Wind, Check, X, Camera, Edit3, Timer, Sparkles, AlertTriangle, Save, Bath } from 'lucide-react';
 import { cn } from '../components/Layout';
 import confetti from 'canvas-confetti';
+import { compressImage } from '../utils/image';
 
 function formatDuration(ms: number) {
   const totalSeconds = Math.floor(ms / 1000);
@@ -279,41 +280,16 @@ function HygieneModule() {
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
-  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Compress image before saving to avoid hitting Firestore 1MB limit
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const img = new Image();
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          const MAX_WIDTH = 800;
-          const MAX_HEIGHT = 800;
-          let width = img.width;
-          let height = img.height;
-
-          if (width > height) {
-            if (width > MAX_WIDTH) {
-              height *= MAX_WIDTH / width;
-              width = MAX_WIDTH;
-            }
-          } else {
-            if (height > MAX_HEIGHT) {
-              width *= MAX_HEIGHT / height;
-              height = MAX_HEIGHT;
-            }
-          }
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          ctx?.drawImage(img, 0, 0, width, height);
-          const dataUrl = canvas.toDataURL('image/jpeg', 0.6); // 60% quality JPEG
-          setPhotoUrl(dataUrl);
-        };
-        img.src = reader.result as string;
-      };
-      reader.readAsDataURL(file);
+      try {
+        const compressedBase64 = await compressImage(file);
+        setPhotoUrl(compressedBase64);
+      } catch (error) {
+        console.error("Error compressing image:", error);
+        alert("Hubo un error al procesar la imagen. Intenta con una más pequeña.");
+      }
     }
   };
 
