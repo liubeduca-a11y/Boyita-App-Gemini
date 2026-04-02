@@ -69,7 +69,6 @@ service cloud.firestore {
       return data.keys().hasAll(['type', 'timestamp', 'authorId']) &&
              data.type is string &&
              data.timestamp is number &&
-             data.authorId == request.auth.uid &&
              (!('endTimestamp' in data) || data.endTimestamp is number) &&
              (!('notes' in data) || (data.notes is string && data.notes.size() < 1000)) &&
              (!('details' in data) || data.details is map);
@@ -117,8 +116,8 @@ service cloud.firestore {
 
     match /families/{familyId}/events/{eventId} {
       allow read: if isFamilyMember(familyId);
-      allow create: if isFamilyMember(familyId) && isValidEvent();
-      allow update: if isFamilyMember(familyId) && isValidEvent();
+      allow create: if isFamilyMember(familyId) && isValidEvent() && request.resource.data.authorId == request.auth.uid;
+      allow update: if isFamilyMember(familyId) && isValidEvent() && request.resource.data.authorId == resource.data.authorId;
       allow delete: if isFamilyMember(familyId);
     }
 

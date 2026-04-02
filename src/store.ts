@@ -99,6 +99,9 @@ interface AppState {
   setProfile: (profile: BabyProfile) => void;
   setCompletedMilestones: (milestones: Record<string, CompletedMilestone>) => void;
   setActiveAlarms: (alarms: string[]) => void;
+  setTimelineEntries: (entries: TimelineEntry[]) => void;
+  setMedicalRecords: (records: MedicalRecord[]) => void;
+  setPendingQuestions: (questions: PendingQuestion[]) => void;
   setActiveFeeding: (active: { startTime: number } | null) => void;
   setActiveSleep: (active: { startTime: number } | null) => void;
 
@@ -154,6 +157,9 @@ export const useStore = create<AppState>()(
       setProfile: (profile) => set({ profile }),
       setCompletedMilestones: (milestones) => set({ completedMilestones: milestones }),
       setActiveAlarms: (alarms) => set({ activeAlarms: alarms }),
+      setTimelineEntries: (entries) => set({ timelineEntries: entries }),
+      setMedicalRecords: (records) => set({ medicalRecords: records }),
+      setPendingQuestions: (questions) => set({ pendingQuestions: questions }),
       setActiveFeeding: (activeFeeding) => set({ activeFeeding }),
       setActiveSleep: (activeSleep) => set({ activeSleep }),
 

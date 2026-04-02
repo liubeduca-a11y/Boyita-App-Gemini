@@ -99,6 +99,7 @@ import { compressImage } from '../utils/image';
 export function Milestones() {
   const { completedMilestones, completeMilestone, removeMilestone, removeMilestoneEvidence, activeAlarms, toggleAlarm, profile } = useStore();
   const [selectedMilestone, setSelectedMilestone] = useState<typeof MILESTONES[0] | null>(null);
+  const [selectedTrophyGroup, setSelectedTrophyGroup] = useState<typeof AGE_GROUPS[0] | null>(null);
   const [showAlarms, setShowAlarms] = useState(false);
   const [activeTab, setActiveTab] = useState<'path' | 'trophies'>('path');
   const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -313,12 +314,17 @@ export function Milestones() {
             const strokeDashoffset = circumference - (progress / 100) * circumference;
 
             return (
-              <div key={ageGroup.id} id={`trophy-group-${ageGroup.id}`} className={cn(
-                "p-5 rounded-3xl border-2 flex items-center space-x-4 transition-all",
-                isFullyCompleted ? "bg-green-50 border-green-400 dark:bg-green-900/20 dark:border-green-700/50" : 
-                isInProgress ? "bg-yellow-50 border-yellow-400 dark:bg-yellow-900/20 dark:border-yellow-700/50" : 
-                "bg-gray-50 border-gray-200 dark:bg-gray-800/50 dark:border-gray-700"
-              )}>
+              <button 
+                key={ageGroup.id} 
+                id={`trophy-group-${ageGroup.id}`} 
+                onClick={() => setSelectedTrophyGroup(ageGroup)}
+                className={cn(
+                  "p-5 rounded-3xl border-2 flex items-center space-x-4 transition-all text-left w-full hover:scale-[1.02] active:scale-[0.98]",
+                  isFullyCompleted ? "bg-green-50 border-green-400 dark:bg-green-900/20 dark:border-green-700/50 shadow-green-100 dark:shadow-none shadow-lg" : 
+                  isInProgress ? "bg-yellow-50 border-yellow-400 dark:bg-yellow-900/20 dark:border-yellow-700/50 shadow-yellow-100 dark:shadow-none shadow-lg" : 
+                  "bg-gray-50 border-gray-200 dark:bg-gray-800/50 dark:border-gray-700 opacity-80"
+                )}
+              >
                 <div className="relative flex items-center justify-center w-20 h-20 shrink-0">
                   <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 64 64">
                     <circle
@@ -390,7 +396,7 @@ export function Milestones() {
                     {groupMilestones.length > 3 ? '...' : ''}
                   </p>
                 </div>
-              </div>
+              </button>
             );
           })}
         </div>
@@ -599,6 +605,71 @@ export function Milestones() {
           </div>
         </div>
       )}
+      {/* Trophy Collage Modal */}
+      {selectedTrophyGroup && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-white dark:bg-gray-800 rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl animate-in fade-in zoom-in duration-200">
+            <div className="p-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between bg-gray-50 dark:bg-gray-900/50">
+              <h3 className="font-bold text-xl text-gray-800 dark:text-gray-200 flex items-center space-x-2">
+                <Trophy className="w-6 h-6 text-yellow-500" />
+                <span>Recuerdos: {selectedTrophyGroup.label}</span>
+              </h3>
+              <button 
+                onClick={() => setSelectedTrophyGroup(null)}
+                className="p-2 text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            
+            <div className="p-6 overflow-y-auto">
+              {(() => {
+                const groupMilestones = MILESTONES.filter(m => m.ageGroup === selectedTrophyGroup.id);
+                const photos = groupMilestones
+                  .filter(m => completedMilestones[m.id]?.evidenceUrl)
+                  .map(m => ({
+                    title: m.title,
+                    url: completedMilestones[m.id].evidenceUrl!
+                  }));
+
+                if (photos.length === 0) {
+                  return (
+                    <div className="text-center py-12 px-4">
+                      <div className="w-20 h-20 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Camera className="w-10 h-10 text-gray-400" />
+                      </div>
+                      <h4 className="text-lg font-bold text-gray-800 dark:text-gray-200 mb-2">Aún no hay recuerdos</h4>
+                      <p className="text-gray-500 dark:text-gray-400 max-w-sm mx-auto">
+                        Completa los logros de esta etapa y sube fotografías para verlas aquí en tu collage de recuerdos.
+                      </p>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {photos.map((photo, idx) => (
+                      <div key={idx} className="relative rounded-2xl overflow-hidden shadow-md group aspect-square bg-gray-100 dark:bg-gray-800">
+                        <img 
+                          src={photo.url} 
+                          alt={photo.title} 
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" 
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex items-end p-4 opacity-90 group-hover:opacity-100 transition-opacity">
+                          <p className="text-white font-medium text-sm drop-shadow-md leading-tight">
+                            {photo.title}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

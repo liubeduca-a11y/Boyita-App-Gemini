@@ -3,9 +3,10 @@ import { auth, db } from '../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc, setDoc, updateDoc, onSnapshot, collection, query, writeBatch, getDocs } from 'firebase/firestore';
 import { useStore, BabyEvent } from '../store';
+import { TimelineEntry, MedicalRecord, PendingQuestion } from '../types';
 
 export function FirebaseProvider({ children }: { children: React.ReactNode }) {
-  const { setFamilyId, setEvents, setProfile, setActiveFeeding, setActiveSleep, setCompletedMilestones, setActiveAlarms, profile } = useStore();
+  const { setFamilyId, setEvents, setProfile, setActiveFeeding, setActiveSleep, setCompletedMilestones, setActiveAlarms, setTimelineEntries, setMedicalRecords, setPendingQuestions, profile } = useStore();
   const familyId = useStore(state => state.familyId);
   const [isAuthReady, setIsAuthReady] = useState(false);
 
@@ -141,11 +142,37 @@ export function FirebaseProvider({ children }: { children: React.ReactNode }) {
       console.error(`Error in events snapshot for familyId ${familyId}:`, error);
     });
 
+    // Listen to timeline entries
+    const unsubTimeline = onSnapshot(collection(db, `families/${familyId}/timelineEntries`), (snap) => {
+      const entries: TimelineEntry[] = [];
+      snap.forEach(doc => entries.push({ id: doc.id, ...doc.data() } as TimelineEntry));
+      entries.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      setTimelineEntries(entries);
+    });
+
+    // Listen to medical records
+    const unsubMedical = onSnapshot(collection(db, `families/${familyId}/medicalRecords`), (snap) => {
+      const records: MedicalRecord[] = [];
+      snap.forEach(doc => records.push({ id: doc.id, ...doc.data() } as MedicalRecord));
+      records.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      setMedicalRecords(records);
+    });
+
+    // Listen to pending questions
+    const unsubQuestions = onSnapshot(collection(db, `families/${familyId}/pendingQuestions`), (snap) => {
+      const questions: PendingQuestion[] = [];
+      snap.forEach(doc => questions.push({ id: doc.id, ...doc.data() } as PendingQuestion));
+      setPendingQuestions(questions);
+    });
+
     return () => {
       unsubFamily();
       unsubEvents();
+      unsubTimeline();
+      unsubMedical();
+      unsubQuestions();
     };
-  }, [isAuthReady, familyId, setProfile, setActiveFeeding, setActiveSleep, setEvents, setCompletedMilestones, setActiveAlarms]);
+  }, [isAuthReady, familyId, setProfile, setActiveFeeding, setActiveSleep, setEvents, setCompletedMilestones, setActiveAlarms, setTimelineEntries, setMedicalRecords, setPendingQuestions]);
 
   return <>{children}</>;
 }
