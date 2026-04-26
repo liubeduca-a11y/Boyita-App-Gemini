@@ -53,6 +53,41 @@
     --theme-text: #3A3A5A;
   }
 
+  :root[data-theme="peach"] {
+    --theme-base: #FFDAB9;
+    --theme-light: #FFF5ED;
+    --theme-dark: #D9B99E;
+    --theme-text: #5A4A3A;
+  }
+
+  :root[data-theme="sage"] {
+    --theme-base: #B2AC88;
+    --theme-light: #EAE8DF;
+    --theme-dark: #8E8A6D;
+    --theme-text: #3A3A2C;
+  }
+
+  :root[data-theme="sky"] {
+    --theme-base: #87CEEB;
+    --theme-light: #E0F4FB;
+    --theme-dark: #6CA5BC;
+    --theme-text: #203A4A;
+  }
+
+  :root[data-theme="lilac"] {
+    --theme-base: #C8A2C8;
+    --theme-light: #F4EDF4;
+    --theme-dark: #A081A0;
+    --theme-text: #3F2A3F;
+  }
+
+  :root[data-theme="coral"] {
+    --theme-base: #F08080;
+    --theme-light: #FCE6E6;
+    --theme-dark: #C06666;
+    --theme-text: #4D2929;
+  }
+
   body {
     @apply bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 font-sans antialiased;
   }

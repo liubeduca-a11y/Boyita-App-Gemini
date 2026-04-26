@@ -23,7 +23,7 @@ export interface BabyEvent {
   authorId?: string;
 }
 
-export type ThemeColor = 'blue' | 'pink' | 'mint' | 'yellow' | 'lavender';
+export type ThemeColor = 'blue' | 'pink' | 'mint' | 'yellow' | 'lavender' | 'peach' | 'sage' | 'sky' | 'lilac' | 'coral';
 export type ColorMode = 'system' | 'light' | 'dark';
 
 export interface MedicalCondition {

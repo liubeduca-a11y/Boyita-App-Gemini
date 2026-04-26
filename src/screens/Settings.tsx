@@ -14,6 +14,11 @@ const THEMES: { id: ThemeColor; name: string; color: string }[] = [
   { id: 'mint', name: 'Verde Menta', color: '#B2E2F2' },
   { id: 'yellow', name: 'Amarillo Crema', color: '#FFFFCC' },
   { id: 'lavender', name: 'Lavanda', color: '#E6E6FA' },
+  { id: 'peach', name: 'Durazno', color: '#FFDAB9' },
+  { id: 'sage', name: 'Salvia', color: '#B2AC88' },
+  { id: 'sky', name: 'Cielo', color: '#87CEEB' },
+  { id: 'lilac', name: 'Lila', color: '#C8A2C8' },
+  { id: 'coral', name: 'Coral', color: '#F08080' },
 ];
 
 export function Settings() {
