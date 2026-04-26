@@ -1,12 +1,13 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { useStore, BabyEvent } from '../store';
 import { format, isAfter, isBefore, startOfDay, endOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Trash2, Edit2, Download, FileText, FileSpreadsheet, Check, X, Calendar, Filter, Search } from 'lucide-react';
+import { Trash2, Edit2, Download, FileText, FileSpreadsheet, Check, X, Calendar, Filter, Search, Camera } from 'lucide-react';
 import { cn } from '../components/Layout';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import Papa from 'papaparse';
+import { compressImage } from '../utils/image';
 
 export function History() {
   const { events, deleteEvent, updateEvent } = useStore();
@@ -329,10 +330,25 @@ function EditEventModal({ event, onClose, onSave }: { event: BabyEvent, onClose:
   
   // Details state
   const [amount, setAmount] = useState(event.details?.amount?.toString() || '');
-  const [hygieneType, setHygieneType] = useState<'pee' | 'poo'>(event.details?.hygieneType || 'pee');
+  const [hygieneType, setHygieneType] = useState<'pee' | 'poo' | 'constipation'>(event.details?.hygieneType || 'pee');
   const [level, setLevel] = useState<'poco' | 'medio' | 'lleno'>(event.details?.level || 'medio');
   const [texture, setTexture] = useState<'liquido' | 'viscoso' | 'pastoso' | 'duro' | 'diarrea'>(event.details?.texture || 'pastoso');
   const [endTimestamp, setEndTimestamp] = useState(event.endTimestamp ? format(new Date(event.endTimestamp), "yyyy-MM-dd'T'HH:mm") : '');
+  const [photoUrl, setPhotoUrl] = useState<string | null>(event.details?.photoUrl || null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      try {
+        const compressedBase64 = await compressImage(file);
+        setPhotoUrl(compressedBase64);
+      } catch (error) {
+        console.error("Error compressing image:", error);
+        alert("Hubo un error al procesar la imagen. Intenta con una más pequeña.");
+      }
+    }
+  };
 
   const [showSaveSuccess, setShowSaveSuccess] = useState(false);
 
@@ -348,9 +364,9 @@ function EditEventModal({ event, onClose, onSave }: { event: BabyEvent, onClose:
     } else if (type === 'hygiene') {
       data.details = { 
         hygieneType, 
-        level: hygieneType === 'pee' ? level : undefined,
+        level: (hygieneType === 'pee' || hygieneType === 'constipation') ? level : undefined,
         texture: hygieneType === 'poo' ? texture : undefined,
-        photoUrl: event.details?.photoUrl // keep existing photo
+        photoUrl: hygieneType === 'poo' ? photoUrl : undefined
       };
     } else if (type === 'sleep') {
       data.endTimestamp = endTimestamp ? new Date(endTimestamp).getTime() : undefined;
@@ -423,9 +439,13 @@ function EditEventModal({ event, onClose, onSave }: { event: BabyEvent, onClose:
                   onClick={() => setHygieneType('poo')}
                   className={cn("flex-1 py-2 rounded-lg text-sm font-medium border", hygieneType === 'poo' ? "bg-theme-base border-theme-dark text-white" : "bg-gray-50 border-gray-200 text-gray-600")}
                 >Popó</button>
+                <button
+                  onClick={() => setHygieneType('constipation')}
+                  className={cn("flex-1 py-2 rounded-lg text-sm font-medium border", hygieneType === 'constipation' ? "bg-red-500 border-red-600 text-white" : "bg-gray-50 border-gray-200 text-gray-600")}
+                >Estreñimiento</button>
               </div>
               
-              {hygieneType === 'pee' && (
+              {(hygieneType === 'pee' || hygieneType === 'constipation') && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Nivel</label>
                   <select value={level} onChange={(e) => setLevel(e.target.value as any)} className="w-full p-3 border border-gray-200 rounded-xl outline-none">
@@ -437,15 +457,46 @@ function EditEventModal({ event, onClose, onSave }: { event: BabyEvent, onClose:
               )}
 
               {hygieneType === 'poo' && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Textura</label>
-                  <select value={texture} onChange={(e) => setTexture(e.target.value as any)} className="w-full p-3 border border-gray-200 rounded-xl outline-none">
-                    <option value="liquido">Líquido</option>
-                    <option value="viscoso">Viscoso</option>
-                    <option value="pastoso">Pastoso</option>
-                    <option value="duro">Duro</option>
-                    <option value="diarrea">Diarrea</option>
-                  </select>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Textura</label>
+                    <select value={texture} onChange={(e) => setTexture(e.target.value as any)} className="w-full p-3 border border-gray-200 rounded-xl outline-none">
+                      <option value="liquido">Líquido</option>
+                      <option value="viscoso">Viscoso</option>
+                      <option value="pastoso">Pastoso</option>
+                      <option value="duro">Duro</option>
+                      <option value="diarrea">Diarrea</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Foto (Opcional)</label>
+                    {photoUrl ? (
+                      <div className="relative rounded-xl overflow-hidden border border-gray-200 h-32 bg-gray-50">
+                        <img src={photoUrl} alt="Popó" className="w-full h-full object-cover" />
+                        <button 
+                          onClick={() => setPhotoUrl(null)}
+                          className="absolute top-2 right-2 p-1.5 bg-black/50 text-white rounded-full hover:bg-black/70"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => fileInputRef.current?.click()}
+                        className="w-full py-4 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 hover:bg-gray-50 hover:border-gray-400 transition-all flex flex-col items-center justify-center space-y-2"
+                      >
+                        <Camera className="w-6 h-6" />
+                        <span className="text-sm font-medium">Tomar foto o subir imagen</span>
+                      </button>
+                    )}
+                    <input 
+                      type="file" 
+                      ref={fileInputRef} 
+                      onChange={handlePhotoChange} 
+                      accept="image/*" 
+                      className="hidden" 
+                    />
+                  </div>
                 </div>
               )}
             </div>

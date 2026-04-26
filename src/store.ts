@@ -65,6 +65,7 @@ export interface CompletedMilestone {
 export interface BabyProfile {
   name: string;
   birthDate: string; // YYYY-MM-DD
+  gender?: 'boy' | 'girl';
   photoUrl?: string;
   birthType?: 'cesarea' | 'natural' | '';
   birthLength?: number;
@@ -129,6 +130,8 @@ interface AppState {
   updateTimelineEntry: (id: string, entry: Partial<TimelineEntry>) => Promise<void>;
   deleteTimelineEntry: (id: string) => Promise<void>;
   addMedicalRecord: (record: Omit<MedicalRecord, 'id'>) => Promise<void>;
+  updateMedicalRecord: (id: string, record: Partial<MedicalRecord>) => Promise<void>;
+  deleteMedicalRecord: (id: string) => Promise<void>;
   addPendingQuestion: (question: Omit<PendingQuestion, 'id'>) => Promise<void>;
   togglePendingQuestion: (id: string) => Promise<void>;
 }
@@ -452,6 +455,39 @@ export const useStore = create<AppState>()(
         }
       },
 
+      updateMedicalRecord: async (id, updatedRecord) => {
+        const { familyId } = get();
+        
+        set((state) => ({
+          medicalRecords: state.medicalRecords.map(r => r.id === id ? { ...r, ...updatedRecord } : r)
+        }));
+
+        if (familyId && auth.currentUser) {
+          try {
+            const firestoreUpdate = JSON.parse(JSON.stringify(updatedRecord));
+            await updateDoc(doc(db, `families/${familyId}/medicalRecords/${id}`), firestoreUpdate);
+          } catch (error) {
+            console.error("Error updating medical record", error);
+          }
+        }
+      },
+
+      deleteMedicalRecord: async (id) => {
+        const { familyId } = get();
+        
+        set((state) => ({
+          medicalRecords: state.medicalRecords.filter(r => r.id !== id)
+        }));
+
+        if (familyId && auth.currentUser) {
+          try {
+            await deleteDoc(doc(db, `families/${familyId}/medicalRecords/${id}`));
+          } catch (error) {
+            console.error("Error deleting medical record", error);
+          }
+        }
+      },
+
       addPendingQuestion: async (question) => {
         const { familyId } = get();
         const newId = crypto.randomUUID();
@@ -471,9 +507,17 @@ export const useStore = create<AppState>()(
 
       togglePendingQuestion: async (id) => {
         const { familyId, pendingQuestions } = get();
-        const updatedQuestions = pendingQuestions.map(q => 
-          q.id === id ? { ...q, isAnswered: !q.isAnswered } : q
-        );
+        const updatedQuestions = pendingQuestions.map(q => {
+          if (q.id === id) {
+            const isAnswered = !q.isAnswered;
+            return {
+              ...q,
+              isAnswered,
+              answeredAt: isAnswered ? new Date().toISOString() : undefined
+            };
+          }
+          return q;
+        });
         
         set({ pendingQuestions: updatedQuestions });
 
@@ -481,9 +525,18 @@ export const useStore = create<AppState>()(
           try {
             const questionToUpdate = updatedQuestions.find(q => q.id === id);
             if (questionToUpdate) {
-              await updateDoc(doc(db, `families/${familyId}/pendingQuestions/${id}`), {
-                isAnswered: questionToUpdate.isAnswered
-              });
+              const dataToUpdate: any = { isAnswered: questionToUpdate.isAnswered };
+              
+              if (questionToUpdate.isAnswered) {
+                dataToUpdate.answeredAt = questionToUpdate.answeredAt;
+              } else {
+                // Not standard to delete the field here so we'll just set it to null or use FieldValue.delete()
+                // Because we're using updateDoc, we can use deleteField() from firestore or simply set to null
+                // Wait, deleteField is better but I didn't import it. null is fine or empty string.
+                dataToUpdate.answeredAt = '';
+              }
+              
+              await updateDoc(doc(db, `families/${familyId}/pendingQuestions/${id}`), dataToUpdate);
             }
           } catch (error) {
             console.error("Error toggling pending question", error);

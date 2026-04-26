@@ -9,6 +9,7 @@ import {
   PieChart, Pie, Cell, LineChart, Line, CartesianGrid, Legend, AreaChart, Area
 } from 'recharts';
 import { cn } from '../components/Layout';
+import { WEIGHT_BOYS, WEIGHT_GIRLS, HEIGHT_BOYS, HEIGHT_GIRLS } from '../utils/growthCharts';
 
 type FilterType = '24h' | 'yesterday' | '7d' | 'month' | 'custom';
 type CompareType = 'yesterday' | 'weekAvg';
@@ -21,6 +22,7 @@ export function Analytics() {
   
   const events = useStore(state => state.events);
   const profile = useStore(state => state.profile);
+  const medicalRecords = useStore(state => state.medicalRecords);
 
   const [hiddenSeries, setHiddenSeries] = useState<Record<string, boolean>>({});
 
@@ -28,7 +30,12 @@ export function Analytics() {
     setHiddenSeries(prev => ({ ...prev, [dataKey]: !prev[dataKey] }));
   };
 
-  const ageInMonths = differenceInMonths(new Date(), new Date(profile.birthDate));
+  const ageInMonths = useMemo(() => {
+    if (!profile.birthDate) return 0;
+    const d = new Date(profile.birthDate);
+    if (isNaN(d.getTime())) return 0;
+    return Math.max(0, differenceInMonths(new Date(), d));
+  }, [profile.birthDate]);
 
   // Scroll to top when component mounts
   React.useEffect(() => {
@@ -44,47 +51,84 @@ export function Analytics() {
 
   // --- Filtered Events for Current Period ---
   const filteredEvents = useMemo(() => {
+    if (!events) return [];
     const now = new Date();
     
-    if (filter === '24h') {
-      const start = startOfDay(now);
-      const end = endOfDay(now);
-      return events.filter(e => {
-        const eventDate = new Date(e.timestamp);
-        return isAfter(eventDate, start) && isBefore(eventDate, end);
-      });
+    try {
+      if (filter === '24h') {
+        const start = startOfDay(now);
+        const end = endOfDay(now);
+        return events.filter(e => {
+          const eventDate = new Date(e.timestamp);
+          return isAfter(eventDate, start) && isBefore(eventDate, end);
+        });
+      }
+
+      if (filter === 'yesterday') {
+        const start = startOfDay(subDays(now, 1));
+        const end = endOfDay(subDays(now, 1));
+        return events.filter(e => {
+          const eventDate = new Date(e.timestamp);
+          return isAfter(eventDate, start) && isBefore(eventDate, end);
+        });
+      }
+
+      if (filter === 'custom') {
+        const start = startOfDay(new Date(customStart));
+        const end = endOfDay(new Date(customEnd));
+        if (isNaN(start.getTime()) || isNaN(end.getTime())) return [];
+        return events.filter(e => {
+          const eventDate = new Date(e.timestamp);
+          return isAfter(eventDate, start) && isBefore(eventDate, end);
+        });
+      }
+
+      let cutoffDate = now;
+      if (filter === '7d') cutoffDate = subDays(now, 7);
+      if (filter === 'month') cutoffDate = startOfMonth(now);
+
+      return events.filter(e => isAfter(new Date(e.timestamp), cutoffDate));
+    } catch (e) {
+      console.error("Error filtering events in Analytics:", e);
+      return [];
     }
-
-    if (filter === 'yesterday') {
-      const start = startOfDay(subDays(now, 1));
-      const end = endOfDay(subDays(now, 1));
-      return events.filter(e => {
-        const eventDate = new Date(e.timestamp);
-        return isAfter(eventDate, start) && isBefore(eventDate, end);
-      });
-    }
-
-    if (filter === 'custom') {
-      const start = startOfDay(new Date(customStart));
-      const end = endOfDay(new Date(customEnd));
-      return events.filter(e => {
-        const eventDate = new Date(e.timestamp);
-        return isAfter(eventDate, start) && isBefore(eventDate, end);
-      });
-    }
-
-    let cutoffDate = now;
-    if (filter === '7d') cutoffDate = subDays(now, 7);
-    if (filter === 'month') cutoffDate = startOfMonth(now);
-
-    return events.filter(e => isAfter(new Date(e.timestamp), cutoffDate));
   }, [events, filter, customStart, customEnd]);
+
+  // --- Growth Chart Data ---
+  const growthData = useMemo(() => {
+    if (!profile.birthDate || !medicalRecords.length) return [];
+    
+    const sortedRecords = [...medicalRecords].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    
+    return sortedRecords.map(record => {
+      const bDate = new Date(profile.birthDate);
+      const rDate = new Date(record.date);
+      const ageMonths = differenceInMonths(rDate, bDate);
+      
+      const weightTable = profile.gender === 'boy' ? WEIGHT_BOYS : WEIGHT_GIRLS;
+      const heightTable = profile.gender === 'boy' ? HEIGHT_BOYS : HEIGHT_GIRLS;
+      
+      // Find exact or closest preceding value in WHO table (Median is index 1 for weight, 1 for height)
+      const tableMonths = Object.keys(weightTable).map(Number).sort((a, b) => a - b);
+      const closestMonth = tableMonths.find(m => m === ageMonths) ?? tableMonths.reverse().find(m => m <= ageMonths) ?? 0;
+      
+      return {
+        age: ageMonths,
+        label: `${ageMonths}m`,
+        peso: record.weight,
+        talla: record.height,
+        whoPeso: weightTable[closestMonth as keyof typeof weightTable]?.[1] || 0,
+        whoTalla: heightTable[closestMonth as keyof typeof heightTable]?.[1] || 0,
+      };
+    });
+  }, [medicalRecords, profile.birthDate, profile.gender]);
 
   // --- Current Period Stats ---
   const currentStats = useMemo(() => {
     let oz = 0;
     let pee = 0;
     let poo = 0;
+    let constip = 0;
     let burps = 0;
     let baths = 0;
     let sleepMs = 0;
@@ -94,6 +138,7 @@ export function Analytics() {
       if (e.type === 'hygiene') {
         if (e.details?.hygieneType === 'pee') pee += 1;
         if (e.details?.hygieneType === 'poo') poo += 1;
+        if (e.details?.hygieneType === 'constipation') constip += 1;
       }
       if (e.type === 'burp') burps += 1;
       if (e.type === 'bath') baths += 1;
@@ -114,6 +159,7 @@ export function Analytics() {
       oz: oz / days, 
       pee: pee / days, 
       poo: poo / days, 
+      constip: constip / days,
       burps: burps / days, 
       baths: baths / days,
       sleepHours: (sleepMs / (1000 * 60 * 60)) / days 
@@ -167,6 +213,7 @@ export function Analytics() {
     let oz = 0;
     let pee = 0;
     let poo = 0;
+    let constip = 0;
     let burps = 0;
     let baths = 0;
     let sleepMs = 0;
@@ -176,6 +223,7 @@ export function Analytics() {
       if (e.type === 'hygiene') {
         if (e.details?.hygieneType === 'pee') pee += 1;
         if (e.details?.hygieneType === 'poo') poo += 1;
+        if (e.details?.hygieneType === 'constipation') constip += 1;
       }
       if (e.type === 'burp') burps += 1;
       if (e.type === 'bath') baths += 1;
@@ -199,6 +247,7 @@ export function Analytics() {
       oz: oz / days, 
       pee: pee / days, 
       poo: poo / days, 
+      constip: constip / days,
       burps: burps / days, 
       baths: baths / days,
       sleepHours: (sleepMs / (1000 * 60 * 60)) / days 
@@ -229,6 +278,7 @@ export function Analytics() {
           baths: 0,
           pee: 0, 
           poo: 0,
+          constip: 0,
           sleepMs: 0
         });
       }
@@ -244,6 +294,7 @@ export function Analytics() {
       if (e.type === 'hygiene') {
         if (e.details?.hygieneType === 'pee') entry.pee += 1;
         if (e.details?.hygieneType === 'poo') entry.poo += 1;
+        if (e.details?.hygieneType === 'constipation') entry.constip += 1;
       }
       if (e.type === 'sleep' && e.endTimestamp) {
         entry.sleepMs += (e.endTimestamp - e.timestamp);
@@ -419,7 +470,7 @@ export function Analytics() {
       </div>
 
       {/* Resumen de Métricas */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         <div className="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 relative group">
           <div className="absolute top-2 right-2 text-gray-400 hover:text-theme-base cursor-help">
             <Info className="w-4 h-4" />
@@ -428,7 +479,7 @@ export function Analytics() {
             </div>
           </div>
           <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1">Onzas / Día</p>
-          <p className="text-2xl font-bold text-theme-dark dark:text-theme-base">{currentStats.oz.toFixed(1)}</p>
+          <p className="text-2xl font-bold text-theme-dark dark:text-theme-base">{(currentStats.oz || 0).toFixed(1)}</p>
           {renderTrend(currentStats.oz, comparisonStats.oz, 'oz')}
         </div>
 
@@ -440,7 +491,7 @@ export function Analytics() {
             </div>
           </div>
           <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1">Pipí / Día</p>
-          <p className="text-2xl font-bold text-theme-dark dark:text-theme-base">{currentStats.pee.toFixed(1)}</p>
+          <p className="text-2xl font-bold text-theme-dark dark:text-theme-base">{(currentStats.pee || 0).toFixed(1)}</p>
           {renderTrend(currentStats.pee, comparisonStats.pee)}
         </div>
 
@@ -452,7 +503,7 @@ export function Analytics() {
             </div>
           </div>
           <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1">Popó / Día</p>
-          <p className="text-2xl font-bold text-theme-dark dark:text-theme-base">{currentStats.poo.toFixed(1)}</p>
+          <p className="text-2xl font-bold text-theme-dark dark:text-theme-base">{(currentStats.poo || 0).toFixed(1)}</p>
           {renderTrend(currentStats.poo, comparisonStats.poo)}
         </div>
 
@@ -464,7 +515,7 @@ export function Analytics() {
             </div>
           </div>
           <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1">Eructos / Día</p>
-          <p className="text-2xl font-bold text-theme-dark dark:text-theme-base">{currentStats.burps.toFixed(1)}</p>
+          <p className="text-2xl font-bold text-theme-dark dark:text-theme-base">{(currentStats.burps || 0).toFixed(1)}</p>
           {renderTrend(currentStats.burps, comparisonStats.burps)}
         </div>
 
@@ -476,8 +527,20 @@ export function Analytics() {
             </div>
           </div>
           <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1">Baños / Día</p>
-          <p className="text-2xl font-bold text-theme-dark dark:text-theme-base">{currentStats.baths.toFixed(1)}</p>
+          <p className="text-2xl font-bold text-theme-dark dark:text-theme-base">{(currentStats.baths || 0).toFixed(1)}</p>
           {renderTrend(currentStats.baths, comparisonStats.baths)}
+        </div>
+
+        <div className="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 relative group">
+          <div className="absolute top-2 right-2 text-gray-400 hover:text-theme-base cursor-help">
+            <Info className="w-4 h-4" />
+            <div className="hidden group-hover:block absolute bottom-full right-0 mb-2 w-48 p-2 bg-gray-900 text-white text-xs rounded-lg shadow-xl z-10">
+              Días con registro de estreñimiento.
+            </div>
+          </div>
+          <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1">Estreñimiento / Día</p>
+          <p className="text-2xl font-bold text-theme-dark dark:text-theme-base">{(currentStats.constip || 0).toFixed(1)}</p>
+          {renderTrend(currentStats.constip, comparisonStats.constip)}
         </div>
 
         <div className="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 relative group col-span-2 lg:col-span-1">
@@ -488,40 +551,106 @@ export function Analytics() {
             </div>
           </div>
           <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1">Sueño / Día</p>
-          <p className="text-2xl font-bold text-theme-dark dark:text-theme-base">{currentStats.sleepHours.toFixed(1)}h</p>
+          <p className="text-2xl font-bold text-theme-dark dark:text-theme-base">{(currentStats.sleepHours || 0).toFixed(1)}h</p>
           {renderTrend(currentStats.sleepHours, comparisonStats.sleepHours, 'h')}
         </div>
       </div>
 
+      {/* Crecimiento - Comparativa OMS */}
+      {growthData.length > 0 && (
+        <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-md border border-gray-100 dark:border-gray-700 mb-8 animate-in fade-in slide-in-from-top-4 duration-500">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h4 className="text-lg font-bold text-gray-800 dark:text-gray-100 font-serif">Curvas de Crecimiento</h4>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Comparativa con la mediana de la OMS para {profile.gender === 'boy' ? 'niños' : 'niñas'}</p>
+            </div>
+            <div className="flex gap-4">
+               <div className="flex items-center gap-1.5">
+                 <div className="w-3 h-1 rounded-full bg-theme-base" />
+                 <span className="text-[10px] font-bold text-gray-500 uppercase">Bebé</span>
+               </div>
+               <div className="flex items-center gap-1.5">
+                 <div className="w-3 h-1 rounded-full bg-gray-300" />
+                 <span className="text-[10px] font-bold text-gray-500 uppercase">OMS</span>
+               </div>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+            <div className="h-64">
+              <div className="text-[10px] mb-2 font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Peso (kg)
+              </div>
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={growthData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="colorWeight" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#AEC6CF" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#AEC6CF" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" opacity={0.5} />
+                  <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fill: '#6b7280', fontSize: 10 }} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fill: '#9ca3af', fontSize: 10 }} />
+                  <Tooltip 
+                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}
+                    itemStyle={{ fontSize: '12px' }}
+                  />
+                  <Area type="monotone" dataKey="peso" stroke="#AEC6CF" strokeWidth={4} fillOpacity={1} fill="url(#colorWeight)" name="Peso Bebé" />
+                  <Area type="monotone" dataKey="whoPeso" stroke="#94a3b8" strokeDasharray="5 5" fill="none" strokeWidth={1} name="Mediana OMS" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="h-64">
+              <div className="text-[10px] mb-2 font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                <div className="w-1.5 h-1.5 rounded-full bg-blue-500" /> Talla (cm)
+              </div>
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={growthData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="colorHeight" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.1}/>
+                      <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" opacity={0.5} />
+                  <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fill: '#6b7280', fontSize: 10 }} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fill: '#9ca3af', fontSize: 10 }} />
+                  <Tooltip 
+                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}
+                    itemStyle={{ fontSize: '12px' }}
+                  />
+                  <Area type="monotone" dataKey="talla" stroke="#10b981" strokeWidth={4} fillOpacity={1} fill="url(#colorHeight)" name="Talla Bebé" />
+                  <Area type="monotone" dataKey="whoTalla" stroke="#94a3b8" strokeDasharray="5 5" fill="none" strokeWidth={1} name="Mediana OMS" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Gráficas */}
       <div className="space-y-6">
         
-        {/* Onzas - Área Acumulativa */}
+        {/* Onzas - Barras Diarias */}
         <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-700">
-          <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-4">Tendencia de Alimentación (Onzas)</h4>
+          <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-4">Consumo de Alimentación (Onzas Diarias)</h4>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="colorOz" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
+              <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
                 <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fill: '#6b7280', fontSize: 12 }} dy={10} />
                 <YAxis axisLine={false} tickLine={false} tick={{ fill: '#9ca3af', fontSize: 12 }} dx={-10} />
-                <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#9ca3af', strokeWidth: 1, strokeDasharray: '3 3' }} />
+                <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(0,0,0,0.04)' }} />
                 <Legend content={renderLegend} verticalAlign="top" wrapperStyle={{ paddingBottom: '20px' }} />
-                <Area hide={hiddenSeries.cumulativeOz} type="monotone" dataKey="cumulativeOz" name="Onzas Acumuladas" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#colorOz)" activeDot={{ r: 6, strokeWidth: 0 }} />
-              </AreaChart>
+                <Bar hide={hiddenSeries.oz} dataKey="oz" name="Onzas Consumidas" fill="#3b82f6" radius={[4, 4, 4, 4]} />
+              </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
 
         {/* Pañales - Barras Apiladas */}
         <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-700">
-          <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-4">Distribución de Pañales</h4>
+          <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-4">Higiene y Pañales</h4>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
@@ -530,8 +659,9 @@ export function Analytics() {
                 <YAxis axisLine={false} tickLine={false} tick={{ fill: '#9ca3af', fontSize: 12 }} dx={-10} allowDecimals={false} />
                 <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(0,0,0,0.04)' }} />
                 <Legend content={renderLegend} verticalAlign="top" wrapperStyle={{ paddingBottom: '20px' }} />
-                <Bar hide={hiddenSeries.pee} dataKey="pee" name="Pipí" stackId="a" fill="#facc15" radius={[0, 0, 4, 4]} />
+                <Bar hide={hiddenSeries.pee} dataKey="pee" name="Pipí" stackId="a" fill="#facc15" />
                 <Bar hide={hiddenSeries.poo} dataKey="poo" name="Popó" stackId="a" fill="#fb923c" radius={[4, 4, 0, 0]} />
+                <Bar hide={hiddenSeries.constip} dataKey="constip" name="Días Estreñimiento" fill="#ef4444" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>

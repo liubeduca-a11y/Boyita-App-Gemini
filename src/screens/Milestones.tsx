@@ -647,21 +647,31 @@ export function Milestones() {
                 }
 
                 return (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {photos.map((photo, idx) => (
-                      <div key={idx} className="relative rounded-2xl overflow-hidden shadow-md group aspect-square bg-gray-100 dark:bg-gray-800">
-                        <img 
-                          src={photo.url} 
-                          alt={photo.title} 
-                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" 
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex items-end p-4 opacity-90 group-hover:opacity-100 transition-opacity">
-                          <p className="text-white font-medium text-sm drop-shadow-md leading-tight">
-                            {photo.title}
-                          </p>
+                  <div className="flex flex-wrap items-center justify-center gap-6 py-8">
+                    {photos.map((photo, idx) => {
+                      const rotations = ['rotate-2', '-rotate-3', 'rotate-3', '-rotate-2', 'rotate-1', '-rotate-1'];
+                      const rot = rotations[idx % rotations.length];
+                      return (
+                        <div 
+                          key={idx} 
+                          className={cn(
+                            "group relative rounded-2xl overflow-hidden shadow-2xl border-[6px] border-white dark:border-gray-800 transition-all duration-300 hover:scale-110 hover:rotate-0 hover:z-10 bg-gray-100 dark:bg-gray-800 w-48 h-48 sm:w-56 sm:h-56 shrink-0",
+                            rot
+                          )}
+                        >
+                          <img 
+                            src={photo.url} 
+                            alt={photo.title} 
+                            className="w-full h-full object-cover" 
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent flex items-end p-4 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-300">
+                            <p className="text-white font-semibold text-sm drop-shadow-md leading-tight text-center w-full">
+                              {photo.title}
+                            </p>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 );
               })()}

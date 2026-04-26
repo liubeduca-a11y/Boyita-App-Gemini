@@ -20,13 +20,14 @@ export function Settings() {
   const { profile, updateProfile, theme, setTheme, colorMode, setColorMode, familyId } = useStore();
   const [name, setName] = useState(profile.name);
   const [birthDate, setBirthDate] = useState(profile.birthDate);
+  const [gender, setGender] = useState<'boy' | 'girl' | undefined>(profile.gender);
   const [photoUrl, setPhotoUrl] = useState(profile.photoUrl);
   
   const [birthType, setBirthType] = useState(profile.birthType || '');
   const [birthLength, setBirthLength] = useState(profile.birthLength?.toString() || '');
-  const [birthLengthUnit, setBirthLengthUnit] = useState(profile.birthLengthUnit || 'cm');
+  const [birthLengthUnit, setBirthLengthUnit] = useState<'cm' | 'in'>(profile.birthLengthUnit || 'cm');
   const [birthWeight, setBirthWeight] = useState(profile.birthWeight?.toString() || '');
-  const [birthWeightUnit, setBirthWeightUnit] = useState(profile.birthWeightUnit || 'kg');
+  const [birthWeightUnit, setBirthWeightUnit] = useState<'kg' | 'lb'>(profile.birthWeightUnit || 'kg');
   const [pregnancyComplications, setPregnancyComplications] = useState(profile.pregnancyComplications || '');
   const [birthComplications, setBirthComplications] = useState(profile.birthComplications || '');
   
@@ -79,6 +80,7 @@ export function Settings() {
     updateProfile({ 
       name, 
       birthDate, 
+      gender,
       photoUrl,
       birthType: birthType as any,
       birthLength: birthLength ? Number(birthLength) : undefined,
@@ -87,7 +89,7 @@ export function Settings() {
       birthWeightUnit: birthWeightUnit as any,
       pregnancyComplications: pregnancyComplications as any,
       birthComplications: birthComplications as any,
-      medicalHistory,
+      medicalHistory: medicalHistory as MedicalHistory,
       screeningHistory
     });
     
@@ -97,7 +99,7 @@ export function Settings() {
     }, 1500);
   };
 
-  const handleMedicalHistoryChange = (key: keyof MedicalHistory, field: keyof MedicalCondition, value: string) => {
+  const handleMedicalHistoryChange = (key: keyof MedicalHistory, field: keyof MedicalCondition, value: any) => {
     setMedicalHistory(prev => ({
       ...prev,
       [key]: {
@@ -216,6 +218,21 @@ export function Settings() {
                   placeholder="Nombre del bebé"
                 />
               </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Sexo (Biológico)</label>
+                <select
+                  value={gender || ''}
+                  onChange={(e) => setGender(e.target.value as 'boy' | 'girl' | undefined)}
+                  className="w-full p-3 border border-gray-200 dark:border-gray-500 bg-white dark:bg-gray-800 rounded-xl focus:ring-2 focus:ring-theme-base outline-none transition-all text-gray-900 dark:text-gray-50"
+                >
+                  <option value="">Seleccionar...</option>
+                  <option value="girl">Niña</option>
+                  <option value="boy">Niño</option>
+                </select>
+                <p className="text-xs text-gray-500 mt-1">Usado para las curvas de crecimiento de peso y talla de la OMS.</p>
+              </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Fecha de Nacimiento</label>
                 <div className="relative">
@@ -255,7 +272,7 @@ export function Settings() {
                     />
                     <select
                       value={birthLengthUnit}
-                      onChange={(e) => setBirthLengthUnit(e.target.value)}
+                      onChange={(e) => setBirthLengthUnit(e.target.value as 'cm' | 'in')}
                       className="p-3 border-y border-r border-gray-200 dark:border-gray-500 bg-gray-50 dark:bg-gray-700 rounded-r-xl focus:ring-2 focus:ring-theme-base outline-none transition-all text-gray-900 dark:text-gray-50"
                     >
                       <option value="cm">cm</option>
@@ -275,7 +292,7 @@ export function Settings() {
                     />
                     <select
                       value={birthWeightUnit}
-                      onChange={(e) => setBirthWeightUnit(e.target.value)}
+                      onChange={(e) => setBirthWeightUnit(e.target.value as 'kg' | 'lb')}
                       className="p-3 border-y border-r border-gray-200 dark:border-gray-500 bg-gray-50 dark:bg-gray-700 rounded-r-xl focus:ring-2 focus:ring-theme-base outline-none transition-all text-gray-900 dark:text-gray-50"
                     >
                       <option value="kg">kg</option>

@@ -6,8 +6,28 @@
     <meta name="theme-color" content="#AEC6CF" />
     <link rel="apple-touch-icon" href="https://picsum.photos/seed/boyita192/192/192" />
     <title>Boyita App</title>
+    <script>
+      function clearAllAndReload() {
+        if(confirm('¿Seguro que quieres borrar todos los datos locales y reiniciar?')) {
+          localStorage.clear();
+          sessionStorage.clear();
+          window.location.reload();
+        }
+      }
+      window.addEventListener('error', function(event) {
+        console.error("Window Error:", event);
+        var root = document.getElementById('root');
+        if(root && !root.innerHTML.includes('Crashed')) {
+          root.innerHTML = '<div style="padding: 20px; color: red; font-family: sans-serif;">' +
+            '<h2>¡La aplicación se detuvo!</h2>' +
+            '<p>Error: ' + event.message + '</p>' +
+            '<button onclick="clearAllAndReload()" style="margin-top:10px; padding:10px; background:white; color:red; border:1px solid red; border-radius:8px; cursor:pointer;">Limpiar Caché y Reintentar</button>' +
+            '</div>';
+        }
+      });
+    </script>
   </head>
-  <body>
+  <body style="margin: 0; background-color: #f9fafb;">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

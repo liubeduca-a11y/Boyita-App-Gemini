@@ -14,23 +14,38 @@ function formatDuration(ms: number) {
 }
 
 export function Dashboard() {
-  const { events } = useStore();
+  const { events, addEvent } = useStore();
   const [showConstipationWarning, setShowConstipationWarning] = useState(false);
+  const [constipationSuccess, setConstipationSuccess] = useState(false);
 
   useEffect(() => {
     const checkConstipation = () => {
       const now = Date.now();
       const oneDayMs = 24 * 60 * 60 * 1000;
 
-      const lastPooEvent = [...events]
-        .filter(e => e.type === 'hygiene' && e.details?.hygieneType === 'poo')
+      // Find the last poo event or the last constipation event
+      const lastPooOrConstipationEvent = [...events]
+        .filter(e => e.type === 'hygiene' && (e.details?.hygieneType === 'poo' || e.details?.hygieneType === 'constipation'))
         .sort((a, b) => b.timestamp - a.timestamp)[0];
 
-      if (lastPooEvent) {
-        const timeSinceLastPoo = now - lastPooEvent.timestamp;
-        if (timeSinceLastPoo > oneDayMs) {
+      if (lastPooOrConstipationEvent && lastPooOrConstipationEvent.details?.hygieneType === 'poo') {
+        const timeSinceLast = now - lastPooOrConstipationEvent.timestamp;
+        if (timeSinceLast > oneDayMs) {
           setShowConstipationWarning(true);
         } else {
+          setShowConstipationWarning(false);
+        }
+      } else {
+        // If the last event was constipation, maybe don't show the warning again until 24 hours have passed since the constipation event?
+        if (lastPooOrConstipationEvent && lastPooOrConstipationEvent.details?.hygieneType === 'constipation') {
+           const timeSinceLast = now - lastPooOrConstipationEvent.timestamp;
+           if (timeSinceLast > oneDayMs) {
+             setShowConstipationWarning(true);
+           } else {
+             setShowConstipationWarning(false);
+           }
+        } else {
+          // No poo or constipation events at all
           setShowConstipationWarning(false);
         }
       }
@@ -39,16 +54,45 @@ export function Dashboard() {
     checkConstipation();
   }, [events]);
 
+  const handleRegisterConstipation = () => {
+    addEvent({
+      type: 'hygiene',
+      timestamp: Date.now(),
+      details: { hygieneType: 'constipation' },
+      notes: 'Día de estreñimiento registrado'
+    });
+    setConstipationSuccess(true);
+    setTimeout(() => {
+      setConstipationSuccess(false);
+      setShowConstipationWarning(false);
+    }, 1500);
+  };
+
   return (
     <div className="p-4 md:p-8 max-w-md md:max-w-none mx-auto space-y-6">
       {showConstipationWarning && (
-        <div className="bg-orange-50 dark:bg-orange-900/30 border-l-4 border-orange-500 p-4 rounded-r-xl flex items-start space-x-3 animate-in fade-in slide-in-from-top-4">
-          <AlertTriangle className="w-5 h-5 text-orange-500 mt-0.5 flex-shrink-0" />
-          <div>
-            <h3 className="text-sm font-bold text-orange-800 dark:text-orange-300">Alerta de Estreñimiento</h3>
-            <p className="text-sm text-orange-700 dark:text-orange-400 mt-1">
-              Ha pasado más de 1 día sin registros de popó. Si esto continúa, considera consultar al pediatra.
-            </p>
+        <div className="bg-orange-50 dark:bg-orange-900/30 border-l-4 border-orange-500 p-4 rounded-r-xl flex flex-col sm:flex-row sm:items-start space-y-3 sm:space-y-0 sm:space-x-3 animate-in fade-in slide-in-from-top-4">
+          <div className="flex items-start space-x-3 flex-1">
+            <AlertTriangle className="w-5 h-5 text-orange-500 mt-0.5 flex-shrink-0" />
+            <div>
+              <h3 className="text-sm font-bold text-orange-800 dark:text-orange-300">Alerta de Estreñimiento</h3>
+              <p className="text-sm text-orange-700 dark:text-orange-400 mt-1">
+                Ha pasado más de 1 día sin registros de popó. Si esto continúa, considera consultar al pediatra.
+              </p>
+            </div>
+          </div>
+          <div className="px-8 sm:px-0">
+             <button
+                onClick={handleRegisterConstipation}
+                disabled={constipationSuccess}
+                className={cn(
+                  "py-2 px-4 rounded-xl text-sm font-semibold transition-all w-full flex items-center justify-center space-x-2",
+                  constipationSuccess ? "bg-green-100 text-green-700" : "bg-orange-500 text-white hover:bg-orange-600 shadow-sm"
+                )}
+             >
+                {constipationSuccess ? <Check className="w-4 h-4" /> : null}
+                <span>{constipationSuccess ? "¡Registrado!" : "Registrar Día"}</span>
+             </button>
           </div>
         </div>
       )}
@@ -432,7 +476,6 @@ function HygieneModule() {
                 ref={fileInputRef} 
                 onChange={handlePhotoChange} 
                 accept="image/*" 
-                capture="environment"
                 className="hidden" 
               />
             </div>

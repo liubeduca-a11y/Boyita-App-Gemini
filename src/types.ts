@@ -12,10 +12,12 @@ export type MedicalRecord = {
   weight: number; // kg
   height: number; // cm
   doctorNotes: string;
+  prescriptionUrl?: string;
 };
 
 export type PendingQuestion = {
   id: string;
   text: string;
   isAnswered: boolean;
+  answeredAt?: string;
 };

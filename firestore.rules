@@ -91,7 +91,8 @@ service cloud.firestore {
              data.date is string &&
              data.weight is number &&
              data.height is number &&
-             data.doctorNotes is string && data.doctorNotes.size() < 5000;
+             data.doctorNotes is string && data.doctorNotes.size() < 5000 &&
+             (!('prescriptionUrl' in data) || (data.prescriptionUrl is string && data.prescriptionUrl.size() < 2097152)); // 2MB limit
     }
 
     function isValidPendingQuestion() {
@@ -99,7 +100,8 @@ service cloud.firestore {
       return data.keys().hasAll(['id', 'text', 'isAnswered']) &&
              data.id is string &&
              data.text is string && data.text.size() < 1000 &&
-             data.isAnswered is bool;
+             data.isAnswered is bool &&
+             (!('answeredAt' in data) || data.answeredAt is string);
     }
 
     match /users/{userId} {
