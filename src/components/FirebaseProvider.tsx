@@ -16,7 +16,7 @@ export function FirebaseProvider({ children }: { children: React.ReactNode }) {
         try {
           // Check if user exists in DB
           const userRef = doc(db, 'users', user.uid);
-          const userSnap = await getDoc(userRef);
+          const userSnap = await getDoc(userRef).catch(e => { console.error("Error on getDoc check users:", e); throw e; });
           
           let currentFamilyId = user.uid;
 
@@ -24,18 +24,20 @@ export function FirebaseProvider({ children }: { children: React.ReactNode }) {
             // Create new user and family
             await setDoc(userRef, {
               familyId: currentFamilyId,
-              email: user.email,
+              email: user.email || '',
               name: user.displayName || 'Usuario'
-            });
+            }).catch(e => { console.error("Error on setDoc users:", e); throw e; });
 
             const state = useStore.getState();
 
             await setDoc(doc(db, 'families', currentFamilyId), {
               members: [user.uid],
-              babyProfile: state.profile, // use current local profile
+              babyProfile: state.profile || null, // use current local profile
               activeFeeding: state.activeFeeding || null,
               activeSleep: state.activeSleep || null,
-            });
+              completedMilestones: state.completedMilestones || [],
+              activeAlarms: state.activeAlarms || []
+            }).catch(e => { console.error("Error on setDoc families:", e); throw e; });
 
             // Migrate local events to Firestore
             if (state.events.length > 0) {
@@ -45,27 +47,29 @@ export function FirebaseProvider({ children }: { children: React.ReactNode }) {
                 const cleanEvent = JSON.parse(JSON.stringify({ ...event, authorId: user.uid }));
                 batch.set(eventRef, cleanEvent);
               });
-              await batch.commit();
+              await batch.commit().catch(e => { console.error("Error on writeBatch migrate events:", e); throw e; });
             }
           } else {
             currentFamilyId = userSnap.data().familyId;
             
             if (!currentFamilyId) {
               currentFamilyId = user.uid;
-              await updateDoc(userRef, { familyId: currentFamilyId });
+              await updateDoc(userRef, { familyId: currentFamilyId }).catch(e => { console.error("Error on updateDoc users currentFamilyId:", e); throw e; });
             }
             
             // Ensure family document exists even if user existed before
             const familyRef = doc(db, 'families', currentFamilyId);
-            const familySnap = await getDoc(familyRef);
+            const familySnap = await getDoc(familyRef).catch(e => { console.error("Error on getDoc familyRef:", e); throw e; });
             if (!familySnap.exists()) {
               const state = useStore.getState();
               await setDoc(familyRef, {
                 members: [user.uid],
-                babyProfile: state.profile,
+                babyProfile: state.profile || null,
                 activeFeeding: state.activeFeeding || null,
                 activeSleep: state.activeSleep || null,
-              });
+                completedMilestones: state.completedMilestones || [],
+                activeAlarms: state.activeAlarms || []
+              }).catch(e => { console.error("Error on setDoc new family for existing user:", e); throw e; });
             }
           }
 

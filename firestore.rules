@@ -2,36 +2,6 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // ===============================================================
-    // Assumed Data Model
-    // ===============================================================
-    // Collection: users
-    // Document ID: {userId}
-    // Fields:
-    //   - familyId: string (required)
-    //   - email: string (required)
-    //   - name: string (optional)
-    //
-    // Collection: families
-    // Document ID: {familyId}
-    // Fields:
-    //   - members: list of strings (required, max 10)
-    //   - babyProfile: map (optional)
-    //   - activeFeeding: map (optional)
-    //   - activeSleep: map (optional)
-    //
-    // Collection: families/{familyId}/events
-    // Document ID: {eventId}
-    // Fields:
-    //   - type: string (required)
-    //   - timestamp: number (required)
-    //   - endTimestamp: number (optional)
-    //   - details: map (optional)
-    //   - notes: string (optional)
-    //   - authorId: string (required)
-    // ===============================================================
-
-    // Helper Functions
     function isAuthenticated() {
       return request.auth != null;
     }
@@ -48,100 +18,45 @@ service cloud.firestore {
       );
     }
 
-    function isValidUser() {
-      let data = request.resource.data;
-      return data.keys().hasAll(['familyId', 'email']) &&
-             data.familyId is string &&
-             data.email is string &&
-             (!('name' in data) || data.name is string);
-    }
-
-    function isValidFamily() {
-      let data = request.resource.data;
-      return data.keys().hasAll(['members']) &&
-             data.members is list &&
-             data.members.size() > 0 &&
-             data.members.size() <= 10;
-    }
-
-    function isValidEvent() {
-      let data = request.resource.data;
-      return data.keys().hasAll(['type', 'timestamp', 'authorId']) &&
-             data.type is string &&
-             data.timestamp is number &&
-             (!('endTimestamp' in data) || data.endTimestamp is number) &&
-             (!('notes' in data) || (data.notes is string && data.notes.size() < 1000)) &&
-             (!('details' in data) || data.details is map);
-    }
-
-    function isValidTimelineEntry() {
-      let data = request.resource.data;
-      return data.keys().hasAll(['id', 'date', 'text', 'tags']) &&
-             data.id is string &&
-             data.date is string &&
-             data.text is string && data.text.size() < 5000 &&
-             data.tags is list &&
-             (!('photoUrl' in data) || (data.photoUrl is string && data.photoUrl.size() < 1048576)); // 1MB limit for base64
-    }
-
-    function isValidMedicalRecord() {
-      let data = request.resource.data;
-      return data.keys().hasAll(['id', 'date', 'weight', 'height', 'doctorNotes']) &&
-             data.id is string &&
-             data.date is string &&
-             data.weight is number &&
-             data.height is number &&
-             data.doctorNotes is string && data.doctorNotes.size() < 5000 &&
-             (!('prescriptionUrl' in data) || (data.prescriptionUrl is string && data.prescriptionUrl.size() < 2097152)); // 2MB limit
-    }
-
-    function isValidPendingQuestion() {
-      let data = request.resource.data;
-      return data.keys().hasAll(['id', 'text', 'isAnswered']) &&
-             data.id is string &&
-             data.text is string && data.text.size() < 1000 &&
-             data.isAnswered is bool &&
-             (!('answeredAt' in data) || data.answeredAt is string);
-    }
-
     match /users/{userId} {
       allow read: if isUser(userId);
-      allow create: if isUser(userId) && isValidUser();
-      allow update: if isUser(userId) && isValidUser();
+      allow create: if isUser(userId);
+      allow update: if isUser(userId);
     }
 
     match /families/{familyId} {
-      allow read: if isFamilyMember(familyId) || isUser(familyId);
-      allow create: if isUser(familyId) && isValidFamily() && request.auth.uid in request.resource.data.members;
-      allow update: if isFamilyMember(familyId) && isValidFamily();
+      allow read: if isUser(familyId) || isFamilyMember(familyId);
+      allow create: if isAuthenticated(); // More flexible while creating
+      allow update: if isFamilyMember(familyId) || isUser(familyId);
     }
 
     match /families/{familyId}/events/{eventId} {
-      allow read: if isFamilyMember(familyId);
-      allow create: if isFamilyMember(familyId) && isValidEvent() && request.resource.data.authorId == request.auth.uid;
-      allow update: if isFamilyMember(familyId) && isValidEvent() && request.resource.data.authorId == resource.data.authorId;
-      allow delete: if isFamilyMember(familyId);
+      allow read: if isFamilyMember(familyId) || isUser(familyId);
+      allow create: if isFamilyMember(familyId) || isUser(familyId);
+      allow update: if isFamilyMember(familyId) || isUser(familyId);
+      allow delete: if isFamilyMember(familyId) || isUser(familyId);
     }
 
     match /families/{familyId}/timelineEntries/{entryId} {
-      allow read: if isFamilyMember(familyId);
-      allow create: if isFamilyMember(familyId) && isValidTimelineEntry();
-      allow update: if isFamilyMember(familyId) && isValidTimelineEntry();
-      allow delete: if isFamilyMember(familyId);
+      allow read: if isFamilyMember(familyId) || isUser(familyId);
+      allow create: if isFamilyMember(familyId) || isUser(familyId);
+      allow update: if isFamilyMember(familyId) || isUser(familyId);
+      allow delete: if isFamilyMember(familyId) || isUser(familyId);
     }
 
     match /families/{familyId}/medicalRecords/{recordId} {
-      allow read: if isFamilyMember(familyId);
-      allow create: if isFamilyMember(familyId) && isValidMedicalRecord();
-      allow update: if isFamilyMember(familyId) && isValidMedicalRecord();
-      allow delete: if isFamilyMember(familyId);
+      allow read: if isFamilyMember(familyId) || isUser(familyId);
+      allow create: if isFamilyMember(familyId) || isUser(familyId);
+      allow update: if isFamilyMember(familyId) || isUser(familyId);
+      allow delete: if isFamilyMember(familyId) || isUser(familyId);
     }
 
     match /families/{familyId}/pendingQuestions/{questionId} {
-      allow read: if isFamilyMember(familyId);
-      allow create: if isFamilyMember(familyId) && isValidPendingQuestion();
-      allow update: if isFamilyMember(familyId) && isValidPendingQuestion();
-      allow delete: if isFamilyMember(familyId);
+      allow read: if isFamilyMember(familyId) || isUser(familyId);
+      allow create: if isFamilyMember(familyId) || isUser(familyId);
+      allow update: if isFamilyMember(familyId) || isUser(familyId);
+      allow delete: if isFamilyMember(familyId) || isUser(familyId);
     }
   }
 }
+
