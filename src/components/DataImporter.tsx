@@ -18,12 +18,18 @@ export function DataImporter() {
     };
 
     const [dayStr, monthStr, yearStr] = fecha.split(' ');
+    if (!dayStr || !monthStr || !yearStr) {
+      throw new Error(`Invalid date format (day/month/year missing): ${fecha}`);
+    }
     const day = parseInt(dayStr, 10);
     const year = parseInt(yearStr, 10);
     const month = months[monthStr.toLowerCase()];
 
     // Parse time
     const [time, ampm] = hora.split(' ');
+    if (!time || !ampm) {
+      throw new Error(`Invalid time format (time/ampm missing): ${hora}`);
+    }
     const [hourStr, minStr] = time.split(':');
     let hour = parseInt(hourStr, 10);
     const minute = parseInt(minStr, 10);
@@ -37,11 +43,30 @@ export function DataImporter() {
     return new Date(year, month, day, hour, minute);
   };
 
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const text = event.target?.result as string;
+        if (text) {
+          setCsvData(text);
+        }
+      };
+      reader.readAsText(file);
+    }
+  };
+
   const handleImport = async () => {
     setLoading(true);
     setStatus('Importando...');
     try {
       const lines = csvData.split('\n').map(l => l.trim()).filter(l => l);
+      if (lines.length === 0) {
+        setStatus('No hay datos para importar.');
+        setLoading(false);
+        return;
+      }
       // Skip header if it is "Fecha,Hora,Tipo,Detalle,Notas"
       if (lines[0].toLowerCase().startsWith('fecha')) {
         lines.shift();
@@ -78,6 +103,11 @@ export function DataImporter() {
         const detail = matches[3];
         const notes = matches[4] || '';
 
+        if (!fecha || !hora) {
+          console.warn(`Skipping line with missing fecha or hora: ${line}`);
+          continue;
+        }
+
         const dateObj = parseDateTime(fecha, hora);
         const timestamp = Timestamp.fromDate(dateObj);
 
@@ -100,17 +130,41 @@ export function DataImporter() {
   };
 
   return (
-    <div className="p-4 bg-white rounded-lg shadow mt-4">
-      <h2 className="text-lg font-bold mb-2">Importar Datos CSV (DataImporter)</h2>
-      <textarea
-        className="w-full h-32 p-2 border rounded mb-2 text-black"
-        placeholder="Pega tu CSV aquí..."
-        value={csvData}
-        onChange={(e) => setCsvData(e.target.value)}
-      ></textarea>
+    <div className="p-4 bg-white rounded-lg shadow mt-4 text-black">
+      <h2 className="text-lg font-bold mb-4">Importar Datos CSV (DataImporter)</h2>
+      
+      <div className="mb-4">
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Sube tu archivo CSV:
+        </label>
+        <input
+          type="file"
+          accept=".csv"
+          onChange={handleFileUpload}
+          className="block w-full text-sm text-gray-500
+            file:mr-4 file:py-2 file:px-4
+            file:rounded-md file:border-0
+            file:text-sm file:font-semibold
+            file:bg-blue-50 file:text-blue-700
+            hover:file:bg-blue-100"
+        />
+      </div>
+
+      <div className="mb-4">
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          O pega el contenido de tu CSV aquí:
+        </label>
+        <textarea
+          className="w-full h-32 p-2 border rounded text-black"
+          placeholder="Pega tu CSV aquí..."
+          value={csvData}
+          onChange={(e) => setCsvData(e.target.value)}
+        ></textarea>
+      </div>
+
       <button
         onClick={handleImport}
-        disabled={loading}
+        disabled={loading || !csvData.trim()}
         className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:opacity-50"
       >
         {loading ? 'Procesando...' : 'Importar CSV'}
