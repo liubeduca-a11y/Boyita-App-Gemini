@@ -1,0 +1,121 @@
+import React, { useState } from 'react';
+import { collection, addDoc, Timestamp } from 'firebase/firestore';
+import { db } from '../firebase';
+
+export function DataImporter() {
+  const [csvData, setCsvData] = useState('');
+  const [status, setStatus] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const parseDateTime = (fecha: string, hora: string) => {
+    // fecha: "27 abr 2026"
+    // hora: "08:07 PM"
+    const months: Record<string, number> = {
+      'ene': 0, 'feb': 1, 'mar': 2, 'abr': 3, 'may': 4, 'jun': 5,
+      'jul': 6, 'ago': 7, 'sep': 8, 'oct': 9, 'nov': 10, 'dic': 11,
+      'enero': 0, 'febrero': 1, 'marzo': 2, 'abril': 3, 'mayo': 4, 'junio': 5,
+      'julio': 6, 'agosto': 7, 'septiembre': 8, 'octubre': 9, 'noviembre': 10, 'diciembre': 11
+    };
+
+    const [dayStr, monthStr, yearStr] = fecha.split(' ');
+    const day = parseInt(dayStr, 10);
+    const year = parseInt(yearStr, 10);
+    const month = months[monthStr.toLowerCase()];
+
+    // Parse time
+    const [time, ampm] = hora.split(' ');
+    const [hourStr, minStr] = time.split(':');
+    let hour = parseInt(hourStr, 10);
+    const minute = parseInt(minStr, 10);
+
+    if (ampm.toUpperCase() === 'PM' && hour !== 12) {
+      hour += 12;
+    } else if (ampm.toUpperCase() === 'AM' && hour === 12) {
+      hour = 0;
+    }
+
+    return new Date(year, month, day, hour, minute);
+  };
+
+  const handleImport = async () => {
+    setLoading(true);
+    setStatus('Importando...');
+    try {
+      const lines = csvData.split('\n').map(l => l.trim()).filter(l => l);
+      // Skip header if it is "Fecha,Hora,Tipo,Detalle,Notas"
+      if (lines[0].toLowerCase().startsWith('fecha')) {
+        lines.shift();
+      }
+
+      const timelineEntriesRef = collection(db, 'families', 'VLA2LmromwUrtTytybCXED7qCCp1', 'timelineEntries');
+      let count = 0;
+
+      for (const line of lines) {
+        // Simple CSV parser that handles commas inside quotes (though maybe not needed strictly if notas are simple, but we should be careful)
+        const regex = /(".*?"|[^",\s]+)(?=\s*,|\s*$)/g;
+        // actually for ease, since they are structured: Fecha,Hora,Tipo,Detalle,Notas
+        let matches = [];
+        let inQuote = false;
+        let currentString = '';
+        for (let i = 0; i < line.length; i++) {
+          const char = line[i];
+          if (char === '"' && inQuote) {
+            inQuote = false;
+          } else if (char === '"' && !inQuote) {
+            inQuote = true;
+          } else if (char === ',' && !inQuote) {
+            matches.push(currentString);
+            currentString = '';
+          } else {
+            currentString += char;
+          }
+        }
+        matches.push(currentString); // last one
+
+        const fecha = matches[0];
+        const hora = matches[1];
+        const type = matches[2];
+        const detail = matches[3];
+        const notes = matches[4] || '';
+
+        const dateObj = parseDateTime(fecha, hora);
+        const timestamp = Timestamp.fromDate(dateObj);
+
+        await addDoc(timelineEntriesRef, {
+          date: timestamp,
+          type: type || '',
+          detail: detail || '',
+          notes: notes || ''
+        });
+        count++;
+        setStatus(`Importando... ${count}/${lines.length}`);
+      }
+
+      setStatus(`Importación completada! ${count} registros insertados.`);
+    } catch (e: any) {
+      console.error(e);
+      setStatus(`Error: ${e.message}`);
+    }
+    setLoading(false);
+  };
+
+  return (
+    <div className="p-4 bg-white rounded-lg shadow mt-4">
+      <h2 className="text-lg font-bold mb-2">Importar Datos CSV (DataImporter)</h2>
+      <textarea
+        className="w-full h-32 p-2 border rounded mb-2 text-black"
+        placeholder="Pega tu CSV aquí..."
+        value={csvData}
+        onChange={(e) => setCsvData(e.target.value)}
+      ></textarea>
+      <button
+        onClick={handleImport}
+        disabled={loading}
+        className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:opacity-50"
+      >
+        {loading ? 'Procesando...' : 'Importar CSV'}
+      </button>
+      <p className="mt-2 text-sm text-gray-600">{status}</p>
+    </div>
+  );
+}
