@@ -167,7 +167,7 @@ export function History() {
   return (
     <div className="p-4 space-y-6 max-w-md md:max-w-4xl mx-auto pb-8">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-gray-800">Historial</h2>
+        <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Historial</h2>
         <div className="flex items-center space-x-2">
           <button 
             onClick={() => setFilterType(filterType === 'all' ? 'custom' : 'all')}
@@ -271,7 +271,7 @@ export function History() {
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {dayEvents.map((event) => (
-                  <div key={event.id} className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex items-start group transition-all hover:shadow-md h-full">
+                  <div key={event.id} className="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 flex items-start group transition-all hover:shadow-md h-full">
                     <div className="w-10 h-10 rounded-full bg-theme-light flex items-center justify-center text-xl shrink-0">
                       {getEventIcon(event.type)}
                     </div>

@@ -6,7 +6,7 @@ import { useStore, BabyEvent } from '../store';
 import { TimelineEntry, MedicalRecord, PendingQuestion } from '../types';
 
 export function FirebaseProvider({ children }: { children: React.ReactNode }) {
-  const { setFamilyId, setEvents, setProfile, setActiveFeeding, setActiveSleep, setCompletedMilestones, setActiveAlarms, setTimelineEntries, setMedicalRecords, setPendingQuestions, profile } = useStore();
+  const { setFamilyId, setEvents, setProfile, setActiveFeeding, setActiveSleep, setCompletedMilestones, setActiveAlarms, setTimelineEntries, setMedicalRecords, setPendingQuestions } = useStore();
   const familyId = useStore(state => state.familyId);
   const [isAuthReady, setIsAuthReady] = useState(false);
 
@@ -147,27 +147,45 @@ export function FirebaseProvider({ children }: { children: React.ReactNode }) {
     });
 
     // Listen to timeline entries
-    const unsubTimeline = onSnapshot(collection(db, `families/${familyId}/timelineEntries`), (snap) => {
-      const entries: TimelineEntry[] = [];
-      snap.forEach(doc => entries.push({ id: doc.id, ...doc.data() } as TimelineEntry));
-      entries.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-      setTimelineEntries(entries);
-    });
+    const unsubTimeline = onSnapshot(
+      collection(db, `families/${familyId}/timelineEntries`),
+      (snap) => {
+        const entries: TimelineEntry[] = [];
+        snap.forEach(doc => entries.push({ id: doc.id, ...doc.data() } as TimelineEntry));
+        entries.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        setTimelineEntries(entries);
+      },
+      (error) => {
+        console.error(`Error in timelineEntries snapshot for familyId ${familyId}:`, error);
+      }
+    );
 
     // Listen to medical records
-    const unsubMedical = onSnapshot(collection(db, `families/${familyId}/medicalRecords`), (snap) => {
-      const records: MedicalRecord[] = [];
-      snap.forEach(doc => records.push({ id: doc.id, ...doc.data() } as MedicalRecord));
-      records.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-      setMedicalRecords(records);
-    });
+    const unsubMedical = onSnapshot(
+      collection(db, `families/${familyId}/medicalRecords`),
+      (snap) => {
+        const records: MedicalRecord[] = [];
+        snap.forEach(doc => records.push({ id: doc.id, ...doc.data() } as MedicalRecord));
+        records.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        setMedicalRecords(records);
+      },
+      (error) => {
+        console.error(`Error in medicalRecords snapshot for familyId ${familyId}:`, error);
+      }
+    );
 
     // Listen to pending questions
-    const unsubQuestions = onSnapshot(collection(db, `families/${familyId}/pendingQuestions`), (snap) => {
-      const questions: PendingQuestion[] = [];
-      snap.forEach(doc => questions.push({ id: doc.id, ...doc.data() } as PendingQuestion));
-      setPendingQuestions(questions);
-    });
+    const unsubQuestions = onSnapshot(
+      collection(db, `families/${familyId}/pendingQuestions`),
+      (snap) => {
+        const questions: PendingQuestion[] = [];
+        snap.forEach(doc => questions.push({ id: doc.id, ...doc.data() } as PendingQuestion));
+        setPendingQuestions(questions);
+      },
+      (error) => {
+        console.error(`Error in pendingQuestions snapshot for familyId ${familyId}:`, error);
+      }
+    );
 
     return () => {
       unsubFamily();

@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { db, auth } from './firebase';
-import { collection, doc, setDoc, deleteDoc, updateDoc } from 'firebase/firestore';
+import { collection, doc, setDoc, deleteDoc, updateDoc, deleteField } from 'firebase/firestore';
 
 import { TimelineEntry, MedicalRecord, PendingQuestion } from './types';
 
@@ -237,7 +237,7 @@ export const useStore = create<AppState>()(
         const { activeFeeding, addEvent, familyId } = get();
         if (activeFeeding) {
           set({ activeFeeding: null });
-          addEvent({
+          await addEvent({
             type: 'feeding',
             timestamp: activeFeeding.startTime,
             endTimestamp: Date.now(),
@@ -273,7 +273,7 @@ export const useStore = create<AppState>()(
         const { activeSleep, addEvent, familyId } = get();
         if (activeSleep) {
           set({ activeSleep: null });
-          addEvent({
+          await addEvent({
             type: 'sleep',
             timestamp: activeSleep.startTime,
             endTimestamp: Date.now(),
@@ -525,15 +525,15 @@ export const useStore = create<AppState>()(
           try {
             const questionToUpdate = updatedQuestions.find(q => q.id === id);
             if (questionToUpdate) {
-              const dataToUpdate: any = { isAnswered: questionToUpdate.isAnswered };
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const dataToUpdate: Record<string, any> = {
+                isAnswered: questionToUpdate.isAnswered
+              };
               
               if (questionToUpdate.isAnswered) {
                 dataToUpdate.answeredAt = questionToUpdate.answeredAt;
               } else {
-                // Not standard to delete the field here so we'll just set it to null or use FieldValue.delete()
-                // Because we're using updateDoc, we can use deleteField() from firestore or simply set to null
-                // Wait, deleteField is better but I didn't import it. null is fine or empty string.
-                dataToUpdate.answeredAt = '';
+                dataToUpdate.answeredAt = deleteField();
               }
               
               await updateDoc(doc(db, `families/${familyId}/pendingQuestions/${id}`), dataToUpdate);
