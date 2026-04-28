@@ -1,13 +1,16 @@
 import React, { useState } from 'react';
-import { collection, addDoc, Timestamp } from 'firebase/firestore';
+import { collection, addDoc, doc, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
+import { useStore, BabyEvent } from '../store';
 
 export function DataImporter() {
   const [csvData, setCsvData] = useState('');
   const [status, setStatus] = useState('');
   const [loading, setLoading] = useState(false);
+  const { familyId } = useStore();
 
   const parseDateTime = (fecha: string, hora: string) => {
+
     // fecha: "27 abr 2026"
     // hora: "08:07 PM"
     const months: Record<string, number> = {
@@ -72,7 +75,13 @@ export function DataImporter() {
         lines.shift();
       }
 
-      const timelineEntriesRef = collection(db, 'families', 'VLA2LmromwUrtTytybCXED7qCCp1', 'timelineEntries');
+      if (!familyId) {
+        setStatus('Error: No se encontró el ID de familia. Intenta recargar la página.');
+        setLoading(false);
+        return;
+      }
+
+      const eventsRef = collection(db, `families/${familyId}/events`);
       let count = 0;
 
       for (const line of lines) {
@@ -101,7 +110,10 @@ export function DataImporter() {
         const hora = matches[1];
         const type = matches[2];
         const detail = matches[3];
-        const notes = matches[4] || '';
+        let notes = matches[4] || '';
+        
+        // Sometimes the last note column isn't correctly extracted if there's trailing commas, cleanup:
+        notes = notes.replace(/^"|"$/g, '').trim();
 
         if (!fecha || !hora) {
           console.warn(`Skipping line with missing fecha or hora: ${line}`);
@@ -109,14 +121,46 @@ export function DataImporter() {
         }
 
         const dateObj = parseDateTime(fecha, hora);
-        const timestamp = Timestamp.fromDate(dateObj);
+        const eventType = (type && type.trim() !== '' ? type : 'notes') as BabyEvent['type'];
+        
+        const eventData: any = {
+          type: eventType,
+          timestamp: dateObj.getTime(),
+          notes: notes,
+        };
 
-        await addDoc(timelineEntriesRef, {
-          date: timestamp,
-          type: type || '',
-          detail: detail || '',
-          notes: notes || ''
-        });
+        if (eventType === 'feeding' && detail) {
+           const match = detail.match(/([\d.]+)\s*oz/);
+           if (match) {
+             eventData.details = { amount: parseFloat(match[1]) };
+           }
+        } else if (eventType === 'hygiene' && detail) {
+           eventData.details = {};
+           if (detail.includes('Popó')) {
+             eventData.details.hygieneType = 'poo';
+             if (detail.toLowerCase().includes('liquido') || detail.toLowerCase().includes('líquido')) eventData.details.texture = 'liquido';
+             else if (detail.toLowerCase().includes('viscoso')) eventData.details.texture = 'viscoso';
+             else if (detail.toLowerCase().includes('pastoso')) eventData.details.texture = 'pastoso';
+             else if (detail.toLowerCase().includes('duro')) eventData.details.texture = 'duro';
+             else if (detail.toLowerCase().includes('diarrea')) eventData.details.texture = 'diarrea';
+           } else if (detail.includes('Pipí')) {
+             eventData.details.hygieneType = 'pee';
+             if (detail.toLowerCase().includes('poco')) eventData.details.level = 'poco';
+             else if (detail.toLowerCase().includes('medio')) eventData.details.level = 'medio';
+             else if (detail.toLowerCase().includes('lleno') || detail.toLowerCase().includes('mucho')) eventData.details.level = 'lleno';
+           } else if (detail.toLowerCase().includes('estreñimiento')) {
+             eventData.details.hygieneType = 'constipation';
+           }
+        } else if (eventType === 'sleep' && detail) {
+           const match = detail.match(/Durmió\s+(\d+)h\s+(\d+)m/);
+           if (match) {
+             const hours = parseInt(match[1], 10);
+             const mins = parseInt(match[2], 10);
+             eventData.endTimestamp = dateObj.getTime() + (hours * 3600000) + (mins * 60000);
+           }
+        }
+
+        await addDoc(eventsRef, eventData);
         count++;
         setStatus(`Importando... ${count}/${lines.length}`);
       }

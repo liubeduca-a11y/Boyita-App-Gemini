@@ -17,7 +17,7 @@ const PROMPTS = [
 ];
 
 export function TimelineView() {
-  const { timelineEntries, addTimelineEntry, updateTimelineEntry, deleteTimelineEntry } = useStore();
+  const { timelineEntries, addTimelineEntry, updateTimelineEntry, deleteTimelineEntry, deleteAllTimelineEntries } = useStore();
   const [newText, setNewText] = useState('');
   const [newPhoto, setNewPhoto] = useState<string | null>(null);
   const [isAdding, setIsAdding] = useState(false);
@@ -176,6 +176,25 @@ export function TimelineView() {
         )}
       </div>
 
+      {/* Timeline Controls */}
+      <div className="flex justify-between items-center">
+        <h2 className="text-xl font-medium text-gray-800 dark:text-gray-100">Línea de Tiempo</h2>
+        {timelineEntries.length > 0 && (
+          <button
+            onClick={() => {
+              if(window.confirm('¿Estás seguro de que quieres eliminar TODOS los recuerdos? Esta acción no se puede deshacer.')) {
+                deleteAllTimelineEntries();
+              }
+            }}
+            className="text-red-500 hover:text-red-700 bg-red-50 dark:bg-red-900/10 hover:bg-red-100 dark:hover:bg-red-900/30 px-3 py-1.5 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors"
+            title="Eliminar todos los recuerdos"
+          >
+            <Trash2 className="w-4 h-4" />
+            Eliminar todos
+          </button>
+        )}
+      </div>
+
       {/* Timeline */}
       <div className="relative space-y-8 before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-gray-200 dark:before:via-gray-700 before:to-transparent">
         {filteredEntries.length === 0 ? (
@@ -194,7 +213,15 @@ export function TimelineView() {
             <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-4 rounded-2xl bg-white dark:bg-gray-800 shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition-shadow">
               <div className="flex justify-between items-start mb-2">
                 <time className="text-xs font-medium text-gray-400 dark:text-gray-500 mt-2">
-                  {format(new Date(entry.date), "d 'de' MMMM, yyyy • h:mm a", { locale: es })}
+                  {(() => {
+                    try {
+                      const d = new Date(entry.date);
+                      if (isNaN(d.getTime())) return "Fecha inválida";
+                      return format(d, "d 'de' MMMM, yyyy • h:mm a", { locale: es });
+                    } catch (e) {
+                      return "Fecha inválida";
+                    }
+                  })()}
                 </time>
                 <div className="flex space-x-1 -mt-2 -mr-2">
                   <button

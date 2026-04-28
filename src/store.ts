@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { db, auth } from './firebase';
-import { collection, doc, setDoc, deleteDoc, updateDoc } from 'firebase/firestore';
+import { collection, doc, setDoc, deleteDoc, updateDoc, writeBatch } from 'firebase/firestore';
 
 import { TimelineEntry, MedicalRecord, PendingQuestion } from './types';
 
@@ -129,6 +129,7 @@ interface AppState {
   addTimelineEntry: (entry: Omit<TimelineEntry, 'id'>) => Promise<void>;
   updateTimelineEntry: (id: string, entry: Partial<TimelineEntry>) => Promise<void>;
   deleteTimelineEntry: (id: string) => Promise<void>;
+  deleteAllTimelineEntries: () => Promise<void>;
   addMedicalRecord: (record: Omit<MedicalRecord, 'id'>) => Promise<void>;
   updateMedicalRecord: (id: string, record: Partial<MedicalRecord>) => Promise<void>;
   deleteMedicalRecord: (id: string) => Promise<void>;
@@ -435,6 +436,40 @@ export const useStore = create<AppState>()(
           } catch (error) {
             console.error("Error deleting timeline entry", error);
           }
+        }
+      },
+
+      deleteAllTimelineEntries: async () => {
+        const { familyId, timelineEntries } = get();
+        
+        if (!familyId || !auth.currentUser) {
+          alert("Debes iniciar sesión para realizar esta acción.");
+          return;
+        }
+
+        if (timelineEntries.length === 0) return;
+
+        set({ timelineEntries: [] });
+
+        try {
+          // Borrar en lotes de 50 en 50 para evitar sobrecargar a Firebase
+          const chunkSize = 50;
+          for (let i = 0; i < timelineEntries.length; i += chunkSize) {
+            const chunk = timelineEntries.slice(i, i + chunkSize);
+            const currentBatch = writeBatch(db);
+            
+            for (const e of chunk) {
+              const entryRef = doc(db, `families/${familyId}/timelineEntries/${e.id}`);
+              currentBatch.delete(entryRef);
+            }
+            
+            await currentBatch.commit();
+          }
+
+          alert("Todos los recuerdos han sido eliminados.");
+        } catch (error) {
+          console.error("Error deleting all timeline entries", error);
+          alert(`Hubo un error eliminando los recuerdos: ${error instanceof Error ? error.message : 'Error desconocido'}`);
         }
       },
 

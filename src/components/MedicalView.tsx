@@ -382,7 +382,16 @@ export function MedicalView() {
                       <div>
                         <p className="text-sm font-medium text-gray-800 dark:text-gray-100">Consulta Pediátrica</p>
                         <time className="text-xs text-gray-500 dark:text-gray-400">
-                          {record.date ? format(new Date(record.date), "d 'de' MMMM, yyyy", { locale: es }) : 'Fecha desconocida'}
+                          {(() => {
+                            if (!record.date) return 'Fecha desconocida';
+                            try {
+                              const d = new Date(record.date);
+                              if (isNaN(d.getTime())) return 'Fecha inválida';
+                              return format(d, "d 'de' MMMM, yyyy", { locale: es });
+                            } catch (e) {
+                              return 'Fecha inválida';
+                            }
+                          })()}
                         </time>
                       </div>
                     </div>

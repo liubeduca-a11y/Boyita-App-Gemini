@@ -98,11 +98,20 @@ export function Analytics() {
   const growthData = useMemo(() => {
     if (!profile.birthDate || !medicalRecords.length) return [];
     
-    const sortedRecords = [...medicalRecords].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    const sortedRecords = [...medicalRecords].sort((a, b) => {
+      const timeA = new Date(a.date).getTime();
+      const timeB = new Date(b.date).getTime();
+      if (isNaN(timeA) && isNaN(timeB)) return 0;
+      if (isNaN(timeA)) return 1;
+      if (isNaN(timeB)) return -1;
+      return timeA - timeB;
+    });
     
-    return sortedRecords.map(record => {
+    return sortedRecords.reduce((acc, record) => {
       const bDate = new Date(profile.birthDate);
       const rDate = new Date(record.date);
+      if (isNaN(rDate.getTime()) || isNaN(bDate.getTime())) return acc;
+      
       const ageMonths = differenceInMonths(rDate, bDate);
       
       const weightTable = profile.gender === 'boy' ? WEIGHT_BOYS : WEIGHT_GIRLS;
@@ -112,15 +121,16 @@ export function Analytics() {
       const tableMonths = Object.keys(weightTable).map(Number).sort((a, b) => a - b);
       const closestMonth = tableMonths.find(m => m === ageMonths) ?? tableMonths.reverse().find(m => m <= ageMonths) ?? 0;
       
-      return {
+      acc.push({
         age: ageMonths,
         label: `${ageMonths}m`,
         peso: record.weight,
         talla: record.height,
         whoPeso: weightTable[closestMonth as keyof typeof weightTable]?.[1] || 0,
         whoTalla: heightTable[closestMonth as keyof typeof heightTable]?.[1] || 0,
-      };
-    });
+      });
+      return acc;
+    }, [] as any[]);
   }, [medicalRecords, profile.birthDate, profile.gender]);
 
   // --- Current Period Stats ---

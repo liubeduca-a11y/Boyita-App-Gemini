@@ -149,16 +149,51 @@ export function FirebaseProvider({ children }: { children: React.ReactNode }) {
     // Listen to timeline entries
     const unsubTimeline = onSnapshot(collection(db, `families/${familyId}/timelineEntries`), (snap) => {
       const entries: TimelineEntry[] = [];
-      snap.forEach(doc => entries.push({ id: doc.id, ...doc.data() } as TimelineEntry));
-      entries.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      snap.forEach(doc => {
+        const data = doc.data();
+        let dateStr = data.date;
+        if (dateStr && typeof dateStr.toDate === 'function') {
+          dateStr = dateStr.toDate().toISOString();
+        }
+        let text = data.text;
+        if (!text && (data.type || data.detail || data.notes)) {
+           const typeStr = data.type ? `[${data.type.toUpperCase()}] ` : '';
+           const detailStr = data.detail ? `${data.detail} ` : '';
+           const notesStr = data.notes ? `\nNotas: ${data.notes}` : '';
+           text = `${typeStr}${detailStr}${notesStr}`.trim();
+        }
+        entries.push({ id: doc.id, ...data, date: dateStr, text: text || '' } as TimelineEntry);
+      });
+      entries.sort((a, b) => {
+        const timeA = new Date(a.date).getTime();
+        const timeB = new Date(b.date).getTime();
+        if (isNaN(timeA) && isNaN(timeB)) return 0;
+        if (isNaN(timeA)) return 1;
+        if (isNaN(timeB)) return -1;
+        return timeB - timeA;
+      });
       setTimelineEntries(entries);
     });
 
     // Listen to medical records
     const unsubMedical = onSnapshot(collection(db, `families/${familyId}/medicalRecords`), (snap) => {
       const records: MedicalRecord[] = [];
-      snap.forEach(doc => records.push({ id: doc.id, ...doc.data() } as MedicalRecord));
-      records.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      snap.forEach(doc => {
+        const data = doc.data();
+        let dateStr = data.date;
+        if (dateStr && typeof dateStr.toDate === 'function') {
+          dateStr = dateStr.toDate().toISOString();
+        }
+        records.push({ id: doc.id, ...data, date: dateStr } as MedicalRecord);
+      });
+      records.sort((a, b) => {
+        const timeA = new Date(a.date).getTime();
+        const timeB = new Date(b.date).getTime();
+        if (isNaN(timeA) && isNaN(timeB)) return 0;
+        if (isNaN(timeA)) return 1;
+        if (isNaN(timeB)) return -1;
+        return timeB - timeA;
+      });
       setMedicalRecords(records);
     });
 
