@@ -110,7 +110,7 @@ export function Analytics() {
       
       // Find exact or closest preceding value in WHO table (Median is index 1 for weight, 1 for height)
       const tableMonths = Object.keys(weightTable).map(Number).sort((a, b) => a - b);
-      const closestMonth = tableMonths.find(m => m === ageMonths) ?? [...tableMonths].reverse().find(m => m <= ageMonths) ?? 0;
+      const closestMonth = tableMonths.find(m => m === ageMonths) ?? tableMonths.reverse().find(m => m <= ageMonths) ?? 0;
       
       return {
         age: ageMonths,
@@ -169,7 +169,7 @@ export function Analytics() {
   // --- Comparison Stats ---
   const comparisonStats = useMemo(() => {
     const now = new Date();
-    let compEvents: typeof events = [];
+    let compEvents = [];
 
     if (compareType === 'yesterday') {
       // If filter is 24h, compare to the day before yesterday

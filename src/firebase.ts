@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
-import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from 'firebase/firestore';
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, getDocFromServer } from 'firebase/firestore';
 import firebaseConfig from '../firebase-applet-config.json';
 
 export const app = initializeApp(firebaseConfig);
@@ -9,7 +9,7 @@ export const auth = getAuth(app);
 // Initialize Firestore with persistent local cache for efficient reads (offline persistence)
 export const db = initializeFirestore(app, {
   localCache: persistentLocalCache({tabManager: persistentMultipleTabManager()})
-}, firebaseConfig.firestoreDatabaseId);
+}, 'ai-studio-71aa7e80-479b-4bf7-b025-fd6b1ed348c6');
 
 export const loginWithGoogle = async () => {
   const provider = new GoogleAuthProvider();

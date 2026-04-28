@@ -534,15 +534,11 @@ export function Settings() {
 
             <div className="mb-6">
               <button
-                onClick={() => {
-                  if (colorMode === 'system') setColorMode('light');
-                  else if (colorMode === 'light') setColorMode('dark');
-                  else setColorMode('system');
-                }}
+                onClick={() => setColorMode(colorMode === 'dark' ? 'light' : 'dark')}
                 className="w-full py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-xl font-semibold flex items-center justify-center space-x-2 hover:bg-gray-200 dark:hover:bg-gray-600 transition-all shadow-sm"
               >
-                {colorMode === 'dark' ? <Sun className="w-5 h-5" /> : colorMode === 'light' ? <Moon className="w-5 h-5" /> : <Monitor className="w-5 h-5" />}
-                <span>{colorMode === 'dark' ? 'Cambiar a Modo Sistema' : colorMode === 'light' ? 'Cambiar a Modo Oscuro' : 'Cambiar a Modo Claro'}</span>
+                {colorMode === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+                <span>{colorMode === 'dark' ? 'Cambiar a Modo Claro' : 'Cambiar a Modo Oscuro'}</span>
               </button>
             </div>
 
@@ -589,13 +585,7 @@ export function Settings() {
             {user ? (
               <div className="space-y-4">
                 <div className="flex items-center space-x-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
-                  {user.photoURL ? (
-                    <img src={user.photoURL} alt="User" className="w-10 h-10 rounded-full" />
-                  ) : (
-                    <div className="w-10 h-10 rounded-full bg-theme-light dark:bg-theme-dark/40 flex items-center justify-center text-lg">
-                      👤
-                    </div>
-                  )}
+                  <img src={user.photoURL || ''} alt="User" className="w-10 h-10 rounded-full" />
                   <div className="flex-1 overflow-hidden">
                     <p className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">{user.displayName}</p>
                     <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{user.email}</p>
