@@ -6,7 +6,7 @@ import { useStore, BabyEvent } from '../store';
 import { TimelineEntry, MedicalRecord, PendingQuestion } from '../types';
 
 export function FirebaseProvider({ children }: { children: React.ReactNode }) {
-  const { setFamilyId, setEvents, setProfile, setActiveFeeding, setActiveSleep, setCompletedMilestones, setActiveAlarms, setTimelineEntries, setMedicalRecords, setPendingQuestions, profile } = useStore();
+  const { setFamilyId, setEvents, setProfile, setActiveFeeding, setActiveSleep, setCompletedMilestones, setActiveAlarms, setTimelineEntries, setMedicalRecords, setPendingQuestions, setAppliedVaccines, profile } = useStore();
   const familyId = useStore(state => state.familyId);
   const [isAuthReady, setIsAuthReady] = useState(false);
 
@@ -36,7 +36,8 @@ export function FirebaseProvider({ children }: { children: React.ReactNode }) {
               activeFeeding: state.activeFeeding || null,
               activeSleep: state.activeSleep || null,
               completedMilestones: state.completedMilestones || [],
-              activeAlarms: state.activeAlarms || []
+              activeAlarms: state.activeAlarms || [],
+              appliedVaccines: state.appliedVaccines || {}
             }).catch(e => { console.error("Error on setDoc families:", e); throw e; });
 
             // Migrate local events to Firestore
@@ -68,7 +69,8 @@ export function FirebaseProvider({ children }: { children: React.ReactNode }) {
                 activeFeeding: state.activeFeeding || null,
                 activeSleep: state.activeSleep || null,
                 completedMilestones: state.completedMilestones || [],
-                activeAlarms: state.activeAlarms || []
+                activeAlarms: state.activeAlarms || [],
+                appliedVaccines: state.appliedVaccines || {}
               }).catch(e => { console.error("Error on setDoc new family for existing user:", e); throw e; });
             }
           }
@@ -127,6 +129,7 @@ export function FirebaseProvider({ children }: { children: React.ReactNode }) {
         if (data.activeSleep !== undefined) setActiveSleep(data.activeSleep);
         if (data.completedMilestones) setCompletedMilestones(data.completedMilestones);
         if (data.activeAlarms) setActiveAlarms(data.activeAlarms);
+        if (data.appliedVaccines) setAppliedVaccines(data.appliedVaccines);
       }
     }, (error) => {
       console.error(`Error in family snapshot for familyId ${familyId}:`, error);
@@ -211,7 +214,7 @@ export function FirebaseProvider({ children }: { children: React.ReactNode }) {
       unsubMedical();
       unsubQuestions();
     };
-  }, [isAuthReady, familyId, setProfile, setActiveFeeding, setActiveSleep, setEvents, setCompletedMilestones, setActiveAlarms, setTimelineEntries, setMedicalRecords, setPendingQuestions]);
+  }, [isAuthReady, familyId, setProfile, setActiveFeeding, setActiveSleep, setEvents, setCompletedMilestones, setActiveAlarms, setTimelineEntries, setMedicalRecords, setPendingQuestions, setAppliedVaccines]);
 
   return <>{children}</>;
 }

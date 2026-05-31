@@ -7,6 +7,7 @@ import { auth, loginWithGoogle, logout, db } from '../firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { collection, query, getDocs, writeBatch, doc } from 'firebase/firestore';
 import { compressImage } from '../utils/image';
+const logoUrl = "/src/assets/images/boyita_app_logo_1780186577604.png";
 
 const THEMES: { id: ThemeColor; name: string; color: string }[] = [
   { id: 'blue', name: 'Azul Pastel', color: '#AEC6CF' },
@@ -186,11 +187,11 @@ export function Settings() {
 
             <div className="flex flex-col items-center mb-6">
               <div className="relative group">
-                <div className="w-24 h-24 rounded-full bg-gray-100 dark:bg-gray-700 border-4 border-theme-light dark:border-theme-dark/30 overflow-hidden shadow-inner">
+                <div className="w-24 h-24 rounded-full bg-gray-100 dark:bg-gray-700 border-4 border-theme-light dark:border-theme-dark/30 overflow-hidden shadow-inner flex items-center justify-center">
                   {photoUrl ? (
-                    <img src={photoUrl} alt="Bebé" className="w-full h-full object-cover" />
+                    <img src={photoUrl} alt="Bebé" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-4xl">👶</div>
+                    <img src={logoUrl} alt="Bebé" className="w-[85%] h-[85%] object-contain" referrerPolicy="no-referrer" />
                   )}
                 </div>
                 <button 
@@ -535,13 +536,50 @@ export function Settings() {
             </div>
 
             <div className="mb-6">
-              <button
-                onClick={() => setColorMode(colorMode === 'dark' ? 'light' : 'dark')}
-                className="w-full py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-xl font-semibold flex items-center justify-center space-x-2 hover:bg-gray-200 dark:hover:bg-gray-600 transition-all shadow-sm"
-              >
-                {colorMode === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-                <span>{colorMode === 'dark' ? 'Cambiar a Modo Claro' : 'Cambiar a Modo Oscuro'}</span>
-              </button>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Modo de Apariencia</label>
+              <div className="grid grid-cols-3 gap-1.5 bg-gray-150 dark:bg-gray-700/60 p-1.5 rounded-xl border border-gray-200/50 dark:border-gray-600/30">
+                <button
+                  onClick={() => setColorMode('light')}
+                  className={cn(
+                    "flex flex-col sm:flex-row items-center justify-center gap-1.5 py-2.5 px-2 text-xs font-semibold rounded-lg transition-all",
+                    colorMode === 'light'
+                      ? "bg-white dark:bg-gray-800 text-gray-850 dark:text-gray-100 shadow-sm font-bold"
+                      : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+                  )}
+                >
+                  <Sun className="w-4 h-4 text-amber-500 shrink-0" />
+                  <span>Claro</span>
+                </button>
+                <button
+                  onClick={() => setColorMode('dark')}
+                  className={cn(
+                    "flex flex-col sm:flex-row items-center justify-center gap-1.5 py-2.5 px-2 text-xs font-semibold rounded-lg transition-all",
+                    colorMode === 'dark'
+                      ? "bg-white dark:bg-gray-800 text-gray-850 dark:text-gray-100 shadow-sm font-bold"
+                      : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+                  )}
+                >
+                  <Moon className="w-4 h-4 text-indigo-500 dark:text-indigo-400 shrink-0" />
+                  <span>Oscuro</span>
+                </button>
+                <button
+                  onClick={() => setColorMode('system')}
+                  className={cn(
+                    "flex flex-col sm:flex-row items-center justify-center gap-1.5 py-2.5 px-2 text-xs font-semibold rounded-lg transition-all",
+                    colorMode === 'system'
+                      ? "bg-white dark:bg-gray-800 text-gray-850 dark:text-gray-100 shadow-sm font-bold"
+                      : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+                  )}
+                >
+                  <Monitor className="w-4 h-4 text-emerald-500 dark:text-emerald-400 shrink-0" />
+                  <span>Auto</span>
+                </button>
+              </div>
+              <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-2 text-center font-medium leading-relaxed">
+                {colorMode === 'system' 
+                  ? "✓ Usando la apariencia del sistema de tu celular" 
+                  : "Cambia a 'Auto' para seguir la configuración de tu celular"}
+              </p>
             </div>
 
             <div>

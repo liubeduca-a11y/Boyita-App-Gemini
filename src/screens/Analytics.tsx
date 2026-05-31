@@ -15,10 +15,25 @@ type FilterType = '24h' | 'yesterday' | '7d' | 'month' | 'custom';
 type CompareType = 'yesterday' | 'weekAvg';
 
 export function Analytics() {
-  const [filter, setFilter] = useState<FilterType>('24h');
+  const [filter, setFilter] = useState<FilterType>('7d');
   const [compareType, setCompareType] = useState<CompareType>('yesterday');
   const [customStart, setCustomStart] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
   const [customEnd, setCustomEnd] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
+  
+  // Circadian state variables
+  const [viewMode, setViewMode] = useState<'circadian' | 'charts'>('circadian');
+  const [selectedCell, setSelectedCell] = useState<{
+    dayLabel: string;
+    hour: number;
+    sleepMins: number;
+    feedings: any[];
+    diaperPees: any[];
+    diaperPoos: any[];
+    constipatios: any[];
+    burps: any[];
+    baths: any[];
+  } | null>(null);
+  const [circadianFilter, setCircadianFilter] = useState<'all' | 'sleep' | 'feeding' | 'diaper'>('all');
   
   const events = useStore(state => state.events);
   const profile = useStore(state => state.profile);
@@ -321,6 +336,84 @@ export function Analytics() {
 
     return finalData;
   }, [filteredEvents, filter, customStart, customEnd]);
+
+  const circadianData = useMemo(() => {
+    const daysList = [];
+    const now = new Date();
+    
+    // Generar últimos 7 días (de más antiguos a hoy)
+    for (let i = 6; i >= 0; i--) {
+      daysList.push(subDays(now, i));
+    }
+
+    const safeEvents = events || [];
+
+    return daysList.map(day => {
+      const dStart = startOfDay(day);
+      const dayLabel = format(day, 'EEEE dd', { locale: es });
+      const formattedLabel = dayLabel.charAt(0).toUpperCase() + dayLabel.slice(1);
+      
+      const hours = Array.from({ length: 24 }, (_, hour) => {
+        const cellStart = new Date(dStart.getTime() + hour * 60 * 60 * 1000);
+        const cellEnd = new Date(dStart.getTime() + (hour + 1) * 60 * 60 * 1000 - 1);
+        
+        const cellStartMs = cellStart.getTime();
+        const cellEndMs = cellEnd.getTime();
+        
+        // Filtrar eventos que ocurren en esta hora específica de este día
+        const cellEvents = safeEvents.filter(e => {
+          if (e.type === 'sleep') {
+            const sleepStart = e.timestamp;
+            const sleepEnd = e.endTimestamp || now.getTime();
+            return Math.max(cellStartMs, sleepStart) < Math.min(cellEndMs, sleepEnd);
+          } else {
+            return e.timestamp >= cellStartMs && e.timestamp <= cellEndMs;
+          }
+        });
+        
+        // Calcular minutos de sueño en esta hora
+        let sleepMins = 0;
+        cellEvents.forEach(e => {
+          if (e.type === 'sleep') {
+            const sleepStart = e.timestamp;
+            const sleepEnd = e.endTimestamp || now.getTime();
+            const overlapStart = Math.max(cellStartMs, sleepStart);
+            const overlapEnd = Math.min(cellEndMs, sleepEnd);
+            if (overlapStart < overlapEnd) {
+              sleepMins += (overlapEnd - overlapStart) / (1000 * 60);
+            }
+          }
+        });
+        
+        sleepMins = Math.min(60, Math.max(0, sleepMins));
+        
+        const feedings = cellEvents.filter(e => e.type === 'feeding');
+        const diaperPees = cellEvents.filter(e => e.type === 'hygiene' && e.details?.hygieneType === 'pee');
+        const diaperPoos = cellEvents.filter(e => e.type === 'hygiene' && e.details?.hygieneType === 'poo');
+        const constipatios = cellEvents.filter(e => e.type === 'hygiene' && e.details?.hygieneType === 'constipation');
+        const burps = cellEvents.filter(e => e.type === 'burp');
+        const baths = cellEvents.filter(e => e.type === 'bath');
+        
+        return {
+          hour,
+          events: cellEvents,
+          sleepMins,
+          feedings,
+          diaperPees,
+          diaperPoos,
+          constipatios,
+          burps,
+          baths
+        };
+      });
+      
+      return {
+        dayDate: dStart,
+        label: formattedLabel,
+        hours
+      };
+    });
+  }, [events]);
 
   const handleDownload = async () => {
     if (!analyticsRef.current) return;
@@ -638,98 +731,519 @@ export function Analytics() {
         </div>
       )}
 
-      {/* Gráficas */}
-      <div className="space-y-6">
-        
-        {/* Onzas - Barras Diarias */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-700">
-          <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-4">Consumo de Alimentación (Onzas Diarias)</h4>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
-                <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fill: '#6b7280', fontSize: 12 }} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#9ca3af', fontSize: 12 }} dx={-10} />
-                <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(0,0,0,0.04)' }} />
-                <Legend content={renderLegend} verticalAlign="top" wrapperStyle={{ paddingBottom: '20px' }} />
-                <Bar hide={hiddenSeries.oz} dataKey="oz" name="Onzas Consumidas" fill="#3b82f6" radius={[4, 4, 4, 4]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Pañales - Barras Apiladas */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-700">
-          <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-4">Higiene y Pañales</h4>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
-                <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fill: '#6b7280', fontSize: 12 }} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#9ca3af', fontSize: 12 }} dx={-10} allowDecimals={false} />
-                <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(0,0,0,0.04)' }} />
-                <Legend content={renderLegend} verticalAlign="top" wrapperStyle={{ paddingBottom: '20px' }} />
-                <Bar hide={hiddenSeries.pee} dataKey="pee" name="Pipí" stackId="a" fill="#facc15" />
-                <Bar hide={hiddenSeries.poo} dataKey="poo" name="Popó" stackId="a" fill="#fb923c" radius={[4, 4, 0, 0]} />
-                <Bar hide={hiddenSeries.constip} dataKey="constip" name="Días Estreñimiento" fill="#ef4444" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Sueño - Barras */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-700">
-          <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-4">Patrones de Sueño</h4>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
-                <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fill: '#6b7280', fontSize: 12 }} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#9ca3af', fontSize: 12 }} dx={-10} />
-                <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(0,0,0,0.04)' }} />
-                <Legend content={renderLegend} verticalAlign="top" wrapperStyle={{ paddingBottom: '20px' }} />
-                <Bar hide={hiddenSeries.sleepHours} dataKey="sleepHours" name="Horas de Sueño" fill="#818cf8" radius={[4, 4, 4, 4]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Eructos y Baños - Barras */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-700">
-            <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-4">Frecuencia de Eructos</h4>
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
-                  <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fill: '#6b7280', fontSize: 12 }} dy={10} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fill: '#9ca3af', fontSize: 12 }} dx={-10} allowDecimals={false} />
-                  <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(0,0,0,0.04)' }} />
-                  <Legend content={renderLegend} verticalAlign="top" wrapperStyle={{ paddingBottom: '20px' }} />
-                  <Bar hide={hiddenSeries.burps} dataKey="burps" name="Eructos" fill="#10b981" radius={[4, 4, 4, 4]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-700">
-            <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-4">Frecuencia de Baños</h4>
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
-                  <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fill: '#6b7280', fontSize: 12 }} dy={10} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fill: '#9ca3af', fontSize: 12 }} dx={-10} allowDecimals={false} />
-                  <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(0,0,0,0.04)' }} />
-                  <Legend content={renderLegend} verticalAlign="top" wrapperStyle={{ paddingBottom: '20px' }} />
-                  <Bar hide={hiddenSeries.baths} dataKey="baths" name="Baños" fill="#0ea5e9" radius={[4, 4, 4, 4]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        </div>
-
+      {/* Selector de Modo de Vista */}
+      <div className="flex bg-white dark:bg-gray-800 p-1.5 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 max-w-md mx-auto transition-all">
+        <button
+          onClick={() => {
+            setViewMode('circadian');
+            setSelectedCell(null);
+          }}
+          className={cn(
+            "flex-1 py-2 text-sm font-bold rounded-lg transition-all flex items-center justify-center gap-2",
+            viewMode === 'circadian'
+              ? "bg-theme-base text-white shadow-sm"
+              : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+          )}
+        >
+          ⏱️ Ritmo Circadiano
+        </button>
+        <button
+          onClick={() => {
+            setViewMode('charts');
+            setSelectedCell(null);
+          }}
+          className={cn(
+            "flex-1 py-2 text-sm font-bold rounded-lg transition-all flex items-center justify-center gap-2",
+            viewMode === 'charts'
+              ? "bg-theme-base text-white shadow-sm"
+              : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+          )}
+        >
+          📊 Gráficas de Evolución
+        </button>
       </div>
+
+      {viewMode === 'circadian' && (
+        <div className="space-y-6">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-700 space-y-4 animate-in fade-in slide-in-from-top-4 duration-300">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div>
+                <h4 className="text-base font-bold text-gray-800 dark:text-gray-100">Mapa del Ritmo Circadiano</h4>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Análisis visual consolidado de las 24 horas del día para los últimos 7 días</p>
+              </div>
+              
+              {/* Filtros de Categorías dentro del Mapa */}
+              <div className="flex space-x-1 bg-gray-100 dark:bg-gray-700 p-1 rounded-lg self-start md:self-auto overflow-x-auto max-w-full">
+                {[
+                  { id: 'all', label: 'Todo 📋' },
+                  { id: 'sleep', label: 'Sueño 😴' },
+                  { id: 'feeding', label: 'Tomas 🍼' },
+                  { id: 'diaper', label: 'Pañal 🚼' }
+                ].map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => {
+                      setCircadianFilter(item.id as any);
+                      setSelectedCell(null);
+                    }}
+                    className={cn(
+                      "px-2.5 py-1 text-xs font-semibold rounded-md transition-all whitespace-nowrap",
+                      circadianFilter === item.id
+                        ? "bg-white dark:bg-gray-600 text-gray-800 dark:text-white shadow-sm"
+                        : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                    )}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Matriz Circadiana */}
+            <div className="border border-gray-100 dark:border-gray-700/80 rounded-xl overflow-hidden shadow-inner bg-gray-50/50 dark:bg-gray-900/10">
+              <div className="overflow-x-auto whitespace-nowrap scrollbar-thin scrollbar-thumb-gray-200 dark:scrollbar-thumb-gray-800">
+                <div className="inline-block min-w-full align-middle">
+                  {/* Fila de Encabezados de Horas */}
+                  <div className="flex border-b border-gray-100 dark:border-gray-800 bg-gray-100/50 dark:bg-gray-800/50">
+                    <div className="sticky left-0 bg-gray-100/90 dark:bg-gray-800/90 z-20 font-bold px-2.5 text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-wider flex items-center min-w-[90px] border-r border-gray-100 dark:border-gray-800 select-none py-2">
+                      Días / Horas
+                    </div>
+                    {Array.from({ length: 24 }).map((_, hour) => (
+                      <div
+                        key={hour}
+                        className="w-8 h-8 flex-shrink-0 flex items-center justify-center font-mono text-[10px] font-bold text-gray-400 dark:text-gray-500 border-r border-gray-100 dark:border-gray-800/50 select-none"
+                      >
+                        {hour.toString().padStart(2, '0')}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Filas de la Grid */}
+                  <div className="flex flex-col">
+                    {circadianData.map((day, dIdx) => (
+                      <div key={dIdx} className="flex border-b border-gray-100/50 dark:border-gray-800/50 last:border-b-0 hover:bg-gray-50/40 dark:hover:bg-gray-800/20 transition-colors">
+                        {/* Celda del Día (Nombre pegajoso a la izquierda) */}
+                        <div className="sticky left-0 bg-white dark:bg-gray-800 z-10 shadow-[2px_0_5px_rgba(0,0,0,0.03)] border-r border-gray-100 dark:border-gray-800/80 font-bold px-2.5 text-[11px] text-gray-700 dark:text-gray-200 flex items-center min-w-[90px] h-10 select-none">
+                          {day.label.replace(' de mayo', '').replace(' de junio', '')}
+                        </div>
+
+                        {/* Las 24 Horas */}
+                        {day.hours.map((hourData, hIdx) => {
+                          const isSelected = selectedCell?.dayLabel === day.label && selectedCell?.hour === hourData.hour;
+                          
+                          let cellBgClass = 'bg-transparent';
+                          let cellBorderClass = 'border-r border-gray-100 dark:border-gray-800/50';
+                          let cellText = '';
+                          let cellTitle = `${day.label}, ${hourData.hour}:00h \n`;
+
+                          // Detalle del tooltip nativo (title)
+                          if (hourData.sleepMins > 0) cellTitle += `💤 Sueño: ${Math.round(hourData.sleepMins)} min\n`;
+                          if (hourData.feedings.length > 0) cellTitle += `🍼 Tomas: ${hourData.feedings.length}\n`;
+                          if (hourData.diaperPees.length > 0) cellTitle += `💦 Pipí: ${hourData.diaperPees.length}\n`;
+                          if (hourData.diaperPoos.length > 0) cellTitle += `💩 Popó: ${hourData.diaperPoos.length}\n`;
+                          if (hourData.constipatios.length > 0) cellTitle += `❌ Estreñimiento registrado\n`;
+
+                          const hasActivity = hourData.sleepMins > 0 || hourData.feedings.length > 0 || hourData.diaperPees.length > 0 || hourData.diaperPoos.length > 0 || hourData.burps.length > 0 || hourData.baths.length > 0;
+
+                          // LÓGICA DE COLO-CODIFICACIÓN SEGÚN EL FILTRO ELEGIDO
+                          if (circadianFilter === 'sleep') {
+                            if (hourData.sleepMins > 45) {
+                              cellBgClass = 'bg-indigo-600 dark:bg-indigo-700 text-white font-bold';
+                            } else if (hourData.sleepMins > 30) {
+                              cellBgClass = 'bg-indigo-400 dark:bg-indigo-600 text-white';
+                            } else if (hourData.sleepMins > 15) {
+                              cellBgClass = 'bg-indigo-200 dark:bg-indigo-900/60 text-indigo-900 dark:text-indigo-200';
+                            } else if (hourData.sleepMins > 0) {
+                              cellBgClass = 'bg-indigo-100 dark:bg-indigo-950/40 text-indigo-800 dark:text-indigo-300';
+                            }
+                            if (hourData.sleepMins > 0) {
+                              cellText = `${Math.round(hourData.sleepMins)}'`;
+                            }
+                          } else if (circadianFilter === 'feeding') {
+                            if (hourData.feedings.length > 0) {
+                              cellBgClass = 'bg-sky-100 dark:bg-sky-950/75 border-sky-300 dark:border-sky-800/80 text-sky-800 dark:text-sky-300 font-bold';
+                              const totalOz = hourData.feedings.reduce((sum, f) => sum + (f.details?.amount || 0), 0);
+                              cellText = totalOz > 0 ? `${totalOz.toFixed(0)}` : '🍼';
+                            }
+                          } else if (circadianFilter === 'diaper') {
+                            const hasPee = hourData.diaperPees.length > 0;
+                            const hasPoo = hourData.diaperPoos.length > 0;
+                            const hasConst = hourData.constipatios.length > 0;
+                            
+                            if (hasConst) {
+                              cellBgClass = 'bg-rose-100 dark:bg-rose-950/40 text-rose-700';
+                              cellText = '❌';
+                            } else if (hasPee && hasPoo) {
+                              cellBgClass = 'bg-amber-200 dark:bg-amber-950/50 text-amber-900 dark:text-amber-300 font-bold';
+                              cellText = '💩💦';
+                            } else if (hasPoo) {
+                              cellBgClass = 'bg-amber-100 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300';
+                              cellText = '💩';
+                            } else if (hasPee) {
+                              cellBgClass = 'bg-yellow-100 dark:bg-yellow-950/30 text-yellow-850 dark:text-yellow-300';
+                              cellText = '💦';
+                            }
+                          } else {
+                            // MODO 'ALL' (TODO CONSOLIDADO)
+                            // El fondo indica la profundidad del sueño, el contenido es el ícono primordial
+                            if (hourData.sleepMins > 45) {
+                              cellBgClass = 'bg-indigo-600/35 dark:bg-indigo-500/40 border border-indigo-400/20';
+                            } else if (hourData.sleepMins > 20) {
+                              cellBgClass = 'bg-indigo-400/20 dark:bg-indigo-500/25 border border-indigo-400/10';
+                            } else if (hourData.sleepMins > 0) {
+                              cellBgClass = 'bg-indigo-200/15 dark:bg-indigo-500/10';
+                            }
+
+                            // Ícono de evento primordial
+                            if (hourData.diaperPoos.length > 0) {
+                              cellText = '💩';
+                            } else if (hourData.feedings.length > 0) {
+                              cellText = '🍼';
+                            } else if (hourData.diaperPees.length > 0) {
+                              cellText = '💦';
+                            } else if (hourData.sleepMins > 45) {
+                              cellText = '😴';
+                            } else if (hourData.baths.length > 0) {
+                              cellText = '🧼';
+                            } else if (hourData.burps.length > 0) {
+                              cellText = '💨';
+                            }
+                          }
+
+                          return (
+                            <button
+                              key={hourData.hour}
+                              title={cellTitle}
+                              onClick={() => {
+                                if (isSelected) {
+                                  setSelectedCell(null);
+                                } else {
+                                  setSelectedCell({
+                                    dayLabel: day.label,
+                                    hour: hourData.hour,
+                                    ...hourData
+                                  });
+                                }
+                              }}
+                              className={cn(
+                                "w-8 h-10 flex-shrink-0 flex flex-col items-center justify-center text-[10px] select-none transition-all duration-250 border-r border-gray-100 dark:border-gray-800/50 hover:bg-indigo-100/30 dark:hover:bg-indigo-500/10 outline-none position-relative",
+                                cellBgClass,
+                                isSelected && "ring-4 ring-inset ring-theme-base ring-opacity-90 z-20 scale-105 shadow-md",
+                                isSelected ? "border border-theme-base" : ""
+                              )}
+                            >
+                              <span className="font-sans text-[11px] leading-none transform transition-transform group-hover:scale-110">
+                                {cellText}
+                              </span>
+                              
+                              {/* Indicadores en esquina si el filtro es Todo y hay múltiples elementos */}
+                              {circadianFilter === 'all' && (
+                                <div className="absolute bottom-1 flex gap-0.5 justify-center w-full">
+                                  {hourData.sleepMins > 0 && <span className="w-1 h-1 rounded-full bg-indigo-400" />}
+                                  {hourData.feedings.length > 0 && <span className="w-1 h-1 rounded-full bg-sky-400" />}
+                                  {(hourData.diaperPees.length > 0 || hourData.diaperPoos.length > 0) && <span className="w-1 h-1 rounded-full bg-amber-400" />}
+                                </div>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Guía visual / Leyenda */}
+            <div className="flex flex-wrap items-center justify-start gap-4 text-xs font-medium text-gray-500 bg-gray-50 dark:bg-gray-900/30 p-3 rounded-xl border border-gray-100 dark:border-gray-800/50">
+              <span className="font-bold text-gray-700 dark:text-gray-300">Guía:</span>
+              <div className="flex items-center gap-1">
+                <span className="text-sm">😴</span>
+                <span>Sueño (Profundo a ligero)</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <span className="text-sm">🍼</span>
+                <span>Alimentación</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <span className="text-sm">💦</span>
+                <span>Pipí</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <span className="text-sm">💩</span>
+                <span>Popó</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <span className="text-sm">💨</span>
+                <span>Eructo</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <span className="text-sm">🧼</span>
+                <span>Baño</span>
+              </div>
+            </div>
+
+            {/* Tarjeta de descripción */}
+            <div className="flex items-start gap-3 bg-indigo-50/50 dark:bg-indigo-950/15 p-3.5 rounded-xl border border-indigo-100/40 dark:border-indigo-900/10 text-xs text-indigo-700 dark:text-indigo-300">
+              <Info className="w-4 h-4 mt-0.5 flex-shrink-0" />
+              <div>
+                <span className="font-bold">¿Cómo leerlo?:</span> Toque cualquier celda para desbloquear el desglose de lo que ocurrió durante esa hora exacta. Los colores del fondo indican el nivel de sueño, mientras que los iconos indican la presencia de eventos. Ideal para identificar ventanas de sueño naturales.
+              </div>
+            </div>
+          </div>
+
+          {/* Panel de Detalles para la celda seleccionada */}
+          {selectedCell && (
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-md border-2 border-indigo-200 dark:border-indigo-900/40 space-y-4 animate-in fade-in slide-in-from-top-6 duration-300">
+              <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-700/80 pb-3">
+                <div className="flex items-center space-x-2.5">
+                  <span className="text-lg">⏱️</span>
+                  <div>
+                    <h5 className="text-sm font-bold text-gray-800 dark:text-gray-100">
+                      Actividad a las {selectedCell.hour.toString().padStart(2, '0')}:00h
+                    </h5>
+                    <p className="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400">
+                      {selectedCell.dayLabel}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setSelectedCell(null)}
+                  className="px-2 py-1 text-xs font-bold text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-750 rounded-lg transition-all"
+                >
+                  Cerrar
+                </button>
+              </div>
+
+              {/* Lista Desglosada de Actividades en esa hora */}
+              <div className="space-y-3">
+                
+                {/* Sueño en esa hora */}
+                {selectedCell.sleepMins > 0 && (
+                  <div className="flex items-start space-x-3 bg-indigo-50/40 dark:bg-indigo-950/20 p-3 rounded-xl border border-indigo-100/30 dark:border-indigo-900/10">
+                    <span className="text-lg mt-0.5">😴</span>
+                    <div className="flex-1 space-y-1">
+                      <p className="text-xs font-bold text-gray-800 dark:text-gray-200">Período de Sueño</p>
+                      <p className="text-xs text-gray-600 dark:text-gray-400">
+                        El bebé durmió un total aproximado de <strong className="text-indigo-600 dark:text-indigo-400">{Math.round(selectedCell.sleepMins)} minutos</strong> dentro de este rango horario.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Tomas de alimento */}
+                {selectedCell.feedings.length > 0 && (
+                  <div className="space-y-2">
+                    {selectedCell.feedings.map((f, i) => (
+                      <div key={f.id || i} className="flex items-start space-x-3 bg-sky-50/40 dark:bg-sky-950/20 p-3 rounded-xl border border-sky-100/30 dark:border-sky-900/10">
+                        <span className="text-lg mt-0.5">🍼</span>
+                        <div className="flex-1 space-y-1">
+                          <p className="text-xs font-bold text-gray-800 dark:text-gray-200">
+                            Tomas ({format(new Date(f.timestamp), 'HH:mm')} h)
+                          </p>
+                          <div className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
+                            {f.details?.feedingType === 'breast' ? (
+                              <p>Pecho materno: 🕰️ Izq: <strong>{f.details.breastLeft || 0} min</strong>, Der: <strong>{f.details.breastRight || 0} min</strong></p>
+                            ) : f.details?.feedingType === 'bottle' ? (
+                              <p>Biberón: 🥛 <strong className="text-sky-600 dark:text-sky-450">{f.details.amount || 0} oz</strong> ({f.details.bottleType === 'formula' ? 'Fórmula' : 'Leche materna'})</p>
+                            ) : (
+                              <p>Sólidos: <strong>{f.details?.solidType || 'Papilla'}</strong></p>
+                            )}
+                            {f.notes && <p className="text-[11px] italic text-gray-500">Nota: "{f.notes}"</p>}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Pañales e Higiene */}
+                {(selectedCell.diaperPees.length > 0 || selectedCell.diaperPoos.length > 0 || selectedCell.constipatios.length > 0) && (
+                  <div className="space-y-2">
+                    {/* Pipí */}
+                    {selectedCell.diaperPees.map((e, i) => (
+                      <div key={e.id || i} className="flex items-start space-x-3 bg-yellow-50/40 dark:bg-yellow-950/20 p-3 rounded-xl border border-yellow-100/30 dark:border-yellow-900/10">
+                        <span className="text-lg mt-0.5">💦</span>
+                        <div className="flex-1 space-y-1">
+                          <p className="text-xs font-bold text-gray-800 dark:text-gray-200">
+                            Pañal Mojado (Pipí) ({format(new Date(e.timestamp), 'HH:mm')} h)
+                          </p>
+                          {e.notes && <p className="text-[11px] italic text-gray-500">Nota: "{e.notes}"</p>}
+                        </div>
+                      </div>
+                    ))}
+
+                    {/* Popó */}
+                    {selectedCell.diaperPoos.map((e, i) => (
+                      <div key={e.id || i} className="flex items-start space-x-3 bg-amber-50/40 dark:bg-amber-950/20 p-3 rounded-xl border border-amber-100/30 dark:border-amber-900/10">
+                        <span className="text-lg mt-0.5">💩</span>
+                        <div className="flex-1 space-y-1">
+                          <p className="text-xs font-bold text-gray-800 dark:text-gray-200">
+                            Pañal con Deposición (Popó) ({format(new Date(e.timestamp), 'HH:mm')} h)
+                          </p>
+                          <div className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
+                            {e.details?.consistency && <p>Consistencia: <strong>{e.details.consistency}</strong></p>}
+                            {e.details?.color && <p>Color de deposición: <strong>{e.details.color}</strong></p>}
+                            {e.notes && <p className="text-[11px] italic text-gray-500">Nota: "{e.notes}"</p>}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+
+                    {/* Estreñimiento */}
+                    {selectedCell.constipatios.map((e, i) => (
+                      <div key={e.id || i} className="flex items-start space-x-3 bg-rose-50/40 dark:bg-rose-950/20 p-3 rounded-xl border border-rose-100/30 dark:border-rose-900/10">
+                        <span className="text-lg mt-0.5">❌</span>
+                        <div className="flex-1 space-y-1">
+                          <p className="text-xs font-bold text-red-700 dark:text-red-400">
+                            Reporte de Estreñimiento ({format(new Date(e.timestamp), 'HH:mm')} h)
+                          </p>
+                          {e.notes && <p className="text-[11px] italic text-gray-500">Nota: "{e.notes}"</p>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Eructos */}
+                {selectedCell.burps.map((e, i) => (
+                  <div key={e.id || i} className="flex items-start space-x-3 bg-emerald-50/40 dark:bg-emerald-950/20 p-3 rounded-xl border border-emerald-100/30 dark:border-emerald-900/10">
+                    <span className="text-lg mt-0.5">💨</span>
+                    <div className="flex-1 space-y-1">
+                      <p className="text-xs font-bold text-gray-800 dark:text-gray-200">
+                        Eructo para alivio ({format(new Date(e.timestamp), 'HH:mm')} h)
+                      </p>
+                      {e.notes && <p className="text-[11px] italic text-gray-500">Nota: "{e.notes}"</p>}
+                    </div>
+                  </div>
+                ))}
+
+                {/* Baños */}
+                {selectedCell.baths.map((e, i) => (
+                  <div key={e.id || i} className="flex items-start space-x-3 bg-sky-50/40 dark:bg-sky-950/20 p-3 rounded-xl border border-sky-100/30 dark:border-sky-900/10">
+                    <span className="text-lg mt-0.5">🧼</span>
+                    <div className="flex-1 space-y-1">
+                      <p className="text-xs font-bold text-gray-800 dark:text-gray-200">
+                        Baño registrado ({format(new Date(e.timestamp), 'HH:mm')} h)
+                      </p>
+                      {e.notes && <p className="text-[11px] italic text-gray-500">Nota: "{e.notes}"</p>}
+                    </div>
+                  </div>
+                ))}
+
+                {/* Caso VACÍO: Actividad nula en ese rango de hora */}
+                {selectedCell.sleepMins === 0 &&
+                  selectedCell.feedings.length === 0 &&
+                  selectedCell.diaperPees.length === 0 &&
+                  selectedCell.diaperPoos.length === 0 &&
+                  selectedCell.constipatios.length === 0 &&
+                  selectedCell.burps.length === 0 &&
+                  selectedCell.baths.length === 0 && (
+                    <div className="text-center py-6 text-gray-400 dark:text-gray-500">
+                      <span className="text-3xl block mb-2">🎈</span>
+                      <p className="text-xs font-bold">No hay actividades registradas en esta hora específica.</p>
+                      <p className="text-[11px] text-gray-405 dark:text-gray-510">¡Un excelente momento de calma!</p>
+                    </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {viewMode === 'charts' && (
+        <div className="space-y-6">
+          
+          {/* Onzas - Barras Diarias */}
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-700 animate-in fade-in slide-in-from-top-4 duration-300">
+            <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-4">Consumo de Alimentación (Onzas Diarias)</h4>
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+                  <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fill: '#6b7280', fontSize: 12 }} dy={10} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fill: '#9ca3af', fontSize: 12 }} dx={-10} />
+                  <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(0,0,0,0.04)' }} />
+                  <Legend content={renderLegend} verticalAlign="top" wrapperStyle={{ paddingBottom: '20px' }} />
+                  <Bar hide={hiddenSeries.oz} dataKey="oz" name="Onzas Consumidas" fill="#3b82f6" radius={[4, 4, 4, 4]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Pañales - Barras Apiladas */}
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-700">
+            <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-4">Higiene y Pañales</h4>
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+                  <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fill: '#6b7280', fontSize: 12 }} dy={10} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fill: '#9ca3af', fontSize: 12 }} dx={-10} allowDecimals={false} />
+                  <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(0,0,0,0.04)' }} />
+                  <Legend content={renderLegend} verticalAlign="top" wrapperStyle={{ paddingBottom: '20px' }} />
+                  <Bar hide={hiddenSeries.pee} dataKey="pee" name="Pipí" stackId="a" fill="#facc15" />
+                  <Bar hide={hiddenSeries.poo} dataKey="poo" name="Popó" stackId="a" fill="#fb923c" radius={[4, 4, 0, 0]} />
+                  <Bar hide={hiddenSeries.constip} dataKey="constip" name="Días Estreñimiento" fill="#ef4444" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Sueño - Barras */}
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-700">
+            <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-4">Patrones de Sueño</h4>
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+                  <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fill: '#6b7280', fontSize: 12 }} dy={10} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fill: '#9ca3af', fontSize: 12 }} dx={-10} />
+                  <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(0,0,0,0.04)' }} />
+                  <Legend content={renderLegend} verticalAlign="top" wrapperStyle={{ paddingBottom: '20px' }} />
+                  <Bar hide={hiddenSeries.sleepHours} dataKey="sleepHours" name="Horas de Sueño" fill="#818cf8" radius={[4, 4, 4, 4]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Eructos y Baños - Barras */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-700">
+              <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-4">Frecuencia de Eructos</h4>
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+                    <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fill: '#6b7280', fontSize: 12 }} dy={10} />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fill: '#9ca3af', fontSize: 12 }} dx={-10} allowDecimals={false} />
+                    <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(0,0,0,0.04)' }} />
+                    <Legend content={renderLegend} verticalAlign="top" wrapperStyle={{ paddingBottom: '20px' }} />
+                    <Bar hide={hiddenSeries.burps} dataKey="burps" name="Eructos" fill="#10b981" radius={[4, 4, 4, 4]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-700">
+              <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-4">Frecuencia de Baños</h4>
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+                    <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fill: '#6b7280', fontSize: 12 }} dy={10} />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fill: '#9ca3af', fontSize: 12 }} dx={-10} allowDecimals={false} />
+                    <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(0,0,0,0.04)' }} />
+                    <Legend content={renderLegend} verticalAlign="top" wrapperStyle={{ paddingBottom: '25px' }} />
+                    <Bar hide={hiddenSeries.baths} dataKey="baths" name="Baños" fill="#0ea5e9" radius={[4, 4, 4, 4]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      )}
     </div>
   );
 }

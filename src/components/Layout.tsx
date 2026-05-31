@@ -3,6 +3,7 @@ import { Home, BarChart2, List, Settings, Trophy, BookHeart } from 'lucide-react
 import { useStore } from '../store';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+const logoUrl = "/src/assets/images/boyita_app_logo_1780186577604.png";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -62,16 +63,16 @@ export function Layout({ children, activeTab, onTabChange }: LayoutProps) {
       {/* Mobile Header */}
       <header className="md:hidden bg-theme-base dark:bg-theme-dark/40 text-theme-text dark:text-theme-base px-4 py-4 shadow-sm z-10 flex items-center justify-between shrink-0">
         <h1 className="text-xl font-semibold tracking-tight">Boyita App</h1>
-        <div className="w-8 h-8 rounded-full bg-white/30 dark:bg-black/20 flex items-center justify-center">
-          <span className="text-sm font-bold">👶</span>
+        <div className="w-8 h-8 rounded-full bg-white/10 dark:bg-black/10 overflow-hidden flex items-center justify-center border border-white/20">
+          <img src={logoUrl} alt="Boyita logotype" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
         </div>
       </header>
 
       {/* Sidebar (Tablet/Desktop) */}
       <aside className="hidden md:flex flex-col w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 z-20 shrink-0">
         <div className="p-6 flex items-center space-x-3 bg-theme-base dark:bg-theme-dark/40 text-theme-text dark:text-theme-base">
-          <div className="w-10 h-10 rounded-full bg-white/30 dark:bg-black/20 flex items-center justify-center">
-            <span className="text-lg font-bold">👶</span>
+          <div className="w-10 h-10 rounded-full bg-white/15 dark:bg-black/15 overflow-hidden flex items-center justify-center border border-white/25">
+            <img src={logoUrl} alt="Boyita logo" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
           </div>
           <h1 className="text-2xl font-semibold tracking-tight">Boyita App</h1>
         </div>

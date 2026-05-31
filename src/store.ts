@@ -3,7 +3,7 @@ import { persist } from 'zustand/middleware';
 import { db, auth } from './firebase';
 import { collection, doc, setDoc, deleteDoc, updateDoc, writeBatch } from 'firebase/firestore';
 
-import { TimelineEntry, MedicalRecord, PendingQuestion } from './types';
+import { TimelineEntry, MedicalRecord, PendingQuestion, AppliedVaccine } from './types';
 
 export type EventType = 'feeding' | 'burp' | 'hygiene' | 'sleep' | 'bath';
 
@@ -88,6 +88,7 @@ interface AppState {
   colorMode: ColorMode;
   completedMilestones: Record<string, CompletedMilestone>;
   activeAlarms: string[];
+  appliedVaccines: Record<string, AppliedVaccine>;
   
   // Bitacora State
   timelineEntries: TimelineEntry[];
@@ -103,6 +104,7 @@ interface AppState {
   setTimelineEntries: (entries: TimelineEntry[]) => void;
   setMedicalRecords: (records: MedicalRecord[]) => void;
   setPendingQuestions: (questions: PendingQuestion[]) => void;
+  setAppliedVaccines: (appliedVaccines: Record<string, AppliedVaccine>) => void;
   setActiveFeeding: (active: { startTime: number } | null) => void;
   setActiveSleep: (active: { startTime: number } | null) => void;
 
@@ -135,6 +137,8 @@ interface AppState {
   deleteMedicalRecord: (id: string) => Promise<void>;
   addPendingQuestion: (question: Omit<PendingQuestion, 'id'>) => Promise<void>;
   togglePendingQuestion: (id: string) => Promise<void>;
+  applyVaccine: (id: string, appliedAt: string, notes?: string, reactions?: string) => Promise<void>;
+  unapplyVaccine: (id: string) => Promise<void>;
 }
 
 export const useStore = create<AppState>()(
@@ -152,6 +156,7 @@ export const useStore = create<AppState>()(
       colorMode: 'system',
       completedMilestones: {},
       activeAlarms: [],
+      appliedVaccines: {},
       timelineEntries: [],
       medicalRecords: [],
       pendingQuestions: [],
@@ -164,6 +169,7 @@ export const useStore = create<AppState>()(
       setTimelineEntries: (entries) => set({ timelineEntries: entries }),
       setMedicalRecords: (records) => set({ medicalRecords: records }),
       setPendingQuestions: (questions) => set({ pendingQuestions: questions }),
+      setAppliedVaccines: (appliedVaccines) => set({ appliedVaccines }),
       setActiveFeeding: (activeFeeding) => set({ activeFeeding }),
       setActiveSleep: (activeSleep) => set({ activeSleep }),
 
@@ -575,6 +581,46 @@ export const useStore = create<AppState>()(
             }
           } catch (error) {
             console.error("Error toggling pending question", error);
+          }
+        }
+      },
+
+      applyVaccine: async (id, appliedAt, notes, reactions) => {
+        const { familyId, appliedVaccines } = get();
+        const newVaccine: AppliedVaccine = {
+          id,
+          applied: true,
+          appliedAt,
+          notes,
+          reactions
+        };
+        const newAppliedVaccines = { ...appliedVaccines, [id]: newVaccine };
+        set({ appliedVaccines: newAppliedVaccines });
+
+        if (familyId && auth.currentUser) {
+          try {
+            const firestoreVaccines = JSON.parse(JSON.stringify(newAppliedVaccines));
+            await updateDoc(doc(db, `families/${familyId}`), { appliedVaccines: firestoreVaccines });
+          } catch (error) {
+            console.error("Error applying vaccine in Firebase", error);
+          }
+        }
+      },
+
+      unapplyVaccine: async (id) => {
+        const { familyId, appliedVaccines } = get();
+        if (!appliedVaccines[id]) return;
+
+        const newAppliedVaccines = { ...appliedVaccines };
+        delete newAppliedVaccines[id];
+        set({ appliedVaccines: newAppliedVaccines });
+
+        if (familyId && auth.currentUser) {
+          try {
+            const firestoreVaccines = JSON.parse(JSON.stringify(newAppliedVaccines));
+            await updateDoc(doc(db, `families/${familyId}`), { appliedVaccines: firestoreVaccines });
+          } catch (error) {
+            console.error("Error unapplying vaccine in Firebase", error);
           }
         }
       },

@@ -21,3 +21,12 @@ export type PendingQuestion = {
   isAnswered: boolean;
   answeredAt?: string;
 };
+
+export interface AppliedVaccine {
+  id: string;
+  applied: boolean;
+  appliedAt: string; // ISO date string
+  notes?: string;
+  reactions?: string;
+}
+
