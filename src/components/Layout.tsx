@@ -1,8 +1,9 @@
 import React, { useEffect } from 'react';
-import { Home, BarChart2, List, Settings, Trophy, BookHeart } from 'lucide-react';
+import { Baby, ClipboardList, BookHeart, Activity, Award, Settings } from 'lucide-react';
 import { useStore } from '../store';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { motion } from 'motion/react';
 const logoUrl = "/src/assets/images/boyita_app_logo_1780186577604.png";
 
 export function cn(...inputs: ClassValue[]) {
@@ -50,18 +51,18 @@ export function Layout({ children, activeTab, onTabChange }: LayoutProps) {
   }, [colorMode]);
 
   const tabs = [
-    { id: 'dashboard', icon: Home, label: 'Registro' },
-    { id: 'history', icon: List, label: 'Historial' },
+    { id: 'dashboard', icon: Baby, label: 'Registro' },
+    { id: 'history', icon: ClipboardList, label: 'Historial' },
     { id: 'bitacora', icon: BookHeart, label: 'Bitácora' },
-    { id: 'analytics', icon: BarChart2, label: 'Análisis' },
-    { id: 'trophyPath', icon: Trophy, label: 'Logros' },
+    { id: 'analytics', icon: Activity, label: 'Análisis' },
+    { id: 'trophyPath', icon: Award, label: 'Logros' },
     { id: 'settings', icon: Settings, label: 'Ajustes' },
   ] as const;
 
   return (
     <div className="flex h-[100dvh] bg-gray-50 dark:bg-gray-900 overflow-hidden flex-col md:flex-row">
       {/* Mobile Header */}
-      <header className="md:hidden bg-theme-base dark:bg-theme-dark/40 text-theme-text dark:text-theme-base px-4 py-4 shadow-sm z-10 flex items-center justify-between shrink-0">
+      <header className="md:hidden bg-theme-base dark:bg-theme-dark/40 text-theme-text dark:text-theme-base px-4 py-4 shadow-sm z-50 flex items-center justify-between shrink-0">
         <h1 className="text-xl font-semibold tracking-tight">Boyita App</h1>
         <div className="w-8 h-8 rounded-full bg-white/10 dark:bg-black/10 overflow-hidden flex items-center justify-center border border-white/20">
           <img src={logoUrl} alt="Boyita logotype" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
@@ -85,14 +86,26 @@ export function Layout({ children, activeTab, onTabChange }: LayoutProps) {
                 key={tab.id}
                 onClick={() => onTabChange(tab.id)}
                 className={cn(
-                  "flex items-center w-full px-4 py-3 rounded-xl transition-colors space-x-3",
+                  "flex items-center w-full px-4 py-3 rounded-xl transition-all space-x-3 relative overflow-hidden group select-none outline-none",
                   isActive 
-                    ? "bg-theme-base/20 text-theme-dark dark:text-theme-base" 
-                    : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700/50"
+                    ? "text-theme-dark dark:text-theme-base font-bold scale-[1.02]" 
+                    : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
                 )}
               >
-                <Icon className={cn("w-6 h-6", isActive && "fill-theme-dark dark:fill-theme-base")} />
-                <span className="font-medium text-base">{tab.label}</span>
+                {isActive && (
+                  <motion.div
+                    layoutId="activeSidebarTabBackground"
+                    className="absolute inset-0 bg-theme-base/20 dark:bg-theme-base/15 rounded-xl border border-theme-base/10"
+                    transition={{ type: "spring", stiffness: 350, damping: 28 }}
+                  />
+                )}
+                <span className="relative z-10 flex items-center space-x-3 pointer-events-none">
+                  <Icon className={cn(
+                    "w-6 h-6 transition-transform duration-300 group-hover:scale-110", 
+                    isActive && "text-theme-dark dark:text-theme-base"
+                  )} />
+                  <span className="text-base">{tab.label}</span>
+                </span>
               </button>
             );
           })}
@@ -107,7 +120,7 @@ export function Layout({ children, activeTab, onTabChange }: LayoutProps) {
       </main>
 
       {/* Bottom Nav (Mobile) */}
-      <nav className="md:hidden fixed bottom-0 w-full bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] pb-safe z-20">
+      <nav className="md:hidden fixed bottom-0 w-full bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] pb-safe z-50">
         <div className="flex justify-around items-center h-16">
           {tabs.map((tab) => {
             const Icon = tab.icon;
@@ -117,18 +130,22 @@ export function Layout({ children, activeTab, onTabChange }: LayoutProps) {
                 key={tab.id}
                 onClick={() => onTabChange(tab.id)}
                 className={cn(
-                  "flex flex-col items-center justify-center w-full h-full space-y-1 transition-colors relative",
+                  "flex flex-col items-center justify-center w-full h-full space-y-1 transition-colors relative outline-none select-none",
                   isActive ? "text-theme-dark dark:text-theme-base" : "text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-400"
                 )}
               >
-                <div className={cn(
-                  "p-1.5 rounded-full transition-colors",
-                  isActive ? "bg-theme-base/20 dark:bg-theme-base/10" : "bg-transparent"
-                )}>
-                  <Icon className={cn("w-6 h-6", isActive && "fill-theme-dark dark:fill-theme-base")} />
+                <div className="p-1.5 rounded-full relative">
+                  {isActive && (
+                    <motion.div
+                      layoutId="activeMobileTabBackground"
+                      className="absolute inset-0 bg-theme-base/20 dark:bg-theme-base/15 rounded-full"
+                      transition={{ type: "spring", stiffness: 350, damping: 28 }}
+                    />
+                  )}
+                  <Icon className={cn("w-6 h-6 transition-transform duration-300 relative z-10", isActive && "scale-105")} />
                 </div>
                 <span className={cn(
-                  "text-[10px] font-medium transition-all",
+                  "text-[10px] font-medium transition-all relative z-10",
                   isActive ? "font-bold" : ""
                 )}>{tab.label}</span>
               </button>
