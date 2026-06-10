@@ -311,48 +311,50 @@ export function Milestones() {
 
                     return (
                       <div key={milestone.id} className="flex flex-col items-center relative group">
-                        <button
-                          onClick={() => setSelectedMilestone(milestone)}
-                          className={cn(
-                            "w-24 h-24 rounded-full flex items-center justify-center transition-all duration-300 relative z-10 overflow-hidden border-4 focus:outline-none",
-                            isCompleted 
-                              ? cn(
-                                  "bg-gradient-to-tr text-white border-white dark:border-gray-800 shadow-lg -rotate-6 hover:rotate-6 hover:scale-110 active:scale-95",
-                                  cat.badgeTheme?.gradient || "from-emerald-400 via-green-500 to-emerald-600",
-                                  cat.badgeTheme?.shadow || "shadow-emerald-500/30"
-                                )
-                              : "bg-gray-100/80 dark:bg-gray-800/80 border-dashed border-gray-300 dark:border-gray-700 hover:scale-105 active:scale-95 text-gray-400"
-                          )}
-                        >
-                          {/* 3D-Style Emoji Graphic with metallic glow */}
-                          {isCompleted ? (
-                            <div className="relative flex items-center justify-center w-full h-full">
-                              <span className="text-4xl filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.2)] select-none">
-                                {milestone.emoji}
-                              </span>
-                              
-                              {/* Metallic shine effect */}
-                              <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/20 to-white/30 transform -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-                              
-                              {/* Inner subtle glow line */}
-                              <div className="absolute inset-1 rounded-full border border-white/20 pointer-events-none" />
-                            </div>
-                          ) : (
-                            <div className="relative flex items-center justify-center w-full h-full opacity-40 grayscale">
-                              <span className="text-4.5xl select-none">
-                                {milestone.emoji}
-                              </span>
-                            </div>
-                          )}
+                        <div className="relative">
+                          <button
+                            onClick={() => setSelectedMilestone(milestone)}
+                            className={cn(
+                              "w-24 h-24 rounded-full flex items-center justify-center transition-all duration-300 relative z-10 overflow-hidden border-4 focus:outline-none",
+                              isCompleted 
+                                ? cn(
+                                    "bg-gradient-to-tr text-white border-white dark:border-gray-800 shadow-lg -rotate-6 hover:rotate-6 hover:scale-110 active:scale-95",
+                                    cat.badgeTheme?.gradient || "from-emerald-400 via-green-500 to-emerald-600",
+                                    cat.badgeTheme?.shadow || "shadow-emerald-500/30"
+                                  )
+                                : "bg-gray-100/80 dark:bg-gray-800/80 border-dashed border-gray-300 dark:border-gray-700 hover:scale-105 active:scale-95 text-gray-400"
+                            )}
+                          >
+                            {/* 3D-Style Emoji Graphic with metallic glow */}
+                            {isCompleted ? (
+                              <div className="relative flex items-center justify-center w-full h-full">
+                                <span className="text-4xl filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.2)] select-none">
+                                  {milestone.emoji}
+                                </span>
+                                
+                                {/* Metallic shine effect */}
+                                <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/20 to-white/30 transform -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+                                
+                                {/* Inner subtle glow line */}
+                                <div className="absolute inset-1 rounded-full border border-white/20 pointer-events-none" />
+                              </div>
+                            ) : (
+                              <div className="relative flex items-center justify-center w-full h-full opacity-40 grayscale">
+                                <span className="text-4.5xl select-none">
+                                  {milestone.emoji}
+                                </span>
+                              </div>
+                            )}
+                          </button>
                           
                           {/* Status Badge */}
                           <div className={cn(
-                            "absolute -bottom-1 -right-1 w-8 h-8 rounded-full border-2 border-white dark:border-gray-900 flex items-center justify-center shadow-md transition-all z-20",
+                            "absolute bottom-0 right-0 w-8 h-8 rounded-full border-2 border-white dark:border-gray-900 flex items-center justify-center shadow-md transition-all z-20 pointer-events-none",
                             isCompleted ? "bg-emerald-500 text-white" : "bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
                           )}>
                             {isCompleted ? <Check className="w-4 h-4 stroke-[3]" /> : <Lock className="w-4 h-4" />}
                           </div>
-                        </button>
+                        </div>
                         <span className={cn(
                           "text-sm font-bold mt-4 text-center px-1.5 leading-tight tracking-tight transition-colors", 
                           isCompleted ? "text-gray-800 dark:text-gray-200" : "text-gray-400 dark:text-gray-500"

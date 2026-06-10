@@ -926,7 +926,7 @@ export function Analytics() {
                                 }
                               }}
                               className={cn(
-                                "w-8 h-10 flex-shrink-0 flex flex-col items-center justify-center text-[10px] select-none transition-all duration-250 border-r border-gray-100 dark:border-gray-800/50 hover:bg-indigo-100/30 dark:hover:bg-indigo-500/10 outline-none position-relative",
+                                "relative w-8 h-10 flex-shrink-0 flex flex-col items-center justify-center text-[10px] select-none transition-all duration-250 border-r border-gray-100 dark:border-gray-800/50 hover:bg-indigo-100/30 dark:hover:bg-indigo-500/10 outline-none",
                                 cellBgClass,
                                 isSelected && "ring-4 ring-inset ring-theme-base ring-opacity-90 z-20 scale-105 shadow-md",
                                 isSelected ? "border border-theme-base" : ""
