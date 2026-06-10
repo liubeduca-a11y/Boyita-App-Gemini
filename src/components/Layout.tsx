@@ -70,14 +70,14 @@ export function Layout({ children, activeTab, onTabChange }: LayoutProps) {
       </header>
 
       {/* Sidebar (Tablet/Desktop) */}
-      <aside className="hidden md:flex flex-col w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 z-20 shrink-0">
-        <div className="p-6 flex items-center space-x-3 bg-theme-base dark:bg-theme-dark/40 text-theme-text dark:text-theme-base">
-          <div className="w-10 h-10 rounded-full bg-white/15 dark:bg-black/15 overflow-hidden flex items-center justify-center border border-white/25">
+      <aside className="hidden md:flex flex-col w-20 lg:w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 z-20 shrink-0 transition-all duration-300">
+        <div className="p-4 lg:p-6 flex items-center justify-center lg:justify-start lg:space-x-3 bg-theme-base dark:bg-theme-dark/40 text-theme-text dark:text-theme-base">
+          <div className="w-10 h-10 rounded-full bg-white/15 dark:bg-black/15 overflow-hidden flex items-center justify-center border border-white/25 shrink-0">
             <img src={logoUrl} alt="Boyita logo" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
           </div>
-          <h1 className="text-2xl font-semibold tracking-tight">Boyita App</h1>
+          <h1 className="text-xl lg:text-2xl font-semibold tracking-tight hidden lg:block overflow-hidden whitespace-nowrap">Boyita App</h1>
         </div>
-        <nav className="flex-1 px-4 py-6 space-y-2">
+        <nav className="flex-1 px-3 lg:px-4 py-6 space-y-2">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -86,11 +86,12 @@ export function Layout({ children, activeTab, onTabChange }: LayoutProps) {
                 key={tab.id}
                 onClick={() => onTabChange(tab.id)}
                 className={cn(
-                  "flex items-center w-full px-4 py-3 rounded-xl transition-all space-x-3 relative overflow-hidden group select-none outline-none",
+                  "flex items-center justify-center lg:justify-start w-full px-3 lg:px-4 py-3 rounded-xl transition-all lg:space-x-3 relative overflow-hidden group select-none outline-none",
                   isActive 
                     ? "text-theme-dark dark:text-theme-base font-bold scale-[1.02]" 
                     : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
                 )}
+                title={tab.label}
               >
                 {isActive && (
                   <motion.div
@@ -99,12 +100,12 @@ export function Layout({ children, activeTab, onTabChange }: LayoutProps) {
                     transition={{ type: "spring", stiffness: 350, damping: 28 }}
                   />
                 )}
-                <span className="relative z-10 flex items-center space-x-3 pointer-events-none">
+                <span className="relative z-10 flex items-center lg:space-x-3 pointer-events-none">
                   <Icon className={cn(
-                    "w-6 h-6 transition-transform duration-300 group-hover:scale-110", 
+                    "w-6 h-6 transition-transform duration-300 group-hover:scale-110 shrink-0", 
                     isActive && "text-theme-dark dark:text-theme-base"
                   )} />
-                  <span className="text-base">{tab.label}</span>
+                  <span className="text-base hidden lg:block overflow-hidden whitespace-nowrap">{tab.label}</span>
                 </span>
               </button>
             );
@@ -114,7 +115,7 @@ export function Layout({ children, activeTab, onTabChange }: LayoutProps) {
 
       {/* Main Content Area */}
       <main className="flex-1 overflow-y-auto pb-20 md:pb-0 relative w-full">
-        <div className="max-w-4xl mx-auto w-full min-h-full">
+        <div className="max-w-4xl lg:max-w-5xl xl:max-w-6xl mx-auto w-full min-h-full">
           {children}
         </div>
       </main>

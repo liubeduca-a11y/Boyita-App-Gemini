@@ -69,7 +69,7 @@ export function Dashboard() {
   };
 
   return (
-    <div className="p-4 md:p-8 max-w-md md:max-w-none mx-auto space-y-6">
+    <div className="p-4 md:p-6 lg:p-8 max-w-md md:max-w-none mx-auto space-y-6">
       <AnimatePresence>
         {showConstipationWarning && (
           <motion.div 
