@@ -186,7 +186,7 @@ function FeedingModule() {
       <div>
         <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 mb-5">
           <div className="flex items-center space-x-3.5">
-            <div className="p-3 bg-gradient-to-br from-sky-400/15 via-sky-400/10 to-transparent dark:from-sky-550/20 rounded-2xl text-sky-500 dark:text-sky-400 border border-sky-100/30">
+            <div className="p-3 bg-gradient-to-br from-sky-400/15 via-sky-400/10 to-transparent dark:from-sky-500/20 rounded-2xl text-sky-500 dark:text-sky-400 border border-sky-100/30">
               <Milk className="w-6 h-6 animate-pulse" />
             </div>
             <div>
@@ -194,7 +194,7 @@ function FeedingModule() {
               <span className="text-[11px] text-gray-400 dark:text-gray-500 md:inline-block hidden">Tomas y onzas de fórmula o leche</span>
             </div>
           </div>
-          <div className="flex bg-gray-100/90 dark:bg-gray-750 p-1 rounded-xl border border-gray-200/20 shrink-0">
+          <div className="flex bg-gray-100/90 dark:bg-gray-700 p-1 rounded-xl border border-gray-200/20 shrink-0">
             <button
               onClick={() => setMode('manual')}
               className={cn(
@@ -261,10 +261,10 @@ function FeedingModule() {
                     step="0.5"
                     value={oz}
                     onChange={(e) => setOz(e.target.value)}
-                    className="w-full p-3.5 pl-4 border border-gray-200 dark:border-gray-600 bg-gray-50/40 dark:bg-gray-700/35 rounded-xl focus:ring-2 focus:ring-sky-400 dark:focus:ring-sky-500/50 outline-none text-lg font-bold text-gray-900 dark:text-white transition-all focus:bg-white dark:focus:bg-gray-700"
+                    className="w-full p-3.5 pl-4 border border-gray-200 dark:border-gray-600 bg-gray-50/40 dark:bg-gray-700/35 rounded-xl focus:ring-2 focus:ring-sky-400 dark:focus:ring-sky-500/50 outline-none text-lg font-bold text-gray-900 dark:text-white transition-all"
                     placeholder="Ej. 4.5"
                   />
-                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-bold text-gray-405 dark:text-gray-400">oz</span>
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-bold text-gray-400 dark:text-gray-400">oz</span>
                 </div>
               </div>
               <div>
@@ -274,7 +274,7 @@ function FeedingModule() {
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   placeholder="Ej. Tomó con buen ritmo, con eructo hábil"
-                  className="w-full p-3.5 border border-gray-200 dark:border-gray-600 bg-gray-50/40 dark:bg-gray-700/35 rounded-xl text-sm focus:ring-2 focus:ring-sky-400 dark:focus:ring-sky-500/50 outline-none text-gray-900 dark:text-white transition-all focus:bg-white dark:focus:bg-gray-700"
+                  className="w-full p-3.5 border border-gray-200 dark:border-gray-600 bg-gray-50/40 dark:bg-gray-700/35 rounded-xl text-sm focus:ring-2 focus:ring-sky-400 dark:focus:ring-sky-500/50 outline-none text-gray-900 dark:text-white transition-all"
                 />
               </div>
               <button
@@ -302,7 +302,7 @@ function FeedingModule() {
             "w-full py-3.5 rounded-xl font-bold flex items-center justify-center space-x-2.5 transition-all duration-300 border select-none",
             showBurpSuccess 
               ? "bg-green-100 border-green-200 text-green-700 dark:bg-green-900/30 dark:border-green-800 dark:text-green-400 scale-95 shadow-sm" 
-              : "bg-gray-50 hover:bg-gray-100/80 border-gray-200 text-gray-700 dark:bg-gray-805/30 dark:hover:bg-gray-700 dark:border-gray-700 dark:text-gray-300 hover:shadow-xs active:scale-[0.98]"
+              : "bg-gray-50 hover:bg-gray-100/80 border-gray-200 text-gray-700 dark:bg-gray-700 dark:hover:bg-gray-600 dark:border-gray-600 dark:text-gray-200 hover:shadow-xs active:scale-[0.98]"
           )}
         >
           {showBurpSuccess ? <Check className="w-5 h-5 text-green-500 animate-bounce" /> : <Wind className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />}
@@ -313,7 +313,7 @@ function FeedingModule() {
       {showModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-gray-800 rounded-3xl p-6 w-full max-w-sm shadow-2xl border border-gray-100 dark:border-gray-700 animate-in fade-in zoom-in-95 duration-200">
-            <h3 className="text-xl font-bold mb-4 text-gray-805 dark:text-gray-100 flex items-center space-x-2">
+            <h3 className="text-xl font-bold mb-4 text-gray-800 dark:text-gray-100 flex items-center space-x-2">
               <span className="p-1.5 bg-sky-100 dark:bg-sky-900 text-sky-600 rounded-lg">👶</span>
               <span>Finalizar Toma</span>
             </h3>
@@ -424,7 +424,7 @@ function HygieneModule() {
             <Sparkles className="w-6 h-6" />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-gray-850 dark:text-gray-100 leading-tight">Higiene</h2>
+            <h2 className="text-lg font-bold text-gray-800 dark:text-gray-100 leading-tight">Higiene</h2>
             <span className="text-[11px] text-gray-400 dark:text-gray-500 md:inline-block hidden">Registro de pañal: pipí o popó</span>
           </div>
         </div>
@@ -436,8 +436,8 @@ function HygieneModule() {
               className={cn(
                 "flex-1 py-4 rounded-2xl font-bold border transition-all text-sm flex flex-col items-center justify-center space-y-1.5 select-none",
                 type === 'pee' 
-                  ? "bg-yellow-501/5 border-yellow-300 dark:border-yellow-700/50 text-yellow-800 dark:text-yellow-300 bg-gradient-to-br from-yellow-50 to-amber-50/50 dark:from-yellow-950/20 dark:to-amber-950/10 ring-2 ring-yellow-400/10 shadow-sm" 
-                  : "bg-gray-50 border-gray-100 text-gray-500 hover:text-gray-700 dark:bg-gray-800/40 dark:border-gray-700 hover:bg-gray-100/60 dark:hover:bg-gray-750"
+                  ? "bg-yellow-500/5 border-yellow-300 dark:border-yellow-700/50 text-yellow-800 dark:text-yellow-300 bg-gradient-to-br from-yellow-50 to-amber-50/50 dark:from-yellow-950/20 dark:to-amber-950/10 ring-2 ring-yellow-400/10 shadow-sm" 
+                  : "bg-gray-50 border-gray-100 text-gray-500 hover:text-gray-700 dark:bg-gray-800/40 dark:border-gray-700 hover:bg-gray-100/60 dark:hover:bg-gray-700"
               )}
             >
               <span className="text-2xl drop-shadow-sm">💛</span>
@@ -448,8 +448,8 @@ function HygieneModule() {
               className={cn(
                 "flex-1 py-4 rounded-2xl font-bold border transition-all text-sm flex flex-col items-center justify-center space-y-1.5 select-none",
                 type === 'poo' 
-                  ? "bg-amber-101 border-amber-300 dark:border-amber-700/50 text-amber-900 dark:text-amber-300 bg-gradient-to-br from-amber-50 to-orange-50/50 dark:from-amber-950/20 dark:to-orange-950/10 ring-2 ring-amber-400/10 shadow-sm" 
-                  : "bg-gray-50 border-gray-100 text-gray-500 hover:text-gray-700 dark:bg-gray-800/40 dark:border-gray-700 hover:bg-gray-100/60 dark:hover:bg-gray-750"
+                  ? "bg-amber-100 border-amber-300 dark:border-amber-700/50 text-amber-900 dark:text-amber-300 bg-gradient-to-br from-amber-50 to-orange-50/50 dark:from-amber-950/20 dark:to-orange-950/10 ring-2 ring-amber-400/10 shadow-sm" 
+                  : "bg-gray-50 border-gray-100 text-gray-500 hover:text-gray-700 dark:bg-gray-800/40 dark:border-gray-700 hover:bg-gray-100/60 dark:hover:bg-gray-700"
               )}
             >
               <span className="text-2xl drop-shadow-sm">💩</span>
@@ -463,7 +463,7 @@ function HygieneModule() {
               animate={{ opacity: 1, y: 0 }}
               className="space-y-2 pt-1"
             >
-              <label className="block text-[11px] font-bold text-gray-400 dark:text-gray-550 uppercase tracking-widest">Nivel de Humedad</label>
+              <label className="block text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Nivel de Humedad</label>
               <div className="flex space-x-2">
                 {['poco', 'medio', 'lleno'].map((l) => (
                   <button
@@ -473,7 +473,7 @@ function HygieneModule() {
                       "flex-1 py-2.5 rounded-xl text-xs font-bold border capitalize transition-all select-none",
                       level === l 
                         ? "bg-yellow-50 border-yellow-300 text-yellow-800 dark:bg-yellow-950/20 dark:border-yellow-700 dark:text-yellow-300 font-bold" 
-                        : "bg-white dark:bg-gray-750 border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:text-gray-700"
+                        : "bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:text-gray-700"
                     )}
                   >
                     {l}
@@ -490,7 +490,7 @@ function HygieneModule() {
               className="space-y-4 pt-1"
             >
               <div>
-                <label className="block text-[11px] font-bold text-gray-400 dark:text-gray-550 uppercase tracking-widest mb-2">Consistencia / Alertas</label>
+                <label className="block text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2">Consistencia / Alertas</label>
                 
                 <button
                   onClick={() => setTexture('diarrea')}
@@ -498,7 +498,7 @@ function HygieneModule() {
                     "w-full mb-3 py-3 rounded-2xl font-bold border transition-all flex items-center justify-center space-x-2 select-none",
                     texture === 'diarrea' 
                       ? "bg-red-50 dark:bg-red-950/20 border-red-400 text-red-800 dark:text-red-400 ring-2 ring-red-400/10 shadow-sm" 
-                      : "bg-red-50/20 border-red-200/55 text-red-650 hover:bg-red-50 dark:bg-red-950/10 dark:border-red-900/10 dark:text-red-450 dark:hover:bg-red-900/15"
+                      : "bg-red-50/20 border-red-200/55 text-red-600 hover:bg-red-50 dark:bg-red-950/10 dark:border-red-900/10 dark:text-red-400 dark:hover:bg-red-900/15"
                   )}
                 >
                   <AlertTriangle className="w-4 h-4 animate-bounce text-red-500" />
@@ -514,7 +514,7 @@ function HygieneModule() {
                         "flex-1 py-2 rounded-xl text-xs font-bold border capitalize transition-all select-none",
                         texture === t 
                           ? "bg-amber-50 border-amber-300 text-amber-900 dark:bg-amber-950/20 dark:border-amber-700 dark:text-amber-300" 
-                          : "bg-white dark:bg-gray-750 border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400"
+                          : "bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400"
                       )}
                     >
                       {t}
@@ -568,7 +568,7 @@ function HygieneModule() {
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Ej. Color normal, sin irritación"
-                className="w-full p-3.5 border border-gray-200 dark:border-gray-650 bg-gray-50/40 dark:bg-gray-750/30 rounded-xl text-sm focus:ring-2 focus:ring-amber-400 outline-none text-gray-900 dark:text-white"
+                className="w-full p-3.5 border border-gray-200 dark:border-gray-600 bg-gray-50/40 dark:bg-gray-700/30 rounded-xl text-sm focus:ring-2 focus:ring-amber-400 outline-none text-gray-900 dark:text-white"
               />
               <button
                 onClick={handleSave}
@@ -654,15 +654,15 @@ function SleepModule() {
       <div>
         <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 mb-5">
           <div className="flex items-center space-x-3.5">
-            <div className="p-3 bg-gradient-to-br from-indigo-400/15 via-indigo-400/10 to-transparent dark:from-indigo-550/20 rounded-2xl text-indigo-550 dark:text-indigo-400 border border-indigo-100/30">
+            <div className="p-3 bg-gradient-to-br from-indigo-400/15 via-indigo-400/10 to-transparent dark:from-indigo-500/20 rounded-2xl text-indigo-500 dark:text-indigo-400 border border-indigo-100/30">
               <CloudMoon className="w-6 h-6 animate-pulse" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-gray-850 dark:text-gray-100 leading-tight">Sueño</h2>
+              <h2 className="text-lg font-bold text-gray-800 dark:text-gray-100 leading-tight">Sueño</h2>
               <span className="text-[11px] text-gray-400 dark:text-gray-500 md:inline-block hidden">Gestiona siestas y descanso nocturno</span>
             </div>
           </div>
-          <div className="flex bg-gray-100/90 dark:bg-gray-750 p-1 rounded-xl border border-gray-200/20 shrink-0">
+          <div className="flex bg-gray-100/90 dark:bg-gray-700 p-1 rounded-xl border border-gray-200/20 shrink-0">
             <button
               onClick={() => setMode('timer')}
               className={cn(
@@ -732,7 +732,7 @@ function SleepModule() {
                     type="datetime-local"
                     value={manualStart}
                     onChange={(e) => setManualStart(e.target.value)}
-                    className="w-full p-3 border border-gray-200 dark:border-gray-650 bg-gray-50/40 dark:bg-gray-700/35 rounded-xl text-xs focus:ring-2 focus:ring-indigo-505 outline-none text-gray-950 dark:text-white transition-all focus:bg-white"
+                    className="w-full p-3 border border-gray-200 dark:border-gray-600 bg-gray-50/40 dark:bg-gray-700/35 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 outline-none text-gray-950 dark:text-white transition-all"
                   />
                 </div>
                 <div>
@@ -741,18 +741,18 @@ function SleepModule() {
                     type="datetime-local"
                     value={manualEnd}
                     onChange={(e) => setManualEnd(e.target.value)}
-                    className="w-full p-3 border border-gray-200 dark:border-gray-650 bg-gray-50/40 dark:bg-gray-700/35 rounded-xl text-xs focus:ring-2 focus:ring-indigo-505 outline-none text-gray-950 dark:text-white transition-all focus:bg-white"
+                    className="w-full p-3 border border-gray-200 dark:border-gray-600 bg-gray-50/40 dark:bg-gray-700/35 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 outline-none text-gray-950 dark:text-white transition-all"
                   />
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-bold text-gray-405 dark:text-gray-400 uppercase tracking-wider mb-1.5 font-sans">Observaciones</label>
+                <label className="block text-xs font-bold text-gray-400 dark:text-gray-400 uppercase tracking-wider mb-1.5 font-sans">Observaciones</label>
                 <input
                   type="text"
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   placeholder="Ej. Tomó siesta corta pero reparadora"
-                  className="w-full p-3.5 border border-gray-205 dark:border-gray-600 bg-gray-50/40 dark:bg-gray-700/35 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none text-gray-900 dark:text-white transition-all focus:bg-white"
+                  className="w-full p-3.5 border border-gray-200 dark:border-gray-600 bg-gray-50/40 dark:bg-gray-700/35 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none text-gray-900 dark:text-white transition-all"
                 />
               </div>
               <button
@@ -847,23 +847,23 @@ function BathModule() {
     >
       <div>
         <div className="flex items-center space-x-3.5 mb-5">
-          <div className="p-3 bg-gradient-to-br from-teal-400/15 via-teal-400/10 to-transparent dark:from-teal-500/20 rounded-2xl text-teal-555 dark:text-teal-400 border border-teal-100/30">
+          <div className="p-3 bg-gradient-to-br from-teal-400/15 via-teal-400/10 to-transparent dark:from-teal-500/20 rounded-2xl text-teal-500 dark:text-teal-400 border border-teal-100/30">
             <Bath className="w-6 h-6 animate-pulse" />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-gray-850 dark:text-gray-100 leading-tight">Baño</h2>
+            <h2 className="text-lg font-bold text-gray-800 dark:text-gray-100 leading-tight">Baño</h2>
             <span className="text-[11px] text-gray-400 dark:text-gray-500 md:inline-block hidden">Registra momentos refrescantes y relajantes</span>
           </div>
         </div>
 
         <div className="space-y-4">
           <div className="animate-in fade-in duration-200 space-y-3">
-            <label className="block text-xs font-bold text-gray-505 dark:text-gray-400 uppercase tracking-wider">Notas de Baño</label>
+            <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Notas de Baño</label>
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="¿Cómo le fue en el baño? ¿Usaste algún champú especial o juguete nuevo?..."
-              className="w-full p-3.5 border border-gray-200 dark:border-gray-650 bg-gray-55/40 dark:bg-gray-750/35 rounded-2xl text-sm focus:ring-2 focus:ring-teal-400 outline-none resize-none h-24 text-gray-900 dark:text-white transition-all focus:bg-white"
+              className="w-full p-3.5 border border-gray-200 dark:border-gray-600 bg-gray-50/40 dark:bg-gray-700/35 rounded-2xl text-sm focus:ring-2 focus:ring-teal-400 outline-none resize-none h-24 text-gray-900 dark:text-white transition-all"
             />
             <button
               onClick={handleSave}

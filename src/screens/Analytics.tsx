@@ -1009,7 +1009,7 @@ export function Analytics() {
                 </div>
                 <button
                   onClick={() => setSelectedCell(null)}
-                  className="px-2 py-1 text-xs font-bold text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-750 rounded-lg transition-all"
+                  className="px-2 py-1 text-xs font-bold text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all"
                 >
                   Cerrar
                 </button>

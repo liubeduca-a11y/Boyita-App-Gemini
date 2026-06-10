@@ -17,7 +17,7 @@ const PROMPTS = [
 ];
 
 export function TimelineView() {
-  const { timelineEntries, addTimelineEntry, updateTimelineEntry, deleteTimelineEntry, deleteAllTimelineEntries } = useStore();
+  const { timelineEntries, addTimelineEntry, updateTimelineEntry, deleteTimelineEntry } = useStore();
   const [newText, setNewText] = useState('');
   const [newPhoto, setNewPhoto] = useState<string | null>(null);
   const [isAdding, setIsAdding] = useState(false);
@@ -179,20 +179,6 @@ export function TimelineView() {
       {/* Timeline Controls */}
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-medium text-gray-800 dark:text-gray-100">Línea de Tiempo</h2>
-        {timelineEntries.length > 0 && (
-          <button
-            onClick={() => {
-              if(window.confirm('¿Estás seguro de que quieres eliminar TODOS los recuerdos? Esta acción no se puede deshacer.')) {
-                deleteAllTimelineEntries();
-              }
-            }}
-            className="text-red-500 hover:text-red-700 bg-red-50 dark:bg-red-900/10 hover:bg-red-100 dark:hover:bg-red-900/30 px-3 py-1.5 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors"
-            title="Eliminar todos los recuerdos"
-          >
-            <Trash2 className="w-4 h-4" />
-            Eliminar todos
-          </button>
-        )}
       </div>
 
       {/* Timeline */}

@@ -22,7 +22,6 @@ const THEMES: { id: ThemeColor; name: string; color: string }[] = [
   { id: 'coral', name: 'Coral', color: '#F08080' },
 ];
 
-import { DataImporter } from '../components/DataImporter';
 
 export function Settings() {
   const { profile, updateProfile, theme, setTheme, colorMode, setColorMode, familyId } = useStore();
@@ -669,7 +668,6 @@ export function Settings() {
             )}
           </div>
           
-          <DataImporter />
         </div>
       </div>
     </div>

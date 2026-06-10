@@ -514,55 +514,55 @@ export function VaccineView() {
   return (
     <div className="space-y-6" id="vaccine-badge-case-section">
       {/* Intro official card */}
-      <div className="bg-gradient-to-br from-indigo-900 via-slate-800 to-indigo-950 text-white rounded-3xl p-6 border border-indigo-500/20 shadow-xl relative overflow-hidden">
-        <div className="absolute right-0 bottom-0 top-0 w-2/3 bg-radial from-indigo-500/10 to-transparent pointer-events-none" />
+      <div className="bg-gradient-to-br from-theme-light via-white to-theme-light/45 dark:from-theme-dark/15 dark:via-gray-800/80 dark:to-theme-dark/5 text-gray-900 dark:text-gray-100 rounded-3xl p-6 border border-theme-base/30 dark:border-theme-dark/25 shadow-sm relative overflow-hidden">
+        <div className="absolute right-0 bottom-0 top-0 w-2/3 bg-radial from-theme-base/10 to-transparent pointer-events-none" />
         
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-2">
             <div className="flex items-center gap-2">
-              <span className="px-2.5 py-1 rounded-full text-[10px] uppercase font-bold tracking-widest bg-indigo-500/20 border border-indigo-400/30 text-indigo-200">
+              <span className="px-2.5 py-1 rounded-full text-[10px] uppercase font-bold tracking-widest bg-theme-base/20 border border-theme-base/30 text-theme-dark dark:text-theme-base select-none">
                 LIGA DE LA SALUD • IMSS
               </span>
               <span className="text-sm">🏥</span>
             </div>
-            <h2 className="text-2xl font-serif font-black tracking-tight text-indigo-50">
+            <h2 className="text-2xl font-serif font-bold tracking-tight text-gray-800 dark:text-white">
               Estuche de Medallas de {profile.name}
             </h2>
-            <p className="text-indigo-200 text-xs md:text-sm max-w-md font-medium leading-relaxed">
+            <p className="text-gray-500 dark:text-gray-300 text-xs md:text-sm max-w-md font-medium leading-relaxed">
               {rank.desc}
             </p>
           </div>
 
-          <div className="shrink-0 flex items-center gap-4 bg-black/20 backdrop-blur-md p-4 rounded-2xl border border-white/5">
-            <div className="relative w-16 h-16 rounded-full border-4 border-amber-400/40 flex items-center justify-center bg-indigo-950 font-serif font-bold text-lg text-amber-300">
+          <div className="shrink-0 flex items-center gap-4 bg-white/50 dark:bg-gray-800/40 backdrop-blur-md p-4 rounded-2xl border border-gray-100/50 dark:border-gray-700/50 shadow-xs">
+            <div className="relative w-16 h-16 rounded-full border-4 border-theme-base/40 flex items-center justify-center bg-theme-light/30 dark:bg-theme-dark/10 font-serif font-bold text-lg text-theme-dark dark:text-theme-base">
               {porcentajeConseguido}%
               {/* Radial glow */}
-              <div className="absolute inset-0 rounded-full bg-amber-400/5 animate-pulse" />
+              <div className="absolute inset-0 rounded-full bg-theme-base/5 animate-pulse" />
             </div>
 
             <div className="space-y-1">
-              <p className="text-[10px] text-indigo-300 uppercase font-black tracking-wider-md">RANGO ACTUAL</p>
-              <h4 className="text-sm font-bold text-amber-300 flex items-center gap-1.5 leading-none">
-                <Trophy className="w-4 h-4 text-amber-400 shrink-0" />
+              <p className="text-[10px] text-gray-400 dark:text-gray-500 uppercase font-black tracking-widest">RANGO ACTUAL</p>
+              <h4 className="text-sm font-bold text-theme-dark dark:text-theme-base flex items-center gap-1.5 leading-none">
+                <Trophy className="w-4 h-4 text-theme-dark dark:text-theme-base shrink-0" />
                 {rank.title}
               </h4>
-              <p className="text-xs text-indigo-200">{medallasConseguidas} de {medallasTotales} medallas ganadas</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">{medallasConseguidas} de {medallasTotales} medallas ganadas</p>
             </div>
           </div>
         </div>
 
         {/* Progress Bar */}
         <div className="mt-6 space-y-1.5 relative z-10">
-          <div className="flex justify-between text-[11px] text-indigo-200 font-semibold uppercase">
+          <div className="flex justify-between text-[11px] text-gray-400 dark:text-gray-500 font-bold uppercase">
             <span>Progreso del Esquema de Vacunación</span>
             <span>{medallasConseguidas}/{medallasTotales} Dosis</span>
           </div>
-          <div className="h-2.5 w-full bg-slate-900 rounded-full overflow-hidden border border-white/5">
+          <div className="h-2.5 w-full bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden border border-gray-200/50 dark:border-gray-700/60">
             <motion.div 
               initial={{ width: 0 }}
               animate={{ width: `${porcentajeConseguido}%` }}
               transition={{ duration: 1, ease: 'easeOut' }}
-              className="h-full rounded-full bg-gradient-to-r from-amber-400 via-yellow-400 to-emerald-400 shadow-glow" 
+              className="h-full rounded-full bg-gradient-to-r from-theme-base to-theme-dark dark:from-theme-base/85 dark:to-theme-dark/85" 
             />
           </div>
         </div>

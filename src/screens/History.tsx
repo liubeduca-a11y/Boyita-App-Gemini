@@ -167,31 +167,33 @@ export function History() {
   return (
     <div className="p-4 space-y-6 max-w-md md:max-w-4xl mx-auto pb-8">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-gray-800">Historial</h2>
+        <h2 className="text-2xl font-bold text-gray-800 dark:text-white">Historial</h2>
         <div className="flex items-center space-x-2">
           <button 
             onClick={() => setFilterType(filterType === 'all' ? 'custom' : 'all')}
             className={cn(
-              "p-2 rounded-full transition-colors",
-              filterType === 'custom' ? "bg-theme-base text-white" : "bg-theme-light text-theme-dark hover:bg-theme-base hover:text-white"
+              "p-2 rounded-full transition-colors focus:ring-0 outline-none",
+              filterType === 'custom' 
+                ? "bg-theme-base text-white" 
+                : "bg-theme-light dark:bg-gray-800 text-theme-text dark:text-theme-base hover:bg-theme-base hover:text-white dark:hover:bg-theme-base dark:hover:text-white"
             )}
           >
-            <Calendar className="w-5 h-5" />
+            <Calendar className="w-5 h-5" strokeWidth={2.4} />
           </button>
           <div className="relative">
             <button 
               onClick={() => setShowExport(!showExport)}
-              className="p-2 bg-theme-light text-theme-dark rounded-full hover:bg-theme-base hover:text-white transition-colors"
+              className="p-2 bg-theme-light dark:bg-gray-800 text-theme-text dark:text-theme-base rounded-full hover:bg-theme-base hover:text-white dark:hover:bg-theme-base dark:hover:text-white transition-colors focus:ring-0 outline-none"
             >
-              <Download className="w-5 h-5" />
+              <Download className="w-5 h-5" strokeWidth={2.4} />
             </button>
             
             {showExport && (
-              <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden z-30 animate-in fade-in slide-in-from-top-2">
-                <button onClick={exportPDF} className="w-full flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 border-b">
+              <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-150/50 dark:border-gray-700/80 overflow-hidden z-30 animate-in fade-in slide-in-from-top-2">
+                <button onClick={exportPDF} className="w-full flex items-center px-4 py-3 text-sm text-gray-700 dark:text-gray-205 hover:bg-gray-50 dark:hover:bg-gray-700/50 border-b border-gray-100 dark:border-gray-700 transition-colors">
                   <FileText className="w-4 h-4 mr-2 text-red-500" /> Exportar PDF
                 </button>
-                <button onClick={exportCSV} className="w-full flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50">
+                <button onClick={exportCSV} className="w-full flex items-center px-4 py-3 text-sm text-gray-700 dark:text-gray-205 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
                   <FileSpreadsheet className="w-4 h-4 mr-2 text-green-500" /> Exportar Excel (CSV)
                 </button>
               </div>
@@ -202,18 +204,18 @@ export function History() {
 
       <div className="relative">
         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-          <Search className="h-5 w-5 text-gray-400" />
+          <Search className="h-5 w-5 text-gray-400 dark:text-gray-500" />
         </div>
         <input
           type="text"
           placeholder="Buscar en registros y observaciones..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="block w-full pl-10 pr-3 py-2 border border-gray-200 rounded-xl leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-theme-base focus:border-theme-base sm:text-sm transition-colors"
+          className="block w-full pl-10 pr-3 py-2 border border-gray-200 dark:border-gray-700/85 rounded-xl leading-5 bg-white dark:bg-gray-800 text-gray-950 dark:text-white placeholder-gray-500 dark:placeholder-gray-450 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-theme-base focus:border-theme-base sm:text-sm transition-colors"
         />
       </div>
 
-      <div className="flex space-x-2 bg-gray-100 p-1 rounded-xl overflow-x-auto whitespace-nowrap scrollbar-hide">
+      <div className="flex space-x-2 bg-gray-100 dark:bg-gray-800/60 p-1 rounded-xl overflow-x-auto whitespace-nowrap scrollbar-hide border border-gray-200/10">
         {[
           { id: 'all', label: 'Todos' },
           { id: 'feeding', label: 'Alimentación' },
@@ -226,8 +228,10 @@ export function History() {
             key={f.id}
             onClick={() => setEventTypeFilter(f.id as any)}
             className={cn(
-              "px-3 py-1.5 text-sm font-medium rounded-lg transition-all",
-              eventTypeFilter === f.id ? "bg-white text-theme-dark shadow-sm" : "text-gray-500 hover:text-gray-700"
+              "px-3 py-1.5 text-sm font-medium rounded-lg transition-all focus:outline-none focus:ring-0 select-none",
+              eventTypeFilter === f.id 
+                ? "bg-white dark:bg-gray-700 text-theme-dark dark:text-white shadow-sm" 
+                : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
             )}
           >
             {f.label}
@@ -236,70 +240,70 @@ export function History() {
       </div>
 
       {filterType === 'custom' && (
-        <div className="flex space-x-3 bg-white p-3 rounded-xl shadow-sm border border-gray-100 animate-in fade-in slide-in-from-top-2">
+        <div className="flex space-x-3 bg-white dark:bg-gray-800 p-3 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 animate-in fade-in slide-in-from-top-2">
           <div className="flex-1">
-            <label className="block text-xs font-medium text-gray-500 mb-1">Desde</label>
+            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Desde</label>
             <input 
               type="date" 
               value={customStart}
               onChange={(e) => setCustomStart(e.target.value)}
-              className="w-full text-sm p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-theme-base outline-none"
+              className="w-full text-sm p-2 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-theme-base outline-none"
             />
           </div>
           <div className="flex-1">
-            <label className="block text-xs font-medium text-gray-500 mb-1">Hasta</label>
+            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Hasta</label>
             <input 
               type="date" 
               value={customEnd}
               onChange={(e) => setCustomEnd(e.target.value)}
-              className="w-full text-sm p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-theme-base outline-none"
+              className="w-full text-sm p-2 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-theme-base outline-none"
             />
           </div>
         </div>
       )}
 
       {filteredEvents.length === 0 ? (
-        <div className="text-center py-12 text-gray-500">
+        <div className="text-center py-12 text-gray-500 dark:text-gray-450">
           <p>No hay registros aún.</p>
         </div>
       ) : (
         <div className="space-y-6">
           {Object.entries(groupedEvents).map(([date, dayEvents]: [string, BabyEvent[]]) => (
             <div key={date} className="space-y-3">
-              <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider sticky top-0 bg-gray-50 py-2 z-10">
+              <h3 className="text-sm font-semibold text-gray-505 dark:text-gray-400 uppercase tracking-wider sticky top-0 bg-gray-50/95 dark:bg-gray-900/95 backdrop-blur-xs py-2 z-10">
                 {date}
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {dayEvents.map((event) => (
-                  <div key={event.id} className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex items-start group transition-all hover:shadow-md h-full">
-                    <div className="w-10 h-10 rounded-full bg-theme-light flex items-center justify-center text-xl shrink-0">
+                  <div key={event.id} className="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 flex items-start group transition-all hover:shadow-md h-full">
+                    <div className="w-10 h-10 rounded-full bg-theme-light dark:bg-theme-dark/25 flex items-center justify-center text-xl shrink-0">
                       {getEventIcon(event.type)}
                     </div>
                     <div className="ml-3 flex-1">
                       <div className="flex justify-between items-start">
-                        <p className="font-semibold text-gray-800 capitalize">{event.type === 'hygiene' ? 'Higiene' : event.type === 'feeding' ? 'Alimentación' : event.type === 'sleep' ? 'Sueño' : event.type === 'bath' ? 'Baño' : 'Eructo'}</p>
-                        <span className="text-xs text-gray-400 font-medium">{formatEventTime(event.timestamp)}</span>
+                        <p className="font-semibold text-gray-800 dark:text-gray-150 capitalize">{event.type === 'hygiene' ? 'Higiene' : event.type === 'feeding' ? 'Alimentación' : event.type === 'sleep' ? 'Sueño' : event.type === 'bath' ? 'Baño' : 'Eructo'}</p>
+                        <span className="text-xs text-gray-450 dark:text-gray-500 font-medium">{formatEventTime(event.timestamp)}</span>
                       </div>
-                      <p className="text-sm text-gray-600 mt-0.5">{getEventDescription(event)}</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-300 mt-0.5">{getEventDescription(event)}</p>
                       
                       {event.details?.photoUrl && (
-                        <div className="mt-2 rounded-lg overflow-hidden border border-gray-100 w-24 h-24">
+                        <div className="mt-2 rounded-lg overflow-hidden border border-gray-100 dark:border-gray-700 w-24 h-24">
                           <img src={event.details.photoUrl} alt="Foto del evento" className="w-full h-full object-cover" />
                         </div>
                       )}
 
-                      {event.notes && <p className="text-xs text-gray-500 mt-1 italic">"{event.notes}"</p>}
+                      {event.notes && <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 italic">"{event.notes}"</p>}
                     </div>
                     <div className="ml-2 flex flex-col space-y-2 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
                       <button 
                         onClick={() => handleEdit(event)}
-                        className="p-1.5 text-blue-400 hover:bg-blue-50 rounded-lg transition-colors"
+                        className="p-1.5 text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors focus:outline-none focus:ring-0"
                       >
                         <Edit2 className="w-4 h-4" />
                       </button>
                       <button 
                         onClick={() => deleteEvent(event.id)}
-                        className="p-1.5 text-red-400 hover:bg-red-50 rounded-lg transition-colors"
+                        className="p-1.5 text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors focus:outline-none focus:ring-0"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -380,22 +384,22 @@ function EditEventModal({ event, onClose, onSave }: { event: BabyEvent, onClose:
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl max-h-[90vh] overflow-y-auto">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-xl font-semibold text-gray-800">Editar Registro</h3>
-          <button onClick={onClose} className="p-1 text-gray-400 hover:bg-gray-100 rounded-full">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+      <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl p-6 w-full max-w-sm shadow-xl max-h-[90vh] overflow-y-auto">
+        <div className="flex justify-between items-center mb-4 border-b border-gray-100 dark:border-gray-700/60 pb-3">
+          <h3 className="text-xl font-semibold text-gray-800 dark:text-white">Editar Registro</h3>
+          <button onClick={onClose} className="p-1 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
         
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de Evento</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-305 mb-1">Tipo de Evento</label>
             <select 
               value={type} 
               onChange={(e) => setType(e.target.value as any)}
-              className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-theme-base outline-none"
+              className="w-full p-3 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700 text-gray-955 dark:text-white rounded-xl focus:ring-2 focus:ring-theme-base outline-none transition-colors"
             >
               <option value="feeding">Alimentación</option>
               <option value="hygiene">Higiene</option>
@@ -406,24 +410,24 @@ function EditEventModal({ event, onClose, onSave }: { event: BabyEvent, onClose:
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Fecha y Hora</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-305 mb-1">Fecha y Hora</label>
             <input 
               type="datetime-local" 
               value={timestamp}
               onChange={(e) => setTimestamp(e.target.value)}
-              className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-theme-base outline-none"
+              className="w-full p-3 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700 text-gray-955 dark:text-white rounded-xl focus:ring-2 focus:ring-theme-base outline-none transition-colors"
             />
           </div>
 
           {type === 'feeding' && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Onzas Consumidas</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-305 mb-1">Onzas Consumidas</label>
               <input 
                 type="number" 
                 step="0.5"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-theme-base outline-none"
+                className="w-full p-3 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700 text-gray-955 dark:text-white rounded-xl focus:ring-2 focus:ring-theme-base outline-none transition-colors"
               />
             </div>
           )}
@@ -432,23 +436,26 @@ function EditEventModal({ event, onClose, onSave }: { event: BabyEvent, onClose:
             <div className="space-y-3">
               <div className="flex space-x-2">
                 <button
+                  type="button"
                   onClick={() => setHygieneType('pee')}
-                  className={cn("flex-1 py-2 rounded-lg text-sm font-medium border", hygieneType === 'pee' ? "bg-theme-base border-theme-dark text-white" : "bg-gray-50 border-gray-200 text-gray-600")}
+                  className={cn("flex-1 py-2 rounded-lg text-sm font-medium border transition-colors focus:ring-0", hygieneType === 'pee' ? "bg-theme-base border-theme-dark/40 text-white" : "bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300")}
                 >Pipí</button>
                 <button
+                  type="button"
                   onClick={() => setHygieneType('poo')}
-                  className={cn("flex-1 py-2 rounded-lg text-sm font-medium border", hygieneType === 'poo' ? "bg-theme-base border-theme-dark text-white" : "bg-gray-50 border-gray-200 text-gray-600")}
+                  className={cn("flex-1 py-2 rounded-lg text-sm font-medium border transition-colors focus:ring-0", hygieneType === 'poo' ? "bg-theme-base border-theme-dark/40 text-white" : "bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300")}
                 >Popó</button>
                 <button
+                  type="button"
                   onClick={() => setHygieneType('constipation')}
-                  className={cn("flex-1 py-2 rounded-lg text-sm font-medium border", hygieneType === 'constipation' ? "bg-red-500 border-red-600 text-white" : "bg-gray-50 border-gray-200 text-gray-600")}
+                  className={cn("flex-1 py-2 rounded-lg text-sm font-medium border transition-colors focus:ring-0", hygieneType === 'constipation' ? "bg-red-500 border-red-600 text-white" : "bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300")}
                 >Estreñimiento</button>
               </div>
               
               {(hygieneType === 'pee' || hygieneType === 'constipation') && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Nivel</label>
-                  <select value={level} onChange={(e) => setLevel(e.target.value as any)} className="w-full p-3 border border-gray-200 rounded-xl outline-none">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-305 mb-1">Nivel</label>
+                  <select value={level} onChange={(e) => setLevel(e.target.value as any)} className="w-full p-3 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700 text-gray-955 dark:text-white rounded-xl focus:ring-2 focus:ring-theme-base outline-none transition-colors">
                     <option value="poco">Poco</option>
                     <option value="medio">Medio</option>
                     <option value="lleno">Lleno</option>
@@ -459,8 +466,8 @@ function EditEventModal({ event, onClose, onSave }: { event: BabyEvent, onClose:
               {hygieneType === 'poo' && (
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Textura</label>
-                    <select value={texture} onChange={(e) => setTexture(e.target.value as any)} className="w-full p-3 border border-gray-200 rounded-xl outline-none">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-305 mb-1">Textura</label>
+                    <select value={texture} onChange={(e) => setTexture(e.target.value as any)} className="w-full p-3 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700 text-gray-955 dark:text-white rounded-xl focus:ring-2 focus:ring-theme-base outline-none transition-colors">
                       <option value="liquido">Líquido</option>
                       <option value="viscoso">Viscoso</option>
                       <option value="pastoso">Pastoso</option>
@@ -469,21 +476,23 @@ function EditEventModal({ event, onClose, onSave }: { event: BabyEvent, onClose:
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Foto (Opcional)</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-305 mb-2">Foto (Opcional)</label>
                     {photoUrl ? (
-                      <div className="relative rounded-xl overflow-hidden border border-gray-200 h-32 bg-gray-50">
+                      <div className="relative rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 h-32 bg-gray-50 dark:bg-gray-700">
                         <img src={photoUrl} alt="Popó" className="w-full h-full object-cover" />
                         <button 
+                          type="button"
                           onClick={() => setPhotoUrl(null)}
-                          className="absolute top-2 right-2 p-1.5 bg-black/50 text-white rounded-full hover:bg-black/70"
+                          className="absolute top-2 right-2 p-1.5 bg-black/50 text-white rounded-full hover:bg-black/70 transition-colors"
                         >
                           <X className="w-4 h-4" />
                         </button>
                       </div>
                     ) : (
                       <button
+                        type="button"
                         onClick={() => fileInputRef.current?.click()}
-                        className="w-full py-4 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 hover:bg-gray-50 hover:border-gray-400 transition-all flex flex-col items-center justify-center space-y-2"
+                        className="w-full py-4 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500 transition-all flex flex-col items-center justify-center space-y-2 focus:ring-0 outline-none"
                       >
                         <Camera className="w-6 h-6" />
                         <span className="text-sm font-medium">Tomar foto o subir imagen</span>
@@ -504,34 +513,35 @@ function EditEventModal({ event, onClose, onSave }: { event: BabyEvent, onClose:
 
           {type === 'sleep' && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Fin del Sueño</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-350 mb-1">Fin del Sueño</label>
               <input 
                 type="datetime-local" 
                 value={endTimestamp}
                 onChange={(e) => setEndTimestamp(e.target.value)}
-                className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-theme-base outline-none"
+                className="w-full p-3 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700 text-gray-955 dark:text-white rounded-xl focus:ring-2 focus:ring-theme-base outline-none transition-colors"
               />
             </div>
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Observaciones</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-350 mb-1">Observaciones</label>
             <textarea 
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-theme-base outline-none resize-none"
+              className="w-full p-3 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700 text-gray-955 dark:text-white rounded-xl focus:ring-2 focus:ring-theme-base outline-none resize-none transition-colors"
               rows={2}
             />
           </div>
 
           <button
+            type="button"
             onClick={handleSave}
             disabled={showSaveSuccess}
             className={cn(
-              "w-full py-3 rounded-xl font-semibold flex items-center justify-center space-x-2 transition-all duration-300",
+              "w-full py-3 rounded-xl font-semibold flex items-center justify-center space-x-2 transition-all duration-300 focus:outline-none focus:ring-0",
               showSaveSuccess 
                 ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 scale-95" 
-                : "bg-theme-dark text-white disabled:opacity-50"
+                : "bg-theme-dark dark:bg-theme-base text-white dark:text-theme-dark disabled:opacity-50"
             )}
           >
             <Check className="w-5 h-5" />
