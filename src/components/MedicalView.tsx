@@ -260,17 +260,17 @@ export function MedicalView() {
               </div>
             </div>
             <div className="mb-4">
-              <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Notas del Médico</label>
+              <label className="block text-xs font-black text-gray-700 dark:text-gray-300 mb-1">Notas del Médico</label>
               <textarea
                 value={newRecord.notes}
                 onChange={(e) => setNewRecord({ ...newRecord, notes: e.target.value })}
-                className="w-full p-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:ring-2 focus:ring-theme-dark dark:focus:ring-theme-base focus:border-transparent resize-none h-24 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
+                className="w-full p-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:ring-2 focus:ring-theme-dark dark:focus:ring-theme-base focus:border-transparent resize-none h-24 text-gray-900 dark:text-gray-100 placeholder-gray-550 dark:placeholder-gray-400"
                 placeholder="Indicaciones, vacunas, observaciones..."
               />
             </div>
             
             <div className="mb-6">
-              <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">Receta o Documento Médico</label>
+              <label className="block text-xs font-black text-gray-700 dark:text-gray-300 mb-2">Receta o Documento Médico</label>
               <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-4 text-center bg-gray-50 dark:bg-gray-900/50">
                 {newRecord.prescriptionUrl ? (
                   <div className="relative rounded-lg overflow-hidden h-32 w-full max-w-sm mx-auto">
@@ -286,10 +286,10 @@ export function MedicalView() {
                   <div>
                     <button 
                       onClick={() => fileInputRef.current?.click()}
-                      className="flex flex-col items-center justify-center w-full h-24 text-gray-500 dark:text-gray-400 hover:text-theme-base transition-colors"
+                      className="flex flex-col items-center justify-center w-full h-24 text-gray-650 dark:text-gray-350 hover:text-theme-base transition-colors"
                     >
-                      <Camera className="w-8 h-8 mb-2 opacity-50" />
-                      <span className="text-sm font-medium">Escanear o tomar foto</span>
+                      <Camera className="w-8 h-8 mb-2 opacity-55" />
+                      <span className="text-sm font-bold">Escanear o tomar foto</span>
                     </button>
                     <input 
                       type="file" 
@@ -311,7 +311,7 @@ export function MedicalView() {
                   setEditingRecordId(null);
                   setNewRecord({ weight: '', height: '', notes: '', prescriptionUrl: '' });
                 }}
-                className="px-4 py-2 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+                className="px-4 py-2 text-sm font-bold text-gray-650 dark:text-gray-350 hover:text-gray-850 dark:hover:text-gray-200 transition-colors"
               >
                 Cancelar
               </button>
@@ -334,7 +334,7 @@ export function MedicalView() {
 
         <div className="space-y-4">
           {filteredRecords.length === 0 ? (
-            <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+            <div className="text-center py-8 text-gray-750 dark:text-gray-405 font-medium">
               {searchTerm ? 'No se encontraron consultas.' : 'Aún no hay consultas registradas.'}
             </div>
           ) : (
@@ -376,12 +376,12 @@ export function MedicalView() {
                 <div key={record.id} className="bg-white dark:bg-gray-800 rounded-2xl p-5 border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow">
                   <div className="flex items-center justify-between mb-4 pb-4 border-b border-gray-100 dark:border-gray-700">
                     <div className="flex items-center gap-3">
-                      <div className="p-2 bg-gray-50 dark:bg-gray-900 rounded-full text-gray-400 dark:text-gray-500">
+                      <div className="p-2 bg-gray-50 dark:bg-gray-900 rounded-full text-gray-600 dark:text-gray-400">
                         <Stethoscope className="w-5 h-5" />
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-gray-800 dark:text-gray-100">Consulta Pediátrica</p>
-                        <time className="text-xs text-gray-500 dark:text-gray-400">
+                        <p className="text-sm font-bold text-gray-900 dark:text-gray-50">Consulta Pediátrica</p>
+                        <time className="text-xs text-gray-700 dark:text-gray-350 font-bold">
                           {(() => {
                             if (!record.date) return 'Fecha desconocida';
                             try {

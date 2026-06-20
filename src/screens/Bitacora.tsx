@@ -2,10 +2,11 @@ import React, { useState } from 'react';
 import { TimelineView } from '../components/TimelineView';
 import { MedicalView } from '../components/MedicalView';
 import { VaccineView } from '../components/VaccineView';
-import { BookHeart, Stethoscope, Syringe } from 'lucide-react';
+import { OuncesCalculator } from '../components/OuncesCalculator';
+import { BookHeart, Stethoscope, Syringe, Milk } from 'lucide-react';
 
 export function Bitacora() {
-  const [activeTab, setActiveTab] = useState<'timeline' | 'medical' | 'vaccines'>('timeline');
+  const [activeTab, setActiveTab] = useState<'timeline' | 'medical' | 'vaccines' | 'ounces'>('timeline');
 
   return (
     <div className="min-h-full bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 font-sans">
@@ -48,6 +49,17 @@ export function Bitacora() {
               <Syringe className="w-4 h-4 text-amber-500" />
               Vacunas
             </button>
+            <button
+              onClick={() => setActiveTab('ounces')}
+              className={`pb-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 transition-colors whitespace-nowrap ${
+                activeTab === 'ounces'
+                  ? 'border-amber-500 text-amber-650 dark:border-amber-400 dark:text-amber-400'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
+              }`}
+            >
+              <Milk className="w-4 h-4 text-orange-400" />
+              Calculadora Leche
+            </button>
           </div>
         </div>
       </header>
@@ -56,6 +68,7 @@ export function Bitacora() {
         {activeTab === 'timeline' && <TimelineView />}
         {activeTab === 'medical' && <MedicalView />}
         {activeTab === 'vaccines' && <VaccineView />}
+        {activeTab === 'ounces' && <OuncesCalculator />}
       </div>
     </div>
   );

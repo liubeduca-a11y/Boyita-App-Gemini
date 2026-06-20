@@ -19,6 +19,8 @@ interface LayoutProps {
 export function Layout({ children, activeTab, onTabChange }: LayoutProps) {
   const theme = useStore((state) => state.theme);
   const colorMode = useStore((state) => state.colorMode);
+  const profile = useStore((state) => state.profile);
+  const babyPhoto = profile?.photoUrl || logoUrl;
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -65,7 +67,7 @@ export function Layout({ children, activeTab, onTabChange }: LayoutProps) {
       <header className="md:hidden bg-theme-base dark:bg-theme-dark/40 text-theme-text dark:text-theme-base px-4 py-4 shadow-sm z-50 flex items-center justify-between shrink-0">
         <h1 className="text-xl font-semibold tracking-tight">Boyita App</h1>
         <div className="w-8 h-8 rounded-full bg-white/10 dark:bg-black/10 overflow-hidden flex items-center justify-center border border-white/20">
-          <img src={logoUrl} alt="Boyita logotype" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+          <img src={babyPhoto} alt="Boyita logotype" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
         </div>
       </header>
 
@@ -73,7 +75,7 @@ export function Layout({ children, activeTab, onTabChange }: LayoutProps) {
       <aside className="hidden md:flex flex-col w-20 lg:w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 z-20 shrink-0 transition-all duration-300">
         <div className="p-4 lg:p-6 flex items-center justify-center lg:justify-start lg:space-x-3 bg-theme-base dark:bg-theme-dark/40 text-theme-text dark:text-theme-base">
           <div className="w-10 h-10 rounded-full bg-white/15 dark:bg-black/15 overflow-hidden flex items-center justify-center border border-white/25 shrink-0">
-            <img src={logoUrl} alt="Boyita logo" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+            <img src={babyPhoto} alt="Boyita logo" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
           </div>
           <h1 className="text-xl lg:text-2xl font-semibold tracking-tight hidden lg:block overflow-hidden whitespace-nowrap">Boyita App</h1>
         </div>

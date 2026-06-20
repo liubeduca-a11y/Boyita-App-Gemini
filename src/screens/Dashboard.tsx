@@ -190,8 +190,8 @@ function FeedingModule() {
               <Milk className="w-6 h-6 animate-pulse" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-gray-800 dark:text-gray-100 leading-tight">Alimentación</h2>
-              <span className="text-[11px] text-gray-400 dark:text-gray-500 md:inline-block hidden">Tomas y onzas de fórmula o leche</span>
+              <h2 className="text-lg font-bold text-gray-900 dark:text-gray-50 leading-tight">Alimentación</h2>
+              <span className="text-[11px] text-gray-650 dark:text-gray-400 md:inline-block hidden font-medium">Tomas y onzas de fórmula o leche</span>
             </div>
           </div>
           <div className="flex bg-gray-100/90 dark:bg-gray-700 p-1 rounded-xl border border-gray-200/20 shrink-0">
@@ -201,7 +201,7 @@ function FeedingModule() {
                 "p-2 rounded-lg transition-all flex items-center space-x-1.5 text-xs font-bold select-none focus:outline-none focus:ring-0",
                 mode === 'manual' 
                   ? "bg-white dark:bg-gray-700 shadow-sm text-theme-dark dark:text-theme-base border border-gray-200/10 dark:border-gray-600" 
-                  : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+                  : "text-gray-650 dark:text-gray-350 hover:text-gray-850 dark:hover:text-gray-200"
               )}
             >
               <Edit3 className="w-3.5 h-3.5" />
@@ -213,7 +213,7 @@ function FeedingModule() {
                 "p-2 rounded-lg transition-all flex items-center space-x-1.5 text-xs font-bold select-none focus:outline-none focus:ring-0",
                 mode === 'timer' 
                   ? "bg-white dark:bg-gray-700 shadow-sm text-theme-dark dark:text-theme-base border border-gray-200/10 dark:border-gray-600" 
-                  : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+                  : "text-gray-650 dark:text-gray-350 hover:text-gray-850 dark:hover:text-gray-200"
               )}
             >
               <Timer className="w-3.5 h-3.5" />
@@ -254,27 +254,27 @@ function FeedingModule() {
           ) : (
             <div className="space-y-4 animate-in fade-in duration-200">
               <div>
-                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Onzas Consumidas</label>
+                <label className="block text-xs font-black text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-1.5">Onzas Consumidas</label>
                 <div className="relative">
                   <input
                     type="number"
                     step="0.5"
                     value={oz}
                     onChange={(e) => setOz(e.target.value)}
-                    className="w-full p-3.5 pl-4 border border-gray-200 dark:border-gray-600 bg-gray-50/40 dark:bg-gray-700/35 rounded-xl focus:ring-2 focus:ring-sky-400 dark:focus:ring-sky-500/50 outline-none text-lg font-bold text-gray-900 dark:text-white transition-all"
+                    className="w-full p-3.5 pl-4 border border-gray-300 dark:border-gray-600 bg-gray-50/40 dark:bg-gray-700/35 rounded-xl focus:ring-2 focus:ring-sky-400 dark:focus:ring-sky-500/50 outline-none text-lg font-bold text-gray-900 dark:text-white transition-all placeholder-gray-500 dark:placeholder-gray-400"
                     placeholder="Ej. 4.5"
                   />
-                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-bold text-gray-400 dark:text-gray-400">oz</span>
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-bold text-gray-600 dark:text-gray-350">oz</span>
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Observaciones</label>
+                <label className="block text-xs font-black text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-1.5">Observaciones</label>
                 <input
                   type="text"
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   placeholder="Ej. Tomó con buen ritmo, con eructo hábil"
-                  className="w-full p-3.5 border border-gray-200 dark:border-gray-600 bg-gray-50/40 dark:bg-gray-700/35 rounded-xl text-sm focus:ring-2 focus:ring-sky-400 dark:focus:ring-sky-500/50 outline-none text-gray-900 dark:text-white transition-all"
+                  className="w-full p-3.5 border border-gray-300 dark:border-gray-600 bg-gray-50/40 dark:bg-gray-700/35 rounded-xl text-sm focus:ring-2 focus:ring-sky-400 dark:focus:ring-sky-500/50 outline-none text-gray-900 dark:text-white transition-all placeholder-gray-500 dark:placeholder-gray-400"
                 />
               </div>
               <button
@@ -319,23 +319,23 @@ function FeedingModule() {
             </h3>
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Onzas Consumidas</label>
+                <label className="block text-xs font-black text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-1.5">Onzas Consumidas</label>
                 <input
                   type="number"
                   step="0.5"
                   value={oz}
                   onChange={(e) => setOz(e.target.value)}
-                  className="w-full p-3.5 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-xl focus:ring-2 focus:ring-sky-400 outline-none text-lg font-bold text-gray-900 dark:text-white"
+                  className="w-full p-3.5 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-xl focus:ring-2 focus:ring-sky-400 outline-none text-lg font-bold text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                   placeholder="Ej. 4.5"
                   autoFocus
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Observaciones</label>
+                <label className="block text-xs font-black text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-1.5">Observaciones</label>
                 <textarea
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  className="w-full p-3.5 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-xl focus:ring-2 focus:ring-sky-400 outline-none resize-none text-sm text-gray-900 dark:text-white"
+                  className="w-full p-3.5 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-xl focus:ring-2 focus:ring-sky-400 outline-none resize-none text-sm text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                   rows={2}
                   placeholder="Opcional..."
                 />
@@ -352,7 +352,7 @@ function FeedingModule() {
                   disabled={!oz}
                   className="flex-1 py-3 bg-gradient-to-r from-sky-500 to-indigo-500 text-white rounded-2xl font-bold text-sm disabled:opacity-40 select-none shadow-md shadow-sky-500/10 hover:opacity-95"
                 >
-                  Guardar
+                Guardar
                 </button>
               </div>
             </div>
@@ -371,6 +371,7 @@ function HygieneModule() {
   const [notes, setNotes] = useState('');
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -389,6 +390,16 @@ function HygieneModule() {
 
   const handleSave = () => {
     if (!type) return;
+    if (type === 'pee' && !level) {
+      setError('Por favor, selecciona el nivel de llenado del pañal');
+      return;
+    }
+    if (type === 'poo' && !texture) {
+      setError('Por favor, selecciona la consistencia / textura del popó');
+      return;
+    }
+
+    setError(null);
     addEvent({
       type: 'hygiene',
       timestamp: Date.now(),
@@ -421,35 +432,35 @@ function HygieneModule() {
       <div>
         <div className="flex items-center space-x-3.5 mb-5">
           <div className="p-3 bg-gradient-to-br from-amber-400/15 via-amber-400/10 to-transparent dark:from-amber-500/20 rounded-2xl text-amber-500 dark:text-amber-400 border border-amber-100/30">
-            <Sparkles className="w-6 h-6" />
+            <Sparkles className="w-6 h-6 animate-pulse" />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-gray-800 dark:text-gray-100 leading-tight">Higiene</h2>
-            <span className="text-[11px] text-gray-400 dark:text-gray-500 md:inline-block hidden">Registro de pañal: pipí o popó</span>
+            <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 leading-tight">Higiene</h2>
+            <span className="text-[11px] text-gray-650 dark:text-gray-400 md:inline-block hidden font-medium">Registro de pañal: pipí o popó</span>
           </div>
         </div>
 
         <div className="space-y-4">
           <div className="flex space-x-4">
             <button
-              onClick={() => { setType('pee'); setTexture(null); setPhotoUrl(null); }}
+              onClick={() => { setType('pee'); setTexture(null); setPhotoUrl(null); setError(null); }}
               className={cn(
                 "flex-1 py-4 rounded-2xl font-bold border transition-all text-sm flex flex-col items-center justify-center space-y-1.5 select-none",
                 type === 'pee' 
                   ? "bg-yellow-500/5 border-yellow-300 dark:border-yellow-700/50 text-yellow-800 dark:text-yellow-300 bg-gradient-to-br from-yellow-50 to-amber-50/50 dark:from-yellow-950/20 dark:to-amber-950/10 ring-2 ring-yellow-400/10 shadow-sm" 
-                  : "bg-gray-50 border-gray-100 text-gray-500 hover:text-gray-700 dark:bg-gray-800/40 dark:border-gray-700 hover:bg-gray-100/60 dark:hover:bg-gray-700"
+                  : "bg-gray-50 border-gray-150 text-gray-650 hover:text-gray-850 dark:bg-gray-800/40 dark:border-gray-700 hover:bg-gray-100/60 dark:hover:bg-gray-700 font-extrabold"
               )}
             >
               <span className="text-2xl drop-shadow-sm">💛</span>
               <span>Pipí</span>
             </button>
             <button
-              onClick={() => { setType('poo'); setLevel(null); }}
+              onClick={() => { setType('poo'); setLevel(null); setError(null); }}
               className={cn(
                 "flex-1 py-4 rounded-2xl font-bold border transition-all text-sm flex flex-col items-center justify-center space-y-1.5 select-none",
                 type === 'poo' 
                   ? "bg-amber-100 border-amber-300 dark:border-amber-700/50 text-amber-900 dark:text-amber-300 bg-gradient-to-br from-amber-50 to-orange-50/50 dark:from-amber-950/20 dark:to-orange-950/10 ring-2 ring-amber-400/10 shadow-sm" 
-                  : "bg-gray-50 border-gray-100 text-gray-500 hover:text-gray-700 dark:bg-gray-800/40 dark:border-gray-700 hover:bg-gray-100/60 dark:hover:bg-gray-700"
+                  : "bg-gray-50 border-gray-150 text-gray-650 hover:text-gray-850 dark:bg-gray-800/40 dark:border-gray-700 hover:bg-gray-100/60 dark:hover:bg-gray-700 font-extrabold"
               )}
             >
               <span className="text-2xl drop-shadow-sm">💩</span>
@@ -463,17 +474,17 @@ function HygieneModule() {
               animate={{ opacity: 1, y: 0 }}
               className="space-y-2 pt-1"
             >
-              <label className="block text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Nivel de Humedad</label>
+              <label className="block text-[11px] font-black text-gray-700 dark:text-gray-300 uppercase tracking-widest">Nivel de Humedad</label>
               <div className="flex space-x-2">
                 {['poco', 'medio', 'lleno'].map((l) => (
                   <button
                     key={l}
-                    onClick={() => setLevel(l as any)}
+                    onClick={() => { setLevel(l as any); setError(null); }}
                     className={cn(
                       "flex-1 py-2.5 rounded-xl text-xs font-bold border capitalize transition-all select-none",
                       level === l 
                         ? "bg-yellow-50 border-yellow-300 text-yellow-800 dark:bg-yellow-950/20 dark:border-yellow-700 dark:text-yellow-300 font-bold" 
-                        : "bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:text-gray-700"
+                        : "bg-white dark:bg-gray-700 border-gray-250 dark:border-gray-600 text-gray-650 dark:text-gray-350 hover:text-gray-850"
                     )}
                   >
                     {l}
@@ -490,15 +501,15 @@ function HygieneModule() {
               className="space-y-4 pt-1"
             >
               <div>
-                <label className="block text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2">Consistencia / Alertas</label>
+                <label className="block text-[11px] font-black text-gray-700 dark:text-gray-300 uppercase tracking-widest mb-2">Consistencia / Alertas</label>
                 
                 <button
-                  onClick={() => setTexture('diarrea')}
+                  onClick={() => { setTexture('diarrea'); setError(null); }}
                   className={cn(
                     "w-full mb-3 py-3 rounded-2xl font-bold border transition-all flex items-center justify-center space-x-2 select-none",
                     texture === 'diarrea' 
                       ? "bg-red-50 dark:bg-red-950/20 border-red-400 text-red-800 dark:text-red-400 ring-2 ring-red-400/10 shadow-sm" 
-                      : "bg-red-50/20 border-red-200/55 text-red-600 hover:bg-red-50 dark:bg-red-950/10 dark:border-red-900/10 dark:text-red-400 dark:hover:bg-red-900/15"
+                      : "bg-red-50/20 border-red-200/55 text-red-650 hover:bg-red-50 dark:bg-red-950/10 dark:border-red-900/10 dark:text-red-400 dark:hover:bg-red-900/15 font-black"
                   )}
                 >
                   <AlertTriangle className="w-4 h-4 animate-bounce text-red-500" />
@@ -509,12 +520,12 @@ function HygieneModule() {
                   {['liquido', 'viscoso', 'pastoso', 'duro'].map((t) => (
                     <button
                       key={t}
-                      onClick={() => setTexture(t as any)}
+                      onClick={() => { setTexture(t as any); setError(null); }}
                       className={cn(
                         "flex-1 py-2 rounded-xl text-xs font-bold border capitalize transition-all select-none",
                         texture === t 
                           ? "bg-amber-50 border-amber-300 text-amber-900 dark:bg-amber-950/20 dark:border-amber-700 dark:text-amber-300" 
-                          : "bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400"
+                          : "bg-white dark:bg-gray-700 border-gray-250 dark:border-gray-600 text-gray-650 dark:text-gray-350 hover:text-gray-850"
                       )}
                     >
                       {t}
@@ -524,7 +535,7 @@ function HygieneModule() {
               </div>
               
               <div>
-                <label className="block text-[11px] font-bold text-gray-400 dark:text-gray-550 uppercase tracking-widest mb-2">Foto de Referencia (Opcional)</label>
+                <label className="block text-[11px] font-black text-gray-700 dark:text-gray-300 uppercase tracking-widest mb-2">Foto de Referencia (Opcional)</label>
                 {photoUrl ? (
                   <div className="relative rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-700 h-36 bg-gray-50 dark:bg-gray-900">
                     <img src={photoUrl} alt="Foto pañal" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
@@ -538,12 +549,12 @@ function HygieneModule() {
                 ) : (
                   <button
                     onClick={() => fileInputRef.current?.click()}
-                    className="w-full py-4.5 border-2 border-dashed border-gray-200 hover:border-amber-305 dark:border-gray-700 rounded-2xl text-gray-500 dark:text-gray-400 hover:bg-amber-500/5 transition-all flex flex-col items-center justify-center space-y-1.5"
+                    className="w-full py-4.5 border-2 border-dashed border-gray-200 hover:border-amber-305 dark:border-gray-700 rounded-2xl text-gray-600 dark:text-gray-350 hover:bg-amber-500/5 transition-all flex flex-col items-center justify-center space-y-1.5"
                   >
-                    <div className="p-2 bg-gray-50 dark:bg-gray-800 rounded-xl text-gray-400 dark:text-gray-550">
+                    <div className="p-2 bg-gray-50 dark:bg-gray-800 rounded-xl text-gray-500 dark:text-gray-400">
                       <Camera className="w-5 h-5" />
                     </div>
-                    <span className="text-xs font-bold text-gray-500 dark:text-gray-400">Capturar o subir imagen</span>
+                    <span className="text-xs font-bold text-gray-650 dark:text-gray-350">Capturar o subir imagen</span>
                   </button>
                 )}
                 <input 
@@ -563,12 +574,23 @@ function HygieneModule() {
               animate={{ opacity: 1, scale: 1 }}
               className="space-y-4 pt-1"
             >
+              {error && (
+                <motion.div
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="p-3 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/40 rounded-xl text-xs font-bold text-red-650 dark:text-red-400 flex items-center space-x-2"
+                >
+                  <AlertTriangle className="w-4 h-4 shrink-0 text-red-500" />
+                  <span>{error}</span>
+                </motion.div>
+              )}
+
               <input
                 type="text"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Ej. Color normal, sin irritación"
-                className="w-full p-3.5 border border-gray-200 dark:border-gray-600 bg-gray-50/40 dark:bg-gray-700/30 rounded-xl text-sm focus:ring-2 focus:ring-amber-400 outline-none text-gray-900 dark:text-white"
+                className="w-full p-3.5 border border-gray-300 dark:border-gray-600 bg-gray-50/40 dark:bg-gray-700/30 rounded-xl text-sm focus:ring-2 focus:ring-amber-400 outline-none text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
               />
               <button
                 onClick={handleSave}
@@ -658,8 +680,8 @@ function SleepModule() {
               <CloudMoon className="w-6 h-6 animate-pulse" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-gray-800 dark:text-gray-100 leading-tight">Sueño</h2>
-              <span className="text-[11px] text-gray-400 dark:text-gray-500 md:inline-block hidden">Gestiona siestas y descanso nocturno</span>
+              <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 leading-tight">Sueño</h2>
+              <span className="text-[11px] text-gray-650 dark:text-gray-400 md:inline-block hidden font-medium">Gestiona siestas y descanso nocturno</span>
             </div>
           </div>
           <div className="flex bg-gray-100/90 dark:bg-gray-700 p-1 rounded-xl border border-gray-200/20 shrink-0">
@@ -669,7 +691,7 @@ function SleepModule() {
                 "p-2 rounded-lg transition-all flex items-center space-x-1.5 text-xs font-bold select-none focus:outline-none focus:ring-0",
                 mode === 'timer' 
                   ? "bg-white dark:bg-gray-700 shadow-sm text-theme-dark dark:text-theme-base border border-gray-200/10 dark:border-gray-600" 
-                  : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+                  : "text-gray-650 dark:text-gray-350 hover:text-gray-850 dark:hover:text-gray-250"
               )}
             >
               <Timer className="w-3.5 h-3.5" />
@@ -681,7 +703,7 @@ function SleepModule() {
                 "p-2 rounded-lg transition-all flex items-center space-x-1.5 text-xs font-bold select-none focus:outline-none focus:ring-0",
                 mode === 'manual' 
                   ? "bg-white dark:bg-gray-700 shadow-sm text-theme-dark dark:text-theme-base border border-gray-200/10 dark:border-gray-600" 
-                  : "text-gray-500 dark:text-gray-400 hover:text-gray-700 hover:text-gray-900 dark:hover:text-gray-200"
+                  : "text-gray-650 dark:text-gray-350 hover:text-gray-850 hover:text-gray-905 dark:hover:text-gray-150"
               )}
             >
               <Edit3 className="w-3.5 h-3.5" />
@@ -727,32 +749,32 @@ function SleepModule() {
             <div className="space-y-4 animate-in fade-in duration-200">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div>
-                  <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Inicio</label>
+                  <label className="block text-xs font-black text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-1.5">Inicio</label>
                   <input
                     type="datetime-local"
                     value={manualStart}
                     onChange={(e) => setManualStart(e.target.value)}
-                    className="w-full p-3 border border-gray-200 dark:border-gray-600 bg-gray-50/40 dark:bg-gray-700/35 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 outline-none text-gray-950 dark:text-white transition-all"
+                    className="w-full p-3 border border-gray-350 dark:border-gray-600 bg-gray-50/40 dark:bg-gray-700/35 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 outline-none text-gray-950 dark:text-white transition-all font-bold"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Fin</label>
+                  <label className="block text-xs font-black text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-1.5">Fin</label>
                   <input
                     type="datetime-local"
                     value={manualEnd}
                     onChange={(e) => setManualEnd(e.target.value)}
-                    className="w-full p-3 border border-gray-200 dark:border-gray-600 bg-gray-50/40 dark:bg-gray-700/35 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 outline-none text-gray-950 dark:text-white transition-all"
+                    className="w-full p-3 border border-gray-350 dark:border-gray-600 bg-gray-50/40 dark:bg-gray-700/35 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 outline-none text-gray-950 dark:text-white transition-all font-bold"
                   />
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-bold text-gray-400 dark:text-gray-400 uppercase tracking-wider mb-1.5 font-sans">Observaciones</label>
+                <label className="block text-xs font-black text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-1.5 font-sans">Observaciones</label>
                 <input
                   type="text"
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   placeholder="Ej. Tomó siesta corta pero reparadora"
-                  className="w-full p-3.5 border border-gray-200 dark:border-gray-600 bg-gray-50/40 dark:bg-gray-700/35 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none text-gray-900 dark:text-white transition-all"
+                  className="w-full p-3.5 border border-gray-350 dark:border-gray-600 bg-gray-50/40 dark:bg-gray-700/35 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none text-gray-900 dark:text-white transition-all placeholder-gray-500 dark:placeholder-gray-400"
                 />
               </div>
               <button
@@ -782,11 +804,11 @@ function SleepModule() {
             </h3>
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Observaciones</label>
+                <label className="block text-xs font-black text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-1.5">Observaciones</label>
                 <textarea
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  className="w-full p-3.5 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none resize-none text-sm text-gray-900 dark:text-white"
+                  className="w-full p-3.5 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none resize-none text-sm text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                   rows={2}
                   placeholder="Opcional..."
                 />
@@ -851,19 +873,19 @@ function BathModule() {
             <Bath className="w-6 h-6 animate-pulse" />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-gray-800 dark:text-gray-100 leading-tight">Baño</h2>
-            <span className="text-[11px] text-gray-400 dark:text-gray-500 md:inline-block hidden">Registra momentos refrescantes y relajantes</span>
+            <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 leading-tight">Baño</h2>
+            <span className="text-[11px] text-gray-650 dark:text-gray-400 md:inline-block hidden font-medium">Registra momentos refrescantes y relajantes</span>
           </div>
         </div>
 
         <div className="space-y-4">
           <div className="animate-in fade-in duration-200 space-y-3">
-            <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Notas de Baño</label>
+            <label className="block text-xs font-black text-gray-700 dark:text-gray-300 uppercase tracking-wider">Notas de Baño</label>
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="¿Cómo le fue en el baño? ¿Usaste algún champú especial o juguete nuevo?..."
-              className="w-full p-3.5 border border-gray-200 dark:border-gray-600 bg-gray-50/40 dark:bg-gray-700/35 rounded-2xl text-sm focus:ring-2 focus:ring-teal-400 outline-none resize-none h-24 text-gray-900 dark:text-white transition-all"
+              className="w-full p-3.5 border border-gray-300 dark:border-gray-600 bg-gray-50/40 dark:bg-gray-700/35 rounded-2xl text-sm focus:ring-2 focus:ring-teal-400 outline-none resize-none h-24 text-gray-900 dark:text-white transition-all placeholder-gray-500 dark:placeholder-gray-400"
             />
             <button
               onClick={handleSave}

@@ -541,19 +541,19 @@ export function VaccineView() {
             </div>
 
             <div className="space-y-1">
-              <p className="text-[10px] text-gray-400 dark:text-gray-500 uppercase font-black tracking-widest">RANGO ACTUAL</p>
+              <p className="text-[10px] text-gray-650 dark:text-gray-400 uppercase font-black tracking-widest bg-gray-100/30 dark:bg-gray-800/20 px-1 py-0.5 rounded">RANGO ACTUAL</p>
               <h4 className="text-sm font-bold text-theme-dark dark:text-theme-base flex items-center gap-1.5 leading-none">
                 <Trophy className="w-4 h-4 text-theme-dark dark:text-theme-base shrink-0" />
                 {rank.title}
               </h4>
-              <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">{medallasConseguidas} de {medallasTotales} medallas ganadas</p>
+              <p className="text-xs text-gray-750 dark:text-gray-305 font-bold">{medallasConseguidas} de {medallasTotales} medallas ganadas</p>
             </div>
           </div>
         </div>
 
         {/* Progress Bar */}
         <div className="mt-6 space-y-1.5 relative z-10">
-          <div className="flex justify-between text-[11px] text-gray-400 dark:text-gray-500 font-bold uppercase">
+          <div className="flex justify-between text-[11px] text-gray-650 dark:text-gray-350 font-black uppercase tracking-wider">
             <span>Progreso del Esquema de Vacunación</span>
             <span>{medallasConseguidas}/{medallasTotales} Dosis</span>
           </div>
@@ -805,7 +805,7 @@ export function VaccineView() {
                 {/* Form to check as applied or details of application */}
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1.5">Fecha de Aplicación</label>
+                    <label className="block text-xs font-black text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-1.5">Fecha de Aplicación</label>
                     <div className="relative">
                       <Calendar className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
                       <input 
@@ -819,24 +819,24 @@ export function VaccineView() {
 
                   <div className="grid grid-cols-1 gap-4">
                     <div>
-                      <label className="block text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1.5">Reacciones o Fiebre (Opcional)</label>
+                      <label className="block text-xs font-black text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-1.5">Reacciones o Fiebre (Opcional)</label>
                       <input 
                         type="text"
                         value={inputReactions}
                         placeholder="Ej. Fiebre leve 1 día, somnolencia"
                         onChange={(e) => setInputReactions(e.target.value)}
-                        className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900 dark:text-white"
+                        className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-405"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1.5">Notas, Lote o Clínica (Opcional)</label>
+                      <label className="block text-xs font-black text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-1.5">Notas, Lote o Clínica (Opcional)</label>
                       <textarea 
                         value={inputNotes}
                         rows={2}
                         placeholder="Ej. Clínica San Jose, Lote X34, pediatra Dr. Gomez"
                         onChange={(e) => setInputNotes(e.target.value)}
-                        className="w-full p-4 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900 dark:text-white resize-none"
+                        className="w-full p-4 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900 dark:text-white resize-none placeholder-gray-500 dark:placeholder-gray-405"
                       />
                     </div>
                   </div>
@@ -846,7 +846,7 @@ export function VaccineView() {
                 <div className="flex gap-3 border-t border-gray-100 dark:border-gray-700 pt-5 mt-5">
                   <button
                     onClick={() => setSelectedBadge(null)}
-                    className="flex-1 py-3 text-sm font-semibold text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-900 rounded-xl transition-all"
+                    className="flex-1 py-3 text-sm font-bold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-900 rounded-xl transition-all"
                   >
                     Salir
                   </button>
