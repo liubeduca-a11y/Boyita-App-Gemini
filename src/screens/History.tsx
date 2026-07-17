@@ -23,7 +23,21 @@ export function History() {
   const getEventDescription = (event: BabyEvent) => {
     switch (event.type) {
       case 'feeding':
-        return `${event.details?.amount} oz consumidas`;
+        if (event.details?.subtype === 'lactancia') {
+          const izq = event.details.duracion_pecho_izquierdo || 0;
+          const der = event.details.duracion_pecho_derecho || 0;
+          const total = event.details.duracion_total_toma || (izq + der);
+          return `Lactancia: Izq ${izq} min, Der ${der} min (Total: ${total} min)`;
+        }
+        if (event.details?.subtype === 'solidos') {
+          const sType = event.details.solidsType || 'Sólidos';
+          const sAmt = event.details.solidsAmount ? ` (${event.details.solidsAmount})` : '';
+          return `Sólidos: ${sType}${sAmt}`;
+        }
+        if (event.details?.subtype === 'biberon') {
+          return `Biberón: ${event.details.amount} ${event.details.unit || 'oz'}`;
+        }
+        return `${event.details?.amount || 0} oz consumidas`;
       case 'burp':
         return 'Eructo registrado';
       case 'hygiene':
@@ -341,6 +355,14 @@ function EditEventModal({ event, onClose, onSave }: { event: BabyEvent, onClose:
   const [photoUrl, setPhotoUrl] = useState<string | null>(event.details?.photoUrl || null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Feeding subtype specific states
+  const [subtype, setSubtype] = useState<'lactancia' | 'biberon' | 'solidos' | undefined>(event.details?.subtype);
+  const [duracionIzq, setDuracionIzq] = useState(event.details?.duracion_pecho_izquierdo?.toString() || '0');
+  const [duracionDer, setDuracionDer] = useState(event.details?.duracion_pecho_derecho?.toString() || '0');
+  const [solidsType, setSolidsType] = useState(event.details?.solidsType || '');
+  const [solidsAmount, setSolidsAmount] = useState(event.details?.solidsAmount || '');
+  const [unit, setUnit] = useState<'oz' | 'ml'>(event.details?.unit || 'oz');
+
   const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -364,7 +386,27 @@ function EditEventModal({ event, onClose, onSave }: { event: BabyEvent, onClose:
     };
 
     if (type === 'feeding') {
-      data.details = { amount: Number(amount) };
+      if (subtype === 'lactancia') {
+        data.details = {
+          subtype: 'lactancia',
+          duracion_pecho_izquierdo: Number(duracionIzq) || 0,
+          duracion_pecho_derecho: Number(duracionDer) || 0,
+          duracion_total_toma: (Number(duracionIzq) || 0) + (Number(duracionDer) || 0),
+        };
+      } else if (subtype === 'solidos') {
+        data.details = {
+          subtype: 'solidos',
+          solidsType,
+          solidsAmount,
+        };
+      } else {
+        // Biberon or legacy
+        data.details = {
+          subtype: 'biberon',
+          amount: Number(amount) || 0,
+          unit,
+        };
+      }
     } else if (type === 'hygiene') {
       data.details = { 
         hygieneType, 
@@ -420,15 +462,111 @@ function EditEventModal({ event, onClose, onSave }: { event: BabyEvent, onClose:
           </div>
 
           {type === 'feeding' && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-305 mb-1">Onzas Consumidas</label>
-              <input 
-                type="number" 
-                step="0.5"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                className="w-full p-3 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700 text-gray-955 dark:text-white rounded-xl focus:ring-2 focus:ring-theme-base outline-none transition-colors"
-              />
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-305 mb-1">Tipo de Alimentación</label>
+                <div className="flex space-x-2">
+                  {[
+                    { id: 'lactancia', label: 'Pecho' },
+                    { id: 'biberon', label: 'Biberón' },
+                    { id: 'solidos', label: 'Sólidos' }
+                  ].map((t) => (
+                    <button
+                      key={t.id}
+                      type="button"
+                      onClick={() => setSubtype(t.id as any)}
+                      className={cn(
+                        "flex-1 py-2 rounded-lg text-xs font-medium border transition-colors focus:ring-0",
+                        (subtype === t.id || (!subtype && t.id === 'biberon'))
+                          ? "bg-theme-base border-theme-dark/40 text-white"
+                          : "bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300"
+                      )}
+                    >
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {(subtype === 'lactancia') && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Pecho Izquierdo (min)</label>
+                    <input
+                      type="number"
+                      max="60"
+                      value={duracionIzq}
+                      onChange={(e) => setDuracionIzq(Math.min(60, Number(e.target.value) || 0).toString())}
+                      className="w-full p-2.5 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700 text-gray-955 dark:text-white rounded-xl focus:ring-2 focus:ring-theme-base outline-none transition-colors font-bold"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Pecho Derecho (min)</label>
+                    <input
+                      type="number"
+                      max="60"
+                      value={duracionDer}
+                      onChange={(e) => setDuracionDer(Math.min(60, Number(e.target.value) || 0).toString())}
+                      className="w-full p-2.5 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700 text-gray-955 dark:text-white rounded-xl focus:ring-2 focus:ring-theme-base outline-none transition-colors font-bold"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {(subtype === 'solidos') && (
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Tipo de Alimento</label>
+                    <input
+                      type="text"
+                      value={solidsType}
+                      onChange={(e) => setSolidsType(e.target.value)}
+                      placeholder="Ej. Papilla de manzana"
+                      className="w-full p-2.5 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700 text-gray-955 dark:text-white rounded-xl focus:ring-2 focus:ring-theme-base outline-none transition-colors"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Cantidad (Opcional)</label>
+                    <input
+                      type="text"
+                      value={solidsAmount}
+                      onChange={(e) => setSolidsAmount(e.target.value)}
+                      placeholder="Ej. 100g, 3 cucharadas"
+                      className="w-full p-2.5 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700 text-gray-955 dark:text-white rounded-xl focus:ring-2 focus:ring-theme-base outline-none transition-colors"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {(!subtype || subtype === 'biberon') && (
+                <div className="grid grid-cols-2 gap-3 items-end">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Cantidad</label>
+                    <input 
+                      type="number" 
+                      step="0.5"
+                      value={amount}
+                      onChange={(e) => setAmount(e.target.value)}
+                      className="w-full p-2.5 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700 text-gray-955 dark:text-white rounded-xl focus:ring-2 focus:ring-theme-base outline-none transition-colors font-bold"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Unidad</label>
+                    <div className="flex bg-gray-100 dark:bg-gray-700 p-1 rounded-xl">
+                      <button
+                        type="button"
+                        onClick={() => setUnit('oz')}
+                        className={cn("flex-1 py-1.5 rounded-lg text-xs font-bold transition-all", unit === 'oz' ? "bg-white dark:bg-gray-650 text-gray-800 dark:text-white shadow-sm border border-gray-200/10" : "text-gray-550 dark:text-gray-400")}
+                      >oz</button>
+                      <button
+                        type="button"
+                        onClick={() => setUnit('ml')}
+                        className={cn("flex-1 py-1.5 rounded-lg text-xs font-bold transition-all", unit === 'ml' ? "bg-white dark:bg-gray-650 text-gray-800 dark:text-white shadow-sm border border-gray-200/10" : "text-gray-550 dark:text-gray-400")}
+                      >ml</button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

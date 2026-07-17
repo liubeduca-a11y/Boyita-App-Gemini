@@ -14,7 +14,7 @@ export default function App() {
   return (
     <FirebaseProvider>
       <Layout activeTab={activeTab} onTabChange={setActiveTab}>
-        {activeTab === 'dashboard' && <Dashboard />}
+        {activeTab === 'dashboard' && <Dashboard onTabChange={setActiveTab} />}
         {activeTab === 'analytics' && <Analytics />}
         {activeTab === 'history' && <History />}
         {activeTab === 'trophyPath' && <Milestones />}

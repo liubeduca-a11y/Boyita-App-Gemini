@@ -18,6 +18,13 @@ export interface BabyEvent {
     level?: 'poco' | 'medio' | 'lleno';
     texture?: 'liquido' | 'viscoso' | 'pastoso' | 'duro' | 'diarrea';
     photoUrl?: string; // base64 photo of the poop
+    subtype?: 'lactancia' | 'biberon' | 'solidos';
+    duracion_pecho_izquierdo?: number;
+    duracion_pecho_derecho?: number;
+    duracion_total_toma?: number;
+    solidsType?: string;
+    solidsAmount?: string;
+    unit?: 'oz' | 'ml';
   };
   notes?: string;
   authorId?: string;
