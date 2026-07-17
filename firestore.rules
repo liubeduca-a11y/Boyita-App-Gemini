@@ -57,6 +57,13 @@ service cloud.firestore {
       allow update: if isFamilyMember(familyId) || isUser(familyId);
       allow delete: if isFamilyMember(familyId) || isUser(familyId);
     }
+
+    match /families/{familyId}/foodShortcuts/{shortcutId} {
+      allow read: if isFamilyMember(familyId) || isUser(familyId);
+      allow create: if isFamilyMember(familyId) || isUser(familyId);
+      allow update: if isFamilyMember(familyId) || isUser(familyId);
+      allow delete: if isFamilyMember(familyId) || isUser(familyId);
+    }
   }
 }
 

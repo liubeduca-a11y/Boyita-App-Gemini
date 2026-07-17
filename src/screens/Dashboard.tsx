@@ -122,7 +122,7 @@ export function Dashboard({ onTabChange }: { onTabChange?: (tab: any) => void })
 }
 
 function FeedingModule({ onTabChange }: { onTabChange?: (tab: any) => void }) {
-  const { addEvent } = useStore();
+  const { addEvent, atajos_alimentacion, addAtajoAlimentacion } = useStore();
   const [feedingType, setFeedingType] = useState<'lactancia' | 'biberon' | 'solidos'>('biberon');
   
   // Date & Time
@@ -136,10 +136,52 @@ function FeedingModule({ onTabChange }: { onTabChange?: (tab: any) => void }) {
   // Biberón
   const [amount, setAmount] = useState('');
   const [unit, setUnit] = useState<'oz' | 'ml'>('oz');
+  const [bottleType, setBottleType] = useState('');
 
   // Sólidos
   const [solidsType, setSolidsType] = useState('');
   const [solidsAmount, setSolidsAmount] = useState('');
+
+  // Dropdowns and checkbox for food shortcuts
+  const [showTypeDropdown, setShowTypeDropdown] = useState(false);
+  const [showAmountDropdown, setShowAmountDropdown] = useState(false);
+  const [showBiberonDropdown, setShowBiberonDropdown] = useState(false);
+  const [showBottleTypeDropdown, setShowBottleTypeDropdown] = useState(false);
+  const [saveAsFavorite, setSaveAsFavorite] = useState(false);
+
+  const filteredTypeShortcuts = atajos_alimentacion
+    .filter(s => s.categoria === 'tipo_alimento')
+    .filter(s => s.concepto.toLowerCase().includes(solidsType.toLowerCase()));
+
+  const filteredAmountShortcuts = atajos_alimentacion
+    .filter(s => s.categoria === 'cantidad_porcion')
+    .filter(s => s.concepto.toLowerCase().includes(solidsAmount.toLowerCase()));
+
+  const filteredBiberonShortcuts = atajos_alimentacion
+    .filter(s => s.categoria === 'cantidad_biberon')
+    .filter(s => {
+      if (!amount) return true;
+      return s.concepto.toLowerCase().includes(amount.toLowerCase());
+    });
+
+  const filteredBottleTypeShortcuts = atajos_alimentacion
+    .filter(s => s.categoria === 'tipo_biberon')
+    .filter(s => s.concepto.toLowerCase().includes(bottleType.toLowerCase()));
+
+  const handleSelectBiberonShortcut = (concept: string) => {
+    const numMatch = concept.match(/\d+(\.\d+)?/);
+    if (numMatch) {
+      setAmount(numMatch[0]);
+    } else {
+      setAmount(concept);
+    }
+    
+    if (concept.toLowerCase().includes('oz')) {
+      setUnit('oz');
+    } else if (concept.toLowerCase().includes('ml')) {
+      setUnit('ml');
+    }
+  };
 
   const [notes, setNotes] = useState('');
   const [showSaveSuccess, setShowSaveSuccess] = useState(false);
@@ -206,7 +248,8 @@ function FeedingModule({ onTabChange }: { onTabChange?: (tab: any) => void }) {
       details = {
         subtype: 'biberon',
         amount: amt,
-        unit: unit
+        unit: unit,
+        bottleType: bottleType.trim() || undefined
       };
     } else if (feedingType === 'solidos') {
       if (!solidsType.trim()) {
@@ -227,14 +270,75 @@ function FeedingModule({ onTabChange }: { onTabChange?: (tab: any) => void }) {
       notes: notes.trim() || undefined
     });
 
+    if (feedingType === 'solidos' && saveAsFavorite) {
+      const simplifiedType = solidsType.trim().toLowerCase().replace(/\s+/g, ' ');
+      const simplifiedAmount = solidsAmount.trim().toLowerCase().replace(/\s+/g, ' ');
+
+      if (solidsType.trim() && solidsType.trim().length <= 25) {
+        const typeExists = atajos_alimentacion.some(shortcut => 
+          shortcut.categoria === 'tipo_alimento' &&
+          shortcut.concepto.toLowerCase().trim().replace(/\s+/g, ' ') === simplifiedType
+        );
+        if (!typeExists) {
+          addAtajoAlimentacion(solidsType.trim(), 'tipo_alimento').catch(err => {
+            console.error("Error saving food shortcut automatically:", err);
+          });
+        }
+      }
+
+      if (solidsAmount.trim() && solidsAmount.trim().length <= 25) {
+        const amountExists = atajos_alimentacion.some(shortcut => 
+          shortcut.categoria === 'cantidad_porcion' &&
+          shortcut.concepto.toLowerCase().trim().replace(/\s+/g, ' ') === simplifiedAmount
+        );
+        if (!amountExists) {
+          addAtajoAlimentacion(solidsAmount.trim(), 'cantidad_porcion').catch(err => {
+            console.error("Error saving food shortcut automatically:", err);
+          });
+        }
+      }
+    }
+
+    if (feedingType === 'biberon' && saveAsFavorite) {
+      const formatted = `${amount} ${unit}`;
+      const simplifiedAmount = formatted.trim().toLowerCase().replace(/\s+/g, ' ');
+
+      if (amount.trim() && formatted.length <= 25) {
+        const amountExists = atajos_alimentacion.some(shortcut => 
+          shortcut.categoria === 'cantidad_biberon' &&
+          shortcut.concepto.toLowerCase().trim().replace(/\s+/g, ' ') === simplifiedAmount
+        );
+        if (!amountExists) {
+          addAtajoAlimentacion(formatted, 'cantidad_biberon').catch(err => {
+            console.error("Error saving food shortcut automatically:", err);
+          });
+        }
+      }
+
+      const simplifiedBottleType = bottleType.trim().toLowerCase().replace(/\s+/g, ' ');
+      if (bottleType.trim() && bottleType.trim().length <= 25) {
+        const typeExists = atajos_alimentacion.some(shortcut => 
+          shortcut.categoria === 'tipo_biberon' &&
+          shortcut.concepto.toLowerCase().trim().replace(/\s+/g, ' ') === simplifiedBottleType
+        );
+        if (!typeExists) {
+          addAtajoAlimentacion(bottleType.trim(), 'tipo_biberon').catch(err => {
+            console.error("Error saving food shortcut automatically:", err);
+          });
+        }
+      }
+    }
+
     setShowSaveSuccess(true);
     setTimeout(() => {
       setShowSaveSuccess(false);
       setLeftBreast('0');
       setRightBreast('0');
       setAmount('');
+      setBottleType('');
       setSolidsType('');
       setSolidsAmount('');
+      setSaveAsFavorite(false);
       setNotes('');
       setDate(format(new Date(), 'yyyy-MM-dd'));
       setTime(format(new Date(), 'HH:mm'));
@@ -337,57 +441,184 @@ function FeedingModule({ onTabChange }: { onTabChange?: (tab: any) => void }) {
           )}
 
           {feedingType === 'biberon' && (
-            <div className="grid grid-cols-3 gap-3 items-end">
-              <div className="col-span-2">
-                <label className="block text-xs font-extrabold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-1.5">Cantidad</label>
+            <div className="space-y-3.5 animate-in fade-in">
+              <div className="relative">
+                <label className="block text-xs font-extrabold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-1.5">Tipo de Biberón</label>
                 <input
-                  type="number"
-                  step="0.5"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  className="w-full p-3 border border-gray-300 dark:border-gray-600 bg-gray-50/40 dark:bg-gray-700/35 rounded-xl focus:ring-2 focus:ring-sky-400 outline-none text-base font-bold text-gray-900 dark:text-white transition-all"
-                  placeholder="Ej. 4.5"
+                  type="text"
+                  value={bottleType}
+                  onChange={(e) => {
+                    setBottleType(e.target.value);
+                    setShowBottleTypeDropdown(true);
+                  }}
+                  onFocus={() => setShowBottleTypeDropdown(true)}
+                  onBlur={() => setTimeout(() => setShowBottleTypeDropdown(false), 200)}
+                  className="w-full p-3 border border-gray-300 dark:border-gray-600 bg-gray-50/40 dark:bg-gray-700/35 rounded-xl focus:ring-2 focus:ring-sky-400 outline-none text-xs text-gray-900 dark:text-white transition-all placeholder-gray-400"
+                  placeholder="Ej. Fórmula, Leche materna, Agua..."
                 />
+                {showBottleTypeDropdown && filteredBottleTypeShortcuts.length > 0 && (
+                  <div className="absolute left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-750 rounded-xl shadow-lg z-50 max-h-48 overflow-y-auto">
+                    {filteredBottleTypeShortcuts.map((shortcut) => (
+                      <button
+                        key={shortcut.id}
+                        type="button"
+                        onMouseDown={() => {
+                          setBottleType(shortcut.concepto);
+                          setShowBottleTypeDropdown(false);
+                        }}
+                        className="w-full text-left px-4 py-2.5 text-xs text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors font-medium border-b border-gray-50 dark:border-gray-750 last:border-0"
+                      >
+                        {shortcut.concepto}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
-              <div>
-                <label className="block text-xs font-extrabold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-1.5">Unidad</label>
-                <div className="flex bg-gray-100 dark:bg-gray-900 p-1 rounded-xl border border-gray-200/10 dark:border-gray-750">
-                  <button
-                    type="button"
-                    onClick={() => setUnit('oz')}
-                    className={cn("flex-1 py-1.5 rounded-lg text-xs font-bold transition-all", unit === 'oz' ? "bg-white dark:bg-gray-800 text-gray-800 dark:text-white shadow-sm" : "text-gray-500 dark:text-gray-400")}
-                  >oz</button>
-                  <button
-                    type="button"
-                    onClick={() => setUnit('ml')}
-                    className={cn("flex-1 py-1.5 rounded-lg text-xs font-bold transition-all", unit === 'ml' ? "bg-white dark:bg-gray-800 text-gray-800 dark:text-white shadow-sm" : "text-gray-500 dark:text-gray-400")}
-                  >ml</button>
+
+              <div className="grid grid-cols-3 gap-3 items-end">
+                <div className="col-span-2 relative">
+                  <label className="block text-xs font-extrabold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-1.5">Cantidad</label>
+                  <input
+                    type="number"
+                    step="0.5"
+                    value={amount}
+                    onChange={(e) => {
+                      setAmount(e.target.value);
+                      setShowBiberonDropdown(true);
+                    }}
+                    onFocus={() => setShowBiberonDropdown(true)}
+                    onBlur={() => setTimeout(() => setShowBiberonDropdown(false), 200)}
+                    className="w-full p-3 border border-gray-300 dark:border-gray-600 bg-gray-50/40 dark:bg-gray-700/35 rounded-xl focus:ring-2 focus:ring-sky-400 outline-none text-base font-bold text-gray-900 dark:text-white transition-all"
+                    placeholder="Ej. 4.5"
+                  />
+                  {showBiberonDropdown && filteredBiberonShortcuts.length > 0 && (
+                    <div className="absolute left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-750 rounded-xl shadow-lg z-50 max-h-48 overflow-y-auto">
+                      {filteredBiberonShortcuts.map((shortcut) => (
+                        <button
+                          key={shortcut.id}
+                          type="button"
+                          onMouseDown={() => {
+                            handleSelectBiberonShortcut(shortcut.concepto);
+                            setShowBiberonDropdown(false);
+                          }}
+                          className="w-full text-left px-4 py-2.5 text-xs text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors font-medium border-b border-gray-50 dark:border-gray-750 last:border-0"
+                        >
+                          {shortcut.concepto}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
+                <div>
+                  <label className="block text-xs font-extrabold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-1.5">Unidad</label>
+                  <div className="flex bg-gray-100 dark:bg-gray-900 p-1 rounded-xl border border-gray-200/10 dark:border-gray-750">
+                    <button
+                      type="button"
+                      onClick={() => setUnit('oz')}
+                      className={cn("flex-1 py-1.5 rounded-lg text-xs font-bold transition-all", unit === 'oz' ? "bg-white dark:bg-gray-800 text-gray-800 dark:text-white shadow-sm" : "text-gray-500 dark:text-gray-400")}
+                    >oz</button>
+                    <button
+                      type="button"
+                      onClick={() => setUnit('ml')}
+                      className={cn("flex-1 py-1.5 rounded-lg text-xs font-bold transition-all", unit === 'ml' ? "bg-white dark:bg-gray-800 text-gray-800 dark:text-white shadow-sm" : "text-gray-500 dark:text-gray-400")}
+                    >ml</button>
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center space-x-2.5 py-1">
+                <input
+                  type="checkbox"
+                  id="saveBiberonAsFavorite"
+                  checked={saveAsFavorite}
+                  onChange={(e) => setSaveAsFavorite(e.target.checked)}
+                  className="w-4 h-4 text-sky-500 rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:ring-sky-400 animate-in fade-in"
+                />
+                <label htmlFor="saveBiberonAsFavorite" className="text-xs font-bold text-gray-650 dark:text-gray-300 cursor-pointer select-none">
+                  ¿Guardar como favorito?
+                </label>
               </div>
             </div>
           )}
 
           {feedingType === 'solidos' && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-extrabold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-1.5">Tipo de Comida</label>
-                <input
-                  type="text"
-                  value={solidsType}
-                  onChange={(e) => setSolidsType(e.target.value)}
-                  className="w-full p-3 border border-gray-300 dark:border-gray-600 bg-gray-50/40 dark:bg-gray-700/35 rounded-xl focus:ring-2 focus:ring-sky-400 outline-none text-xs text-gray-900 dark:text-white transition-all placeholder-gray-400"
-                  placeholder="Ej. Papilla de manzana, avena..."
-                />
+            <div className="space-y-3.5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="relative">
+                  <label className="block text-xs font-extrabold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-1.5">Tipo de Comida</label>
+                  <input
+                    type="text"
+                    value={solidsType}
+                    onChange={(e) => {
+                      setSolidsType(e.target.value);
+                      setShowTypeDropdown(true);
+                    }}
+                    onFocus={() => setShowTypeDropdown(true)}
+                    onBlur={() => setTimeout(() => setShowTypeDropdown(false), 200)}
+                    className="w-full p-3 border border-gray-300 dark:border-gray-600 bg-gray-50/40 dark:bg-gray-700/35 rounded-xl focus:ring-2 focus:ring-sky-400 outline-none text-xs text-gray-900 dark:text-white transition-all placeholder-gray-400"
+                    placeholder="Ej. Papilla de manzana, avena..."
+                  />
+                  {showTypeDropdown && filteredTypeShortcuts.length > 0 && (
+                    <div className="absolute left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-750 rounded-xl shadow-lg z-50 max-h-48 overflow-y-auto">
+                      {filteredTypeShortcuts.map((shortcut) => (
+                        <button
+                          key={shortcut.id}
+                          type="button"
+                          onMouseDown={() => {
+                            setSolidsType(shortcut.concepto);
+                            setShowTypeDropdown(false);
+                          }}
+                          className="w-full text-left px-4 py-2.5 text-xs text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors font-medium border-b border-gray-50 dark:border-gray-750 last:border-0"
+                        >
+                          {shortcut.concepto}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div className="relative">
+                  <label className="block text-xs font-extrabold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-1.5">Cantidad / Porción</label>
+                  <input
+                    type="text"
+                    value={solidsAmount}
+                    onChange={(e) => {
+                      setSolidsAmount(e.target.value);
+                      setShowAmountDropdown(true);
+                    }}
+                    onFocus={() => setShowAmountDropdown(true)}
+                    onBlur={() => setTimeout(() => setShowAmountDropdown(false), 200)}
+                    className="w-full p-3 border border-gray-300 dark:border-gray-600 bg-gray-50/40 dark:bg-gray-700/35 rounded-xl focus:ring-2 focus:ring-sky-400 outline-none text-xs text-gray-900 dark:text-white transition-all placeholder-gray-400"
+                    placeholder="Ej. 100g, 1 porción"
+                  />
+                  {showAmountDropdown && filteredAmountShortcuts.length > 0 && (
+                    <div className="absolute left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-750 rounded-xl shadow-lg z-50 max-h-48 overflow-y-auto">
+                      {filteredAmountShortcuts.map((shortcut) => (
+                        <button
+                          key={shortcut.id}
+                          type="button"
+                          onMouseDown={() => {
+                            setSolidsAmount(shortcut.concepto);
+                            setShowAmountDropdown(false);
+                          }}
+                          className="w-full text-left px-4 py-2.5 text-xs text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors font-medium border-b border-gray-50 dark:border-gray-750 last:border-0"
+                        >
+                          {shortcut.concepto}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
-              <div>
-                <label className="block text-xs font-extrabold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-1.5">Cantidad / Porción</label>
+              <div className="flex items-center space-x-2.5 py-1">
                 <input
-                  type="text"
-                  value={solidsAmount}
-                  onChange={(e) => setSolidsAmount(e.target.value)}
-                  className="w-full p-3 border border-gray-300 dark:border-gray-600 bg-gray-50/40 dark:bg-gray-700/35 rounded-xl focus:ring-2 focus:ring-sky-400 outline-none text-xs text-gray-900 dark:text-white transition-all placeholder-gray-400"
-                  placeholder="Ej. 100g, 1 porción"
+                  type="checkbox"
+                  id="saveAsFavorite"
+                  checked={saveAsFavorite}
+                  onChange={(e) => setSaveAsFavorite(e.target.checked)}
+                  className="w-4 h-4 text-sky-500 rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:ring-sky-400 animate-in fade-in"
                 />
+                <label htmlFor="saveAsFavorite" className="text-xs font-bold text-gray-650 dark:text-gray-300 cursor-pointer select-none">
+                  ¿Guardar como favorito?
+                </label>
               </div>
             </div>
           )}

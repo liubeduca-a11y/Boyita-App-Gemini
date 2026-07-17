@@ -35,7 +35,8 @@ export function History() {
           return `Sólidos: ${sType}${sAmt}`;
         }
         if (event.details?.subtype === 'biberon') {
-          return `Biberón: ${event.details.amount} ${event.details.unit || 'oz'}`;
+          const bType = event.details.bottleType ? ` (${event.details.bottleType})` : '';
+          return `Biberón: ${event.details.amount} ${event.details.unit || 'oz'}${bType}`;
         }
         return `${event.details?.amount || 0} oz consumidas`;
       case 'burp':
@@ -362,6 +363,7 @@ function EditEventModal({ event, onClose, onSave }: { event: BabyEvent, onClose:
   const [solidsType, setSolidsType] = useState(event.details?.solidsType || '');
   const [solidsAmount, setSolidsAmount] = useState(event.details?.solidsAmount || '');
   const [unit, setUnit] = useState<'oz' | 'ml'>(event.details?.unit || 'oz');
+  const [bottleType, setBottleType] = useState(event.details?.bottleType || '');
 
   const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -405,6 +407,7 @@ function EditEventModal({ event, onClose, onSave }: { event: BabyEvent, onClose:
           subtype: 'biberon',
           amount: Number(amount) || 0,
           unit,
+          bottleType: bottleType.trim() || undefined,
         };
       }
     } else if (type === 'hygiene') {
@@ -539,30 +542,42 @@ function EditEventModal({ event, onClose, onSave }: { event: BabyEvent, onClose:
               )}
 
               {(!subtype || subtype === 'biberon') && (
-                <div className="grid grid-cols-2 gap-3 items-end">
+                <div className="space-y-3">
                   <div>
-                    <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Cantidad</label>
-                    <input 
-                      type="number" 
-                      step="0.5"
-                      value={amount}
-                      onChange={(e) => setAmount(e.target.value)}
-                      className="w-full p-2.5 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700 text-gray-955 dark:text-white rounded-xl focus:ring-2 focus:ring-theme-base outline-none transition-colors font-bold"
+                    <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Tipo de Biberón</label>
+                    <input
+                      type="text"
+                      value={bottleType}
+                      onChange={(e) => setBottleType(e.target.value)}
+                      placeholder="Ej. Fórmula, Leche materna, Agua"
+                      className="w-full p-2.5 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700 text-gray-955 dark:text-white rounded-xl focus:ring-2 focus:ring-theme-base outline-none transition-colors"
                     />
                   </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Unidad</label>
-                    <div className="flex bg-gray-100 dark:bg-gray-700 p-1 rounded-xl">
-                      <button
-                        type="button"
-                        onClick={() => setUnit('oz')}
-                        className={cn("flex-1 py-1.5 rounded-lg text-xs font-bold transition-all", unit === 'oz' ? "bg-white dark:bg-gray-650 text-gray-800 dark:text-white shadow-sm border border-gray-200/10" : "text-gray-550 dark:text-gray-400")}
-                      >oz</button>
-                      <button
-                        type="button"
-                        onClick={() => setUnit('ml')}
-                        className={cn("flex-1 py-1.5 rounded-lg text-xs font-bold transition-all", unit === 'ml' ? "bg-white dark:bg-gray-650 text-gray-800 dark:text-white shadow-sm border border-gray-200/10" : "text-gray-550 dark:text-gray-400")}
-                      >ml</button>
+                  <div className="grid grid-cols-2 gap-3 items-end">
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Cantidad</label>
+                      <input 
+                        type="number" 
+                        step="0.5"
+                        value={amount}
+                        onChange={(e) => setAmount(e.target.value)}
+                        className="w-full p-2.5 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700 text-gray-955 dark:text-white rounded-xl focus:ring-2 focus:ring-theme-base outline-none transition-colors font-bold"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Unidad</label>
+                      <div className="flex bg-gray-100 dark:bg-gray-700 p-1 rounded-xl">
+                        <button
+                          type="button"
+                          onClick={() => setUnit('oz')}
+                          className={cn("flex-1 py-1.5 rounded-lg text-xs font-bold transition-all", unit === 'oz' ? "bg-white dark:bg-gray-650 text-gray-800 dark:text-white shadow-sm border border-gray-200/10" : "text-gray-550 dark:text-gray-400")}
+                        >oz</button>
+                        <button
+                          type="button"
+                          onClick={() => setUnit('ml')}
+                          className={cn("flex-1 py-1.5 rounded-lg text-xs font-bold transition-all", unit === 'ml' ? "bg-white dark:bg-gray-650 text-gray-800 dark:text-white shadow-sm border border-gray-200/10" : "text-gray-550 dark:text-gray-400")}
+                        >ml</button>
+                      </div>
                     </div>
                   </div>
                 </div>

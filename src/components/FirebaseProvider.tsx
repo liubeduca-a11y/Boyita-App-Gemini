@@ -3,10 +3,10 @@ import { auth, db } from '../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc, setDoc, updateDoc, onSnapshot, collection, query, writeBatch, getDocs } from 'firebase/firestore';
 import { useStore, BabyEvent } from '../store';
-import { TimelineEntry, MedicalRecord, PendingQuestion } from '../types';
+import { TimelineEntry, MedicalRecord, PendingQuestion, FoodShortcut } from '../types';
 
 export function FirebaseProvider({ children }: { children: React.ReactNode }) {
-  const { setFamilyId, setEvents, setProfile, setActiveFeeding, setActiveSleep, setCompletedMilestones, setActiveAlarms, setTimelineEntries, setMedicalRecords, setPendingQuestions, setAppliedVaccines, profile } = useStore();
+  const { setFamilyId, setEvents, setProfile, setActiveFeeding, setActiveSleep, setCompletedMilestones, setActiveAlarms, setTimelineEntries, setMedicalRecords, setPendingQuestions, setAppliedVaccines, setAtajosAlimentacion, profile } = useStore();
   const familyId = useStore(state => state.familyId);
   const [isAuthReady, setIsAuthReady] = useState(false);
 
@@ -207,14 +207,26 @@ export function FirebaseProvider({ children }: { children: React.ReactNode }) {
       setPendingQuestions(questions);
     });
 
+    // Listen to food shortcuts
+    const unsubShortcuts = onSnapshot(collection(db, `families/${familyId}/foodShortcuts`), (snap) => {
+      const shortcuts: FoodShortcut[] = [];
+      snap.forEach(doc => {
+        shortcuts.push({ id: doc.id, ...doc.data() } as FoodShortcut);
+      });
+      if (shortcuts.length > 0) {
+        setAtajosAlimentacion(shortcuts);
+      }
+    });
+
     return () => {
       unsubFamily();
       unsubEvents();
       unsubTimeline();
       unsubMedical();
       unsubQuestions();
+      unsubShortcuts();
     };
-  }, [isAuthReady, familyId, setProfile, setActiveFeeding, setActiveSleep, setEvents, setCompletedMilestones, setActiveAlarms, setTimelineEntries, setMedicalRecords, setPendingQuestions, setAppliedVaccines]);
+  }, [isAuthReady, familyId, setProfile, setActiveFeeding, setActiveSleep, setEvents, setCompletedMilestones, setActiveAlarms, setTimelineEntries, setMedicalRecords, setPendingQuestions, setAppliedVaccines, setAtajosAlimentacion]);
 
   return <>{children}</>;
 }

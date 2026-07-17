@@ -57,6 +57,16 @@
         "authorId": { "type": "string" }
       },
       "required": ["type", "timestamp", "authorId"]
+    },
+    "FoodShortcut": {
+      "title": "FoodShortcut",
+      "description": "A food shortcut for autocomplete",
+      "type": "object",
+      "properties": {
+        "concepto": { "type": "string" },
+        "categoria": { "type": "string" }
+      },
+      "required": ["concepto", "categoria"]
     }
   },
   "firestore": {
@@ -71,6 +81,10 @@
     "families/{familyId}/events/{eventId}": {
       "schema": { "$ref": "#/entities/BabyEvent" },
       "description": "Events for a family"
+    },
+    "families/{familyId}/foodShortcuts/{shortcutId}": {
+      "schema": { "$ref": "#/entities/FoodShortcut" },
+      "description": "Food shortcuts for a family"
     }
   }
 }

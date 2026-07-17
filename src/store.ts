@@ -3,7 +3,7 @@ import { persist } from 'zustand/middleware';
 import { db, auth } from './firebase';
 import { collection, doc, setDoc, deleteDoc, updateDoc, writeBatch } from 'firebase/firestore';
 
-import { TimelineEntry, MedicalRecord, PendingQuestion, AppliedVaccine } from './types';
+import { TimelineEntry, MedicalRecord, PendingQuestion, AppliedVaccine, FoodShortcut } from './types';
 
 export type EventType = 'feeding' | 'burp' | 'hygiene' | 'sleep' | 'bath';
 
@@ -25,6 +25,7 @@ export interface BabyEvent {
     solidsType?: string;
     solidsAmount?: string;
     unit?: 'oz' | 'ml';
+    bottleType?: string;
   };
   notes?: string;
   authorId?: string;
@@ -102,6 +103,9 @@ interface AppState {
   medicalRecords: MedicalRecord[];
   pendingQuestions: PendingQuestion[];
   
+  // Atajos de alimentacion
+  atajos_alimentacion: FoodShortcut[];
+  
   // Actions
   setFamilyId: (id: string | null) => void;
   setEvents: (events: BabyEvent[]) => void;
@@ -146,6 +150,11 @@ interface AppState {
   togglePendingQuestion: (id: string) => Promise<void>;
   applyVaccine: (id: string, appliedAt: string, notes?: string, reactions?: string) => Promise<void>;
   unapplyVaccine: (id: string) => Promise<void>;
+
+  // Atajos de alimentacion Actions
+  setAtajosAlimentacion: (atajos: FoodShortcut[]) => void;
+  addAtajoAlimentacion: (concepto: string, categoria: 'tipo_alimento' | 'cantidad_porcion' | 'tipo_biberon' | 'cantidad_biberon') => Promise<void>;
+  deleteAtajoAlimentacion: (id: string) => Promise<void>;
 }
 
 export const useStore = create<AppState>()(
@@ -167,6 +176,22 @@ export const useStore = create<AppState>()(
       timelineEntries: [],
       medicalRecords: [],
       pendingQuestions: [],
+      atajos_alimentacion: [
+        { id: 'def-1', concepto: 'Leche', categoria: 'tipo_biberon' },
+        { id: 'def-1-1', concepto: 'Fórmula', categoria: 'tipo_biberon' },
+        { id: 'def-1-2', concepto: 'Leche materna', categoria: 'tipo_biberon' },
+        { id: 'def-1-3', concepto: 'Agua', categoria: 'tipo_biberon' },
+        { id: 'def-2', concepto: 'Avena', categoria: 'tipo_alimento' },
+        { id: 'def-3', concepto: 'Papilla de pollo', categoria: 'tipo_alimento' },
+        { id: 'def-4', concepto: 'Verduras', categoria: 'tipo_alimento' },
+        { id: 'def-5', concepto: '1 porción', categoria: 'cantidad_porcion' },
+        { id: 'def-6', concepto: '100g', categoria: 'cantidad_porcion' },
+        { id: 'def-7', concepto: '2 oz', categoria: 'cantidad_biberon' },
+        { id: 'def-8', concepto: '4 oz', categoria: 'cantidad_biberon' },
+        { id: 'def-9', concepto: '3 oz', categoria: 'cantidad_biberon' },
+        { id: 'def-10', concepto: '6 oz', categoria: 'cantidad_biberon' },
+        { id: 'def-11', concepto: '120 ml', categoria: 'cantidad_biberon' },
+      ],
 
       setFamilyId: (id) => set({ familyId: id }),
       setEvents: (events) => set({ events }),
@@ -628,6 +653,68 @@ export const useStore = create<AppState>()(
             await updateDoc(doc(db, `families/${familyId}`), { appliedVaccines: firestoreVaccines });
           } catch (error) {
             console.error("Error unapplying vaccine in Firebase", error);
+          }
+        }
+      },
+
+      setAtajosAlimentacion: (atajos_alimentacion) => set({ atajos_alimentacion }),
+
+      addAtajoAlimentacion: async (concepto, categoria) => {
+        const { familyId, atajos_alimentacion } = get();
+        
+        // Clean and validate
+        const cleanConcepto = concepto.trim();
+        if (!cleanConcepto) return;
+        if (cleanConcepto.length > 25) {
+          throw new Error('El concepto no puede superar los 25 caracteres.');
+        }
+
+        // Check for duplicates (case insensitive, ignoring extra whitespace)
+        const simplifiedConcepto = cleanConcepto.toLowerCase().replace(/\s+/g, ' ');
+        const isDuplicate = atajos_alimentacion.some(shortcut => 
+          shortcut.categoria === categoria &&
+          shortcut.concepto.toLowerCase().trim().replace(/\s+/g, ' ') === simplifiedConcepto
+        );
+
+        if (isDuplicate) {
+          throw new Error('Este concepto ya existe en tus favoritos.');
+        }
+
+        const newId = crypto.randomUUID();
+        const newShortcut: FoodShortcut = {
+          id: newId,
+          concepto: cleanConcepto,
+          categoria
+        };
+
+        set((state) => ({ 
+          atajos_alimentacion: [...state.atajos_alimentacion, newShortcut] 
+        }));
+
+        if (familyId && auth.currentUser) {
+          try {
+            await setDoc(doc(db, `families/${familyId}/foodShortcuts/${newId}`), {
+              concepto: cleanConcepto,
+              categoria
+            });
+          } catch (error) {
+            console.error("Error adding food shortcut to Firestore", error);
+          }
+        }
+      },
+
+      deleteAtajoAlimentacion: async (id) => {
+        const { familyId } = get();
+        
+        set((state) => ({
+          atajos_alimentacion: state.atajos_alimentacion.filter(shortcut => shortcut.id !== id)
+        }));
+
+        if (familyId && auth.currentUser) {
+          try {
+            await deleteDoc(doc(db, `families/${familyId}/foodShortcuts/${id}`));
+          } catch (error) {
+            console.error("Error deleting food shortcut from Firestore", error);
           }
         }
       },

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useStore, ThemeColor, ColorMode, MedicalHistory, MedicalCondition, ScreeningHistory, ScreeningTest } from '../store';
-import { Camera, Save, Palette, User, Calendar, Cloud, LogOut, LogIn, RefreshCw, Moon, Sun, Monitor, AlertCircle, Accessibility, Dna, Scissors, Wind, PlusCircle, ChevronDown, ChevronUp, Droplet, Ear, Eye, HeartPulse, Bone, Check } from 'lucide-react';
+import { Camera, Save, Palette, User, Calendar, Cloud, LogOut, LogIn, RefreshCw, Moon, Sun, Monitor, AlertCircle, Accessibility, Dna, Scissors, Wind, PlusCircle, ChevronDown, ChevronUp, Droplet, Ear, Eye, HeartPulse, Bone, Check, Plus, Trash2 } from 'lucide-react';
 import { cn } from '../components/Layout';
 import { differenceInMonths, differenceInDays } from 'date-fns';
 import { auth, loginWithGoogle, logout, db } from '../firebase';
@@ -24,7 +24,7 @@ const THEMES: { id: ThemeColor; name: string; color: string }[] = [
 
 
 export function Settings() {
-  const { profile, updateProfile, theme, setTheme, colorMode, setColorMode, familyId } = useStore();
+  const { profile, updateProfile, theme, setTheme, colorMode, setColorMode, familyId, atajos_alimentacion, addAtajoAlimentacion, deleteAtajoAlimentacion } = useStore();
   const [name, setName] = useState(profile.name);
   const [birthDate, setBirthDate] = useState(profile.birthDate);
   const [gender, setGender] = useState<'boy' | 'girl' | undefined>(profile.gender);
@@ -37,6 +37,23 @@ export function Settings() {
   const [birthWeightUnit, setBirthWeightUnit] = useState<'kg' | 'lb'>(profile.birthWeightUnit || 'kg');
   const [pregnancyComplications, setPregnancyComplications] = useState(profile.pregnancyComplications || '');
   const [birthComplications, setBirthComplications] = useState(profile.birthComplications || '');
+
+  const [newShortcutConcept, setNewShortcutConcept] = useState('');
+  const [newShortcutCategory, setNewShortcutCategory] = useState<'tipo_alimento' | 'cantidad_porcion' | 'tipo_biberon' | 'cantidad_biberon'>('tipo_biberon');
+  const [shortcutError, setShortcutError] = useState<string | null>(null);
+
+  const handleAddShortcut = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setShortcutError(null);
+    if (!newShortcutConcept.trim()) return;
+
+    try {
+      await addAtajoAlimentacion(newShortcutConcept, newShortcutCategory);
+      setNewShortcutConcept('');
+    } catch (err: any) {
+      setShortcutError(err.message || 'Error al guardar el atajo');
+    }
+  };
   
   const [medicalHistory, setMedicalHistory] = useState(profile.medicalHistory || {
     alergias: { name: '', diagnosisAge: '', diagnosisAgeUnit: 'meses', treatment: '' },
@@ -608,6 +625,242 @@ export function Settings() {
                     </span>
                   </button>
                 ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Configurar Atajos de Alimentos */}
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-700">
+            <div className="flex items-center space-x-3 mb-4">
+              <div className="p-2 bg-theme-light dark:bg-theme-dark/20 rounded-xl text-theme-dark dark:text-theme-base">
+                <PlusCircle className="w-6 h-6" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Atajos de Alimentos</h3>
+            </div>
+            
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-4 leading-relaxed">
+              Crea palabras o conceptos favoritos para autocompletar rápidamente el registro de alimentación.
+            </p>
+
+            <form onSubmit={handleAddShortcut} className="space-y-4 mb-5">
+              <div>
+                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">Categoría del Atajo</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => { setNewShortcutCategory('tipo_biberon'); setShortcutError(null); }}
+                    className={cn(
+                      "py-2 px-2.5 text-xs font-semibold rounded-xl border transition-all text-center flex flex-col items-center justify-center space-y-0.5",
+                      newShortcutCategory === 'tipo_biberon'
+                        ? "bg-theme-light border-theme-base text-theme-dark dark:bg-theme-dark/30 dark:border-theme-base dark:text-theme-base font-bold shadow-sm"
+                        : "bg-transparent border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"
+                    )}
+                  >
+                    <span className="font-bold">Biberón</span>
+                    <span className="text-[10px] opacity-80 font-normal">Tipo de líquido</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setNewShortcutCategory('cantidad_biberon'); setShortcutError(null); }}
+                    className={cn(
+                      "py-2 px-2.5 text-xs font-semibold rounded-xl border transition-all text-center flex flex-col items-center justify-center space-y-0.5",
+                      newShortcutCategory === 'cantidad_biberon'
+                        ? "bg-theme-light border-theme-base text-theme-dark dark:bg-theme-dark/30 dark:border-theme-base dark:text-theme-base font-bold shadow-sm"
+                        : "bg-transparent border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"
+                    )}
+                  >
+                    <span className="font-bold">Biberón</span>
+                    <span className="text-[10px] opacity-80 font-normal">Cantidad habitual</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setNewShortcutCategory('tipo_alimento'); setShortcutError(null); }}
+                    className={cn(
+                      "py-2 px-2.5 text-xs font-semibold rounded-xl border transition-all text-center flex flex-col items-center justify-center space-y-0.5",
+                      newShortcutCategory === 'tipo_alimento'
+                        ? "bg-theme-light border-theme-base text-theme-dark dark:bg-theme-dark/30 dark:border-theme-base dark:text-theme-base font-bold shadow-sm"
+                        : "bg-transparent border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"
+                    )}
+                  >
+                    <span className="font-bold">Comida Sólida</span>
+                    <span className="text-[10px] opacity-80 font-normal">Tipo de alimento</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setNewShortcutCategory('cantidad_porcion'); setShortcutError(null); }}
+                    className={cn(
+                      "py-2 px-2.5 text-xs font-semibold rounded-xl border transition-all text-center flex flex-col items-center justify-center space-y-0.5",
+                      newShortcutCategory === 'cantidad_porcion'
+                        ? "bg-theme-light border-theme-base text-theme-dark dark:bg-theme-dark/30 dark:border-theme-base dark:text-theme-base font-bold shadow-sm"
+                        : "bg-transparent border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"
+                    )}
+                  >
+                    <span className="font-bold">Comida Sólida</span>
+                    <span className="text-[10px] opacity-80 font-normal">Porción usual</span>
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Concepto Favorito (máx. 25 carac.)</label>
+                <div className="flex space-x-2">
+                  <input
+                    type="text"
+                    value={newShortcutConcept}
+                    onChange={(e) => {
+                      setNewShortcutConcept(e.target.value.slice(0, 25));
+                      setShortcutError(null);
+                    }}
+                    maxLength={25}
+                    placeholder={
+                      newShortcutCategory === 'tipo_biberon' ? "Ej. Fórmula, Leche materna, Agua" :
+                      newShortcutCategory === 'cantidad_biberon' ? "Ej. 4 oz, 120 ml, 6 oz" :
+                      newShortcutCategory === 'tipo_alimento' ? "Ej. Papilla, Puré, Plátano" : "Ej. 1 porción, 100g, 1/2 taza"
+                    }
+                    className="flex-1 p-2.5 text-sm border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-xl focus:ring-2 focus:ring-theme-base outline-none transition-all text-gray-900 dark:text-white"
+                  />
+                  <button
+                    type="submit"
+                    className="p-2.5 bg-theme-base hover:bg-theme-dark text-white rounded-xl font-semibold flex items-center justify-center shadow-sm transition-all shrink-0"
+                  >
+                    <Plus className="w-5 h-5" />
+                  </button>
+                </div>
+                {shortcutError && (
+                  <p className="text-xs text-red-500 dark:text-red-400 mt-1 font-medium">{shortcutError}</p>
+                )}
+              </div>
+            </form>
+
+            <div className="space-y-5">
+              {/* Sección Biberón */}
+              <div className="p-3 bg-gray-50/50 dark:bg-gray-900/10 rounded-2xl border border-gray-100 dark:border-gray-700 space-y-4">
+                <h4 className="text-xs font-bold text-sky-600 dark:text-sky-400 uppercase tracking-wider">Sección Biberón</h4>
+                
+                <div>
+                  <h5 className="text-[11px] font-semibold text-gray-600 dark:text-gray-300 pb-1 mb-1.5 flex justify-between">
+                    <span>Líquidos / Tipos</span>
+                    <span className="text-[10px] font-normal text-gray-400">Autocompleta Tipo</span>
+                  </h5>
+                  {atajos_alimentacion.filter(s => s.categoria === 'tipo_biberon').length === 0 ? (
+                    <p className="text-[11px] text-gray-400 dark:text-gray-500 italic py-0.5">No hay atajos guardados.</p>
+                  ) : (
+                    <div className="flex flex-wrap gap-1.5">
+                      {atajos_alimentacion
+                        .filter(s => s.categoria === 'tipo_biberon')
+                        .map(shortcut => (
+                          <div
+                            key={shortcut.id}
+                            className="flex items-center bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 text-xs px-2.5 py-1 rounded-xl border border-gray-200/40 dark:border-gray-700/50"
+                          >
+                            <span className="font-medium mr-1.5">{shortcut.concepto}</span>
+                            <button
+                              onClick={() => deleteAtajoAlimentacion(shortcut.id)}
+                              className="text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+                              title="Eliminar atajo"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          </div>
+                        ))}
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <h5 className="text-[11px] font-semibold text-gray-600 dark:text-gray-300 pb-1 mb-1.5 flex justify-between">
+                    <span>Cantidades habituales</span>
+                    <span className="text-[10px] font-normal text-gray-400">Autocompleta Cantidad</span>
+                  </h5>
+                  {atajos_alimentacion.filter(s => s.categoria === 'cantidad_biberon').length === 0 ? (
+                    <p className="text-[11px] text-gray-400 dark:text-gray-500 italic py-0.5">No hay atajos guardados.</p>
+                  ) : (
+                    <div className="flex flex-wrap gap-1.5">
+                      {atajos_alimentacion
+                        .filter(s => s.categoria === 'cantidad_biberon')
+                        .map(shortcut => (
+                          <div
+                            key={shortcut.id}
+                            className="flex items-center bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 text-xs px-2.5 py-1 rounded-xl border border-gray-200/40 dark:border-gray-700/50"
+                          >
+                            <span className="font-medium mr-1.5">{shortcut.concepto}</span>
+                            <button
+                              onClick={() => deleteAtajoAlimentacion(shortcut.id)}
+                              className="text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+                              title="Eliminar atajo"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          </div>
+                        ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Sección Sólidos */}
+              <div className="p-3 bg-gray-50/50 dark:bg-gray-900/10 rounded-2xl border border-gray-100 dark:border-gray-700 space-y-4">
+                <h4 className="text-xs font-bold text-amber-600 dark:text-amber-500 uppercase tracking-wider">Sección Comida Sólida</h4>
+
+                <div>
+                  <h5 className="text-[11px] font-semibold text-gray-600 dark:text-gray-300 pb-1 mb-1.5 flex justify-between">
+                    <span>Tipos de Alimento</span>
+                    <span className="text-[10px] font-normal text-gray-400">Autocompleta Alimento</span>
+                  </h5>
+                  {atajos_alimentacion.filter(s => s.categoria === 'tipo_alimento').length === 0 ? (
+                    <p className="text-[11px] text-gray-400 dark:text-gray-500 italic py-0.5">No hay atajos guardados.</p>
+                  ) : (
+                    <div className="flex flex-wrap gap-1.5">
+                      {atajos_alimentacion
+                        .filter(s => s.categoria === 'tipo_alimento')
+                        .map(shortcut => (
+                          <div
+                            key={shortcut.id}
+                            className="flex items-center bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 text-xs px-2.5 py-1 rounded-xl border border-gray-200/40 dark:border-gray-700/50"
+                          >
+                            <span className="font-medium mr-1.5">{shortcut.concepto}</span>
+                            <button
+                              onClick={() => deleteAtajoAlimentacion(shortcut.id)}
+                              className="text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+                              title="Eliminar atajo"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          </div>
+                        ))}
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <h5 className="text-[11px] font-semibold text-gray-600 dark:text-gray-300 pb-1 mb-1.5 flex justify-between">
+                    <span>Porciones usuales</span>
+                    <span className="text-[10px] font-normal text-gray-400">Autocompleta Porción</span>
+                  </h5>
+                  {atajos_alimentacion.filter(s => s.categoria === 'cantidad_porcion').length === 0 ? (
+                    <p className="text-[11px] text-gray-400 dark:text-gray-500 italic py-0.5">No hay atajos guardados.</p>
+                  ) : (
+                    <div className="flex flex-wrap gap-1.5">
+                      {atajos_alimentacion
+                        .filter(s => s.categoria === 'cantidad_porcion')
+                        .map(shortcut => (
+                          <div
+                            key={shortcut.id}
+                            className="flex items-center bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 text-xs px-2.5 py-1 rounded-xl border border-gray-200/40 dark:border-gray-700/50"
+                          >
+                            <span className="font-medium mr-1.5">{shortcut.concepto}</span>
+                            <button
+                              onClick={() => deleteAtajoAlimentacion(shortcut.id)}
+                              className="text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+                              title="Eliminar atajo"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          </div>
+                        ))}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>

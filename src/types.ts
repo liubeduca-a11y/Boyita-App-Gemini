@@ -30,3 +30,9 @@ export interface AppliedVaccine {
   reactions?: string;
 }
 
+export interface FoodShortcut {
+  id: string;
+  concepto: string;
+  categoria: 'tipo_alimento' | 'cantidad_porcion' | 'tipo_biberon' | 'cantidad_biberon';
+}
+
