@@ -53,12 +53,12 @@ export function FeedingAnalysis({ events }: { events: BabyEvent[] }) {
 
       // Overrides based on keywords
       const lowerConcept = rawConcept.toLowerCase();
-      const liquidKeywords = ['biberón', 'biberon', 'agua', 'fórmula', 'formula', 'leche', 'jugo', 'té', 'te', 'pecho'];
-      const solidKeywords = ['papilla', 'puré', 'pure', 'comida', 'verdura', 'fruta', 'cereal', 'galleta'];
+      const liquidRegex = /\b(biberón|biberon|agua|fórmula|formula|leche|jugo|té|te|pecho)\b/i;
+      const solidRegex = /\b(papilla|puré|pure|comida|verdura|fruta|cereal|galleta)\b/i;
 
-      if (unit === 'ml' || unit === 'oz' || liquidKeywords.some(kw => lowerConcept.includes(kw))) {
+      if (unit === 'ml' || unit === 'oz' || liquidRegex.test(lowerConcept)) {
         isLiquid = true;
-      } else if (unit.includes('gr') || unit.includes('porción') || unit.includes('porcion') || solidKeywords.some(kw => lowerConcept.includes(kw))) {
+      } else if (unit.includes('gr') || unit.includes('porción') || unit.includes('porcion') || solidRegex.test(lowerConcept)) {
         isLiquid = false;
       }
 
@@ -132,8 +132,13 @@ export function FeedingAnalysis({ events }: { events: BabyEvent[] }) {
             {item.volumen_total} {item.unit}
           </p>
         )}
+        {!item.isLiquid && item.unit && (
+          <p className="font-bold text-orange-600 dark:text-orange-400 text-sm">
+            {item.unit}
+          </p>
+        )}
         <p className="text-[11px] text-gray-500 dark:text-gray-400 font-medium mt-0.5">
-          {item.frecuencia} {item.frecuencia === 1 ? 'toma' : 'tomas'}
+          {item.frecuencia} {item.isLiquid ? (item.frecuencia === 1 ? 'toma' : 'tomas') : (item.frecuencia === 1 ? 'registro' : 'registros')}
         </p>
       </div>
     </div>
