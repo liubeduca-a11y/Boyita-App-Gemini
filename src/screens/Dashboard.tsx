@@ -5,7 +5,7 @@ import { es } from 'date-fns/locale';
 import { TimeInput12 } from '../components/TimeInput12';
 import { 
   Clock, Droplets, Moon, Wind, Check, X, Camera, Edit3, Timer, Sparkles, 
-  AlertTriangle, Save, Bath, Milk, CloudMoon, Bed, Sparkle, Heart, FlameKindling, Info,
+  AlertTriangle, Save, Bath, Milk, CloudMoon, Bed, Sparkle, FlameKindling, Info,
   Apple
 } from 'lucide-react';
 import { cn } from '../components/Layout';
@@ -125,7 +125,7 @@ export function Dashboard({ onTabChange }: { onTabChange?: (tab: any) => void })
 
 function FeedingModule({ onTabChange }: { onTabChange?: (tab: any) => void }) {
   const { addEvent, atajos_alimentacion, addAtajoAlimentacion } = useStore();
-  const [feedingType, setFeedingType] = useState<'biberon' | 'solidos' | 'lactancia'>('biberon');
+  const [feedingType, setFeedingType] = useState<'biberon' | 'solidos'>('biberon');
   
   // Date & Time
   const [date, setDate] = useState(() => format(new Date(), 'yyyy-MM-dd'));
@@ -362,8 +362,7 @@ function FeedingModule({ onTabChange }: { onTabChange?: (tab: any) => void }) {
         <div className="flex bg-gray-100 dark:bg-gray-900 p-1 rounded-xl border border-gray-200/10 dark:border-gray-700 mb-5">
           {[
             { id: 'biberon', label: 'Biberón', icon: Milk },
-            { id: 'solidos', label: 'Comida', icon: Apple },
-            { id: 'lactancia', label: 'Pecho', icon: Heart }
+            { id: 'solidos', label: 'Comida', icon: Apple }
           ].map((type) => {
             const Icon = type.icon;
             const isActive = feedingType === type.id;
@@ -582,40 +581,7 @@ function FeedingModule({ onTabChange }: { onTabChange?: (tab: any) => void }) {
             </div>
           )}
 
-          {feedingType === 'lactancia' && (
-            <div className="space-y-3.5 animate-in fade-in">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-extrabold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-1.5">Pecho Izquierdo (min)</label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={leftBreast}
-                    onChange={(e) => {
-                      setLeftBreast(e.target.value);
-                      setErrorMsg('');
-                    }}
-                    placeholder="Ej. 10"
-                    className="w-full p-3 border border-gray-300 dark:border-gray-600 bg-gray-50/40 dark:bg-gray-700/35 rounded-xl text-xs font-bold focus:ring-2 focus:ring-sky-400 outline-none text-gray-900 dark:text-white transition-all"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-extrabold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-1.5">Pecho Derecho (min)</label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={rightBreast}
-                    onChange={(e) => {
-                      setRightBreast(e.target.value);
-                      setErrorMsg('');
-                    }}
-                    placeholder="Ej. 10"
-                    className="w-full p-3 border border-gray-300 dark:border-gray-600 bg-gray-50/40 dark:bg-gray-700/35 rounded-xl text-xs font-bold focus:ring-2 focus:ring-sky-400 outline-none text-gray-900 dark:text-white transition-all"
-                  />
-                </div>
-              </div>
-            </div>
-          )}
+
 
           {/* Date & Time Selectors for back-recording */}
           <div className="grid grid-cols-2 gap-3">

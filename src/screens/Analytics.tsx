@@ -1,16 +1,19 @@
 import React, { useState, useMemo } from 'react';
 import { useStore, BabyEvent } from '../store';
 import { Share2, FileText, ChevronDown, ChevronUp, Milk, Moon, Sun, Droplets, Bath, Ruler, Check, Calendar, Download } from 'lucide-react';
-import { subDays, startOfMonth, isAfter, isBefore, startOfDay, endOfDay, format, differenceInDays, formatDistanceToNow } from 'date-fns';
+import { subDays, startOfMonth, isAfter, isBefore, startOfDay, endOfDay, format, differenceInDays, formatDistanceToNow, differenceInMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 import { FeedingAnalysis } from '../components/FeedingAnalysis';
 import { cn } from '../components/Layout';
+import { WEIGHT_BOYS, WEIGHT_GIRLS, HEIGHT_BOYS, HEIGHT_GIRLS } from '../utils/growthCharts';
 
 type FilterType = '24h' | 'yesterday' | '7d' | 'month' | 'custom';
 
 export function Analytics() {
   const events = useStore(state => state.events);
   const medicalRecords = useStore(state => state.medicalRecords);
+  const profile = useStore(state => state.profile);
 
   const [filter, setFilter] = useState<FilterType>('24h');
   const [customStart, setCustomStart] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
@@ -145,6 +148,40 @@ export function Analytics() {
     if (!medicalRecords || medicalRecords.length === 0) return null;
     return [...medicalRecords].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
   }, [medicalRecords]);
+
+  const growthChartData = useMemo(() => {
+    if (!medicalRecords || medicalRecords.length === 0) return [];
+
+    const sortedRecords = [...medicalRecords].sort((a, b) => {
+      const timeA = new Date(a.date).getTime();
+      const timeB = new Date(b.date).getTime();
+      return (isNaN(timeA) ? 0 : timeA) - (isNaN(timeB) ? 0 : timeB);
+    });
+
+    const weightTable = profile?.gender === 'boy' ? WEIGHT_BOYS : WEIGHT_GIRLS;
+    const heightTable = profile?.gender === 'boy' ? HEIGHT_BOYS : HEIGHT_GIRLS;
+    const tableMonths = Object.keys(weightTable).map(Number).sort((a, b) => a - b);
+
+    return sortedRecords.map(record => {
+      const rDate = new Date(record.date);
+      const bDate = profile?.birthDate ? new Date(profile.birthDate) : null;
+      let ageMonths = 0;
+      if (bDate && !isNaN(bDate.getTime()) && !isNaN(rDate.getTime())) {
+        ageMonths = Math.max(0, differenceInMonths(rDate, bDate));
+      }
+
+      const closestMonth = tableMonths.find(m => m === ageMonths) ?? [...tableMonths].reverse().find(m => m <= ageMonths) ?? 0;
+
+      return {
+        age: ageMonths,
+        label: !isNaN(rDate.getTime()) ? format(rDate, 'dd/MM/yy') : record.date,
+        peso: record.weight,
+        talla: record.height,
+        whoPeso: weightTable[closestMonth as keyof typeof weightTable]?.[1] || 0,
+        whoTalla: heightTable[closestMonth as keyof typeof heightTable]?.[1] || 0,
+      };
+    });
+  }, [medicalRecords, profile?.birthDate, profile?.gender]);
 
   // Export Logic
   const handleExport = () => {
@@ -405,31 +442,82 @@ export function Analytics() {
           </button>
 
           {expanded.growth && (
-            <div className="p-5 border-t border-gray-100 dark:border-gray-700 animate-in slide-in-from-top-2 fade-in">
+            <div className="p-5 border-t border-gray-100 dark:border-gray-700 space-y-6 animate-in slide-in-from-top-2 fade-in">
               {lastGrowth ? (
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between text-xs font-semibold text-gray-500 dark:text-gray-400">
-                    <span>Último registro</span>
-                    <span>{format(new Date(lastGrowth.date), 'dd/MM/yyyy')}</span>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-xl border border-gray-100 dark:border-gray-700">
-                      <p className="text-[10px] font-bold text-gray-500 uppercase mb-1">Peso</p>
-                      <p className="text-xl font-black text-gray-900 dark:text-gray-100">{lastGrowth.weight} <span className="text-sm text-gray-500">kg</span></p>
+                <>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between text-xs font-semibold text-gray-500 dark:text-gray-400">
+                      <span>Último registro</span>
+                      <span>{format(new Date(lastGrowth.date), 'dd/MM/yyyy')}</span>
                     </div>
-                    <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-xl border border-gray-100 dark:border-gray-700">
-                      <p className="text-[10px] font-bold text-gray-500 uppercase mb-1">Talla</p>
-                      <p className="text-xl font-black text-gray-900 dark:text-gray-100">{lastGrowth.height} <span className="text-sm text-gray-500">cm</span></p>
-                    </div>
-                    {lastGrowth.head && (
-                      <div className="col-span-2 bg-gray-50 dark:bg-gray-800 p-4 rounded-xl border border-gray-100 dark:border-gray-700 flex justify-between items-center">
-                        <p className="text-xs font-bold text-gray-500 uppercase">Perímetro Cefálico</p>
-                        <p className="text-lg font-black text-gray-900 dark:text-gray-100">{lastGrowth.head} <span className="text-sm text-gray-500">cm</span></p>
+                    
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-xl border border-gray-100 dark:border-gray-700">
+                        <p className="text-[10px] font-bold text-gray-500 uppercase mb-1">Peso</p>
+                        <p className="text-xl font-black text-gray-900 dark:text-gray-100">{lastGrowth.weight} <span className="text-sm text-gray-500">kg</span></p>
                       </div>
-                    )}
+                      <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-xl border border-gray-100 dark:border-gray-700">
+                        <p className="text-[10px] font-bold text-gray-500 uppercase mb-1">Talla</p>
+                        <p className="text-xl font-black text-gray-900 dark:text-gray-100">{lastGrowth.height} <span className="text-sm text-gray-500">cm</span></p>
+                      </div>
+                      {lastGrowth.head && (
+                        <div className="col-span-2 bg-gray-50 dark:bg-gray-800 p-4 rounded-xl border border-gray-100 dark:border-gray-700 flex justify-between items-center">
+                          <p className="text-xs font-bold text-gray-500 uppercase">Perímetro Cefálico</p>
+                          <p className="text-lg font-black text-gray-900 dark:text-gray-100">{lastGrowth.head} <span className="text-sm text-gray-500">cm</span></p>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
+
+                  {/* Growth Charts */}
+                  {growthChartData.length > 0 && (
+                    <div className="space-y-6 pt-2">
+                      {/* Peso Chart */}
+                      <div className="bg-emerald-50/50 dark:bg-emerald-900/10 p-4 rounded-xl border border-emerald-100 dark:border-emerald-800/30">
+                        <h4 className="text-xs font-bold text-emerald-900 dark:text-emerald-200 uppercase tracking-wider mb-3">
+                          Curva de Peso (kg) vs OMS
+                        </h4>
+                        <div className="h-52 w-full">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <LineChart data={growthChartData} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
+                              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+                              <XAxis dataKey="label" tick={{ fill: '#9ca3af', fontSize: 10 }} />
+                              <YAxis tick={{ fill: '#9ca3af', fontSize: 10 }} domain={['auto', 'auto']} />
+                              <Tooltip 
+                                contentStyle={{ backgroundColor: '#1f2937', borderColor: '#374151', borderRadius: '0.75rem', color: '#fff', fontSize: '11px' }} 
+                              />
+                              <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '6px' }} />
+                              <Line type="monotone" dataKey="peso" name="Peso (kg)" stroke="#10b981" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} />
+                              <Line type="monotone" dataKey="whoPeso" name="Mediana OMS" stroke="#9ca3af" strokeDasharray="4 4" strokeWidth={2} dot={false} />
+                            </LineChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </div>
+
+                      {/* Talla Chart */}
+                      <div className="bg-sky-50/50 dark:bg-sky-900/10 p-4 rounded-xl border border-sky-100 dark:border-sky-800/30">
+                        <h4 className="text-xs font-bold text-sky-900 dark:text-sky-200 uppercase tracking-wider mb-3">
+                          Curva de Talla (cm) vs OMS
+                        </h4>
+                        <div className="h-52 w-full">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <LineChart data={growthChartData} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
+                              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+                              <XAxis dataKey="label" tick={{ fill: '#9ca3af', fontSize: 10 }} />
+                              <YAxis tick={{ fill: '#9ca3af', fontSize: 10 }} domain={['auto', 'auto']} />
+                              <Tooltip 
+                                contentStyle={{ backgroundColor: '#1f2937', borderColor: '#374151', borderRadius: '0.75rem', color: '#fff', fontSize: '11px' }} 
+                              />
+                              <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '6px' }} />
+                              <Line type="monotone" dataKey="talla" name="Talla (cm)" stroke="#0ea5e9" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} />
+                              <Line type="monotone" dataKey="whoTalla" name="Mediana OMS" stroke="#9ca3af" strokeDasharray="4 4" strokeWidth={2} dot={false} />
+                            </LineChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </>
               ) : (
                 <div className="text-center py-6">
                   <Ruler className="w-8 h-8 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
