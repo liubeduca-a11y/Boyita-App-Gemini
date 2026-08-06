@@ -2,6 +2,7 @@ import React, { useState, useMemo, useRef } from 'react';
 import { useStore, BabyEvent } from '../store';
 import { format, isAfter, isBefore, startOfDay, endOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { DateTimeInput12 } from '../components/TimeInput12';
 import { Trash2, Edit2, Download, FileText, FileSpreadsheet, Check, X, Calendar, Filter, Search, Camera } from 'lucide-react';
 import { cn } from '../components/Layout';
 import jsPDF from 'jspdf';
@@ -456,11 +457,9 @@ function EditEventModal({ event, onClose, onSave }: { event: BabyEvent, onClose:
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-305 mb-1">Fecha y Hora</label>
-            <input 
-              type="datetime-local" 
+            <DateTimeInput12 
               value={timestamp}
-              onChange={(e) => setTimestamp(e.target.value)}
-              className="w-full p-3 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700 text-gray-955 dark:text-white rounded-xl focus:ring-2 focus:ring-theme-base outline-none transition-colors"
+              onChange={setTimestamp}
             />
           </div>
 
@@ -470,7 +469,6 @@ function EditEventModal({ event, onClose, onSave }: { event: BabyEvent, onClose:
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-305 mb-1">Tipo de Alimentación</label>
                 <div className="flex space-x-2">
                   {[
-                    { id: 'lactancia', label: 'Pecho' },
                     { id: 'biberon', label: 'Biberón' },
                     { id: 'solidos', label: 'Sólidos' }
                   ].map((t) => (
@@ -667,11 +665,9 @@ function EditEventModal({ event, onClose, onSave }: { event: BabyEvent, onClose:
           {type === 'sleep' && (
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-350 mb-1">Fin del Sueño</label>
-              <input 
-                type="datetime-local" 
+              <DateTimeInput12 
                 value={endTimestamp}
-                onChange={(e) => setEndTimestamp(e.target.value)}
-                className="w-full p-3 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700 text-gray-955 dark:text-white rounded-xl focus:ring-2 focus:ring-theme-base outline-none transition-colors"
+                onChange={setEndTimestamp}
               />
             </div>
           )}

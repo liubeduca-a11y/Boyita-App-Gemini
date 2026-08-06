@@ -10,6 +10,7 @@ import {
 } from 'recharts';
 import { cn } from '../components/Layout';
 import { WEIGHT_BOYS, WEIGHT_GIRLS, HEIGHT_BOYS, HEIGHT_GIRLS } from '../utils/growthCharts';
+import { FeedingAnalysis } from "../components/FeedingAnalysis";
 
 type FilterType = '24h' | 'yesterday' | '7d' | 'month' | 'custom';
 type CompareType = 'yesterday' | 'weekAvg';
@@ -291,7 +292,7 @@ export function Analytics() {
 
     sortedEvents.forEach(e => {
       const date = new Date(e.timestamp);
-      const key = isSingleDay ? format(date, 'HH:00') : format(date, 'MMM dd');
+      const key = isSingleDay ? format(date, 'hh:00 a', { locale: es }) : format(date, 'MMM dd');
       
       if (!dataMap.has(key)) {
         dataMap.set(key, { 
@@ -1039,7 +1040,7 @@ export function Analytics() {
                         <span className="text-lg mt-0.5">🍼</span>
                         <div className="flex-1 space-y-1">
                           <p className="text-xs font-bold text-gray-800 dark:text-gray-200">
-                            Tomas ({format(new Date(f.timestamp), 'HH:mm')} h)
+                            Tomas ({format(new Date(f.timestamp), 'hh:mm a', { locale: es })})
                           </p>
                           <div className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
                             {f.details?.feedingType === 'breast' ? (
@@ -1066,7 +1067,7 @@ export function Analytics() {
                         <span className="text-lg mt-0.5">💦</span>
                         <div className="flex-1 space-y-1">
                           <p className="text-xs font-bold text-gray-800 dark:text-gray-200">
-                            Pañal Mojado (Pipí) ({format(new Date(e.timestamp), 'HH:mm')} h)
+                            Pañal Mojado (Pipí) ({format(new Date(e.timestamp), 'hh:mm a', { locale: es })})
                           </p>
                           {e.notes && <p className="text-[11px] italic text-gray-500">Nota: "{e.notes}"</p>}
                         </div>
@@ -1079,7 +1080,7 @@ export function Analytics() {
                         <span className="text-lg mt-0.5">💩</span>
                         <div className="flex-1 space-y-1">
                           <p className="text-xs font-bold text-gray-800 dark:text-gray-200">
-                            Pañal con Deposición (Popó) ({format(new Date(e.timestamp), 'HH:mm')} h)
+                            Pañal con Deposición (Popó) ({format(new Date(e.timestamp), 'hh:mm a', { locale: es })})
                           </p>
                           <div className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
                             {e.details?.consistency && <p>Consistencia: <strong>{e.details.consistency}</strong></p>}
@@ -1096,7 +1097,7 @@ export function Analytics() {
                         <span className="text-lg mt-0.5">❌</span>
                         <div className="flex-1 space-y-1">
                           <p className="text-xs font-bold text-red-700 dark:text-red-400">
-                            Reporte de Estreñimiento ({format(new Date(e.timestamp), 'HH:mm')} h)
+                            Reporte de Estreñimiento ({format(new Date(e.timestamp), 'hh:mm a', { locale: es })})
                           </p>
                           {e.notes && <p className="text-[11px] italic text-gray-500">Nota: "{e.notes}"</p>}
                         </div>
@@ -1111,7 +1112,7 @@ export function Analytics() {
                     <span className="text-lg mt-0.5">💨</span>
                     <div className="flex-1 space-y-1">
                       <p className="text-xs font-bold text-gray-800 dark:text-gray-200">
-                        Eructo para alivio ({format(new Date(e.timestamp), 'HH:mm')} h)
+                        Eructo para alivio ({format(new Date(e.timestamp), 'hh:mm a', { locale: es })})
                       </p>
                       {e.notes && <p className="text-[11px] italic text-gray-500">Nota: "{e.notes}"</p>}
                     </div>
@@ -1124,7 +1125,7 @@ export function Analytics() {
                     <span className="text-lg mt-0.5">🧼</span>
                     <div className="flex-1 space-y-1">
                       <p className="text-xs font-bold text-gray-800 dark:text-gray-200">
-                        Baño registrado ({format(new Date(e.timestamp), 'HH:mm')} h)
+                        Baño registrado ({format(new Date(e.timestamp), 'hh:mm a', { locale: es })})
                       </p>
                       {e.notes && <p className="text-[11px] italic text-gray-500">Nota: "{e.notes}"</p>}
                     </div>
@@ -1154,22 +1155,8 @@ export function Analytics() {
       {viewMode === 'charts' && (
         <div className="space-y-6">
           
-          {/* Onzas - Barras Diarias */}
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-700 animate-in fade-in slide-in-from-top-4 duration-300">
-            <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-4">Consumo de Alimentación (Onzas Diarias)</h4>
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
-                  <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fill: '#6b7280', fontSize: 12 }} dy={10} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fill: '#9ca3af', fontSize: 12 }} dx={-10} />
-                  <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(0,0,0,0.04)' }} />
-                  <Legend content={renderLegend} verticalAlign="top" wrapperStyle={{ paddingBottom: '20px' }} />
-                  <Bar hide={hiddenSeries.oz} dataKey="oz" name="Onzas Consumidas" fill="#3b82f6" radius={[4, 4, 4, 4]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
+          {/* Alimentación - Análisis Dinámico */}
+          <FeedingAnalysis events={filteredEvents} />
 
           {/* Pañales - Barras Apiladas */}
           <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-700">

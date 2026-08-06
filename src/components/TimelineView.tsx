@@ -1,4 +1,5 @@
 import React, { useState, useRef, useMemo } from 'react';
+import { DateTimeInput12 } from './TimeInput12';
 import { 
   Sparkles, 
   Image as ImageIcon, 
@@ -829,11 +830,9 @@ function EditTimelineEntryModal({ entry, onClose, onSave }: { entry: TimelineEnt
         <div className="space-y-4">
           <div>
             <label className="block text-[10px] uppercase font-black tracking-widest text-gray-400 dark:text-gray-500 mb-1">Fecha y Hora</label>
-            <input 
-              type="datetime-local" 
+            <DateTimeInput12 
               value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="w-full p-2.5 text-xs font-bold border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 rounded-xl focus:ring-2 focus:ring-theme-base outline-none text-gray-900 dark:text-gray-100"
+              onChange={setDate}
             />
           </div>
 

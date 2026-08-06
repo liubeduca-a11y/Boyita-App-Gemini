@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useStore } from '../store';
 import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
+import { TimeInput12 } from '../components/TimeInput12';
 import { 
   Clock, Droplets, Moon, Wind, Check, X, Camera, Edit3, Timer, Sparkles, 
   AlertTriangle, Save, Bath, Milk, CloudMoon, Bed, Sparkle, Heart, FlameKindling, Info,
@@ -123,15 +125,11 @@ export function Dashboard({ onTabChange }: { onTabChange?: (tab: any) => void })
 
 function FeedingModule({ onTabChange }: { onTabChange?: (tab: any) => void }) {
   const { addEvent, atajos_alimentacion, addAtajoAlimentacion } = useStore();
-  const [feedingType, setFeedingType] = useState<'lactancia' | 'biberon' | 'solidos'>('biberon');
+  const [feedingType, setFeedingType] = useState<'biberon' | 'solidos' | 'lactancia'>('biberon');
   
   // Date & Time
   const [date, setDate] = useState(() => format(new Date(), 'yyyy-MM-dd'));
   const [time, setTime] = useState(() => format(new Date(), 'HH:mm'));
-
-  // Lactancia (Pecho)
-  const [leftBreast, setLeftBreast] = useState('0');
-  const [rightBreast, setRightBreast] = useState('0');
 
   // Biberón
   const [amount, setAmount] = useState('');
@@ -141,6 +139,13 @@ function FeedingModule({ onTabChange }: { onTabChange?: (tab: any) => void }) {
   // Sólidos
   const [solidsType, setSolidsType] = useState('');
   const [solidsAmount, setSolidsAmount] = useState('');
+
+  // Lactancia
+  const [leftBreast, setLeftBreast] = useState('');
+  const [rightBreast, setRightBreast] = useState('');
+
+  // Error Feedback
+  const [errorMsg, setErrorMsg] = useState('');
 
   // Dropdowns and checkbox for food shortcuts
   const [showTypeDropdown, setShowTypeDropdown] = useState(false);
@@ -187,29 +192,8 @@ function FeedingModule({ onTabChange }: { onTabChange?: (tab: any) => void }) {
   const [showSaveSuccess, setShowSaveSuccess] = useState(false);
   const [showBurpSuccess, setShowBurpSuccess] = useState(false);
 
-  const handleLeftBreastChange = (val: string) => {
-    const num = Number(val) || 0;
-    if (num > 60) {
-      setLeftBreast('60');
-    } else if (num < 0) {
-      setLeftBreast('0');
-    } else {
-      setLeftBreast(val);
-    }
-  };
-
-  const handleRightBreastChange = (val: string) => {
-    const num = Number(val) || 0;
-    if (num > 60) {
-      setRightBreast('60');
-    } else if (num < 0) {
-      setRightBreast('0');
-    } else {
-      setRightBreast(val);
-    }
-  };
-
   const handleSave = () => {
+    setErrorMsg('');
     let eventTimestamp = Date.now();
     if (date && time) {
       try {
@@ -226,40 +210,41 @@ function FeedingModule({ onTabChange }: { onTabChange?: (tab: any) => void }) {
 
     let details: any = {};
 
-    if (feedingType === 'lactancia') {
-      const izq = Number(leftBreast) || 0;
-      const der = Number(rightBreast) || 0;
-      if (izq === 0 && der === 0) {
-        alert('Por favor ingresa minutos para al menos un lado del pecho.');
-        return;
-      }
-      details = {
-        subtype: 'lactancia',
-        duracion_pecho_izquierdo: izq,
-        duracion_pecho_derecho: der,
-        duracion_total_toma: izq + der
-      };
-    } else if (feedingType === 'biberon') {
-      const amt = Number(amount) || 0;
-      if (amt <= 0) {
-        alert('Por favor ingresa una cantidad válida de onzas/ml.');
+    if (feedingType === 'biberon') {
+      const cleanAmountStr = amount.replace(',', '.');
+      const amt = Number(cleanAmountStr) || 0;
+      if (amt <= 0 && !bottleType.trim() && !notes.trim()) {
+        setErrorMsg('Ingresa la cantidad (oz/ml), el tipo de biberón u observaciones.');
         return;
       }
       details = {
         subtype: 'biberon',
-        amount: amt,
+        amount: amt > 0 ? amt : undefined,
         unit: unit,
         bottleType: bottleType.trim() || undefined
       };
     } else if (feedingType === 'solidos') {
-      if (!solidsType.trim()) {
-        alert('Por favor especifica el tipo de alimento sólido.');
+      if (!solidsType.trim() && !notes.trim()) {
+        setErrorMsg('Especifica el tipo de comida u observaciones.');
         return;
       }
       details = {
         subtype: 'solidos',
-        solidsType: solidsType.trim(),
+        solidsType: solidsType.trim() || undefined,
         solidsAmount: solidsAmount.trim() || undefined
+      };
+    } else if (feedingType === 'lactancia') {
+      const durIzq = Number(leftBreast) || 0;
+      const durDer = Number(rightBreast) || 0;
+      if (durIzq <= 0 && durDer <= 0 && !notes.trim()) {
+        setErrorMsg('Ingresa los minutos de al menos un pecho u observaciones.');
+        return;
+      }
+      details = {
+        subtype: 'lactancia',
+        duracion_pecho_izquierdo: durIzq > 0 ? durIzq : undefined,
+        duracion_pecho_derecho: durDer > 0 ? durDer : undefined,
+        duracion_total_toma: (durIzq + durDer) > 0 ? (durIzq + durDer) : undefined
       };
     }
 
@@ -332,20 +317,16 @@ function FeedingModule({ onTabChange }: { onTabChange?: (tab: any) => void }) {
     setShowSaveSuccess(true);
     setTimeout(() => {
       setShowSaveSuccess(false);
-      setLeftBreast('0');
-      setRightBreast('0');
       setAmount('');
       setBottleType('');
       setSolidsType('');
       setSolidsAmount('');
+      setLeftBreast('');
+      setRightBreast('');
       setSaveAsFavorite(false);
       setNotes('');
       setDate(format(new Date(), 'yyyy-MM-dd'));
       setTime(format(new Date(), 'HH:mm'));
-
-      if (onTabChange) {
-        onTabChange('history');
-      }
     }, 1500);
   };
 
@@ -372,7 +353,7 @@ function FeedingModule({ onTabChange }: { onTabChange?: (tab: any) => void }) {
             </div>
             <div>
               <h2 className="text-lg font-bold text-gray-900 dark:text-gray-50 leading-tight">Alimentación</h2>
-              <span className="text-[11px] text-gray-500 dark:text-gray-400 md:inline-block hidden font-medium">Biberón, comida y pecho sin temporizadores</span>
+              <span className="text-[11px] text-gray-500 dark:text-gray-400 md:inline-block hidden font-medium">Biberón y comida sólida</span>
             </div>
           </div>
         </div>
@@ -389,7 +370,11 @@ function FeedingModule({ onTabChange }: { onTabChange?: (tab: any) => void }) {
             return (
               <button
                 key={type.id}
-                onClick={() => setFeedingType(type.id as any)}
+                type="button"
+                onClick={() => {
+                  setFeedingType(type.id as any);
+                  setErrorMsg('');
+                }}
                 className={cn(
                   "flex-1 py-2 rounded-lg transition-all flex items-center justify-center space-x-1.5 text-xs font-bold select-none focus:outline-none focus:ring-0",
                   isActive 
@@ -406,40 +391,6 @@ function FeedingModule({ onTabChange }: { onTabChange?: (tab: any) => void }) {
 
         <div className="space-y-4 animate-in fade-in duration-200">
           {/* Subtype Forms */}
-          {feedingType === 'lactancia' && (
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-extrabold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-1.5">Lado Izquierdo</label>
-                <div className="relative">
-                  <input
-                    type="number"
-                    max="60"
-                    value={leftBreast}
-                    onChange={(e) => handleLeftBreastChange(e.target.value)}
-                    className="w-full p-3 pl-4 pr-12 border border-gray-300 dark:border-gray-600 bg-gray-50/40 dark:bg-gray-700/35 rounded-xl focus:ring-2 focus:ring-sky-400 outline-none text-base font-bold text-gray-900 dark:text-white transition-all"
-                  />
-                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-600 dark:text-gray-400">min</span>
-                </div>
-              </div>
-              <div>
-                <label className="block text-xs font-extrabold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-1.5">Lado Derecho</label>
-                <div className="relative">
-                  <input
-                    type="number"
-                    max="60"
-                    value={rightBreast}
-                    onChange={(e) => handleRightBreastChange(e.target.value)}
-                    className="w-full p-3 pl-4 pr-12 border border-gray-300 dark:border-gray-600 bg-gray-50/40 dark:bg-gray-700/35 rounded-xl focus:ring-2 focus:ring-sky-400 outline-none text-base font-bold text-gray-900 dark:text-white transition-all"
-                  />
-                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-600 dark:text-gray-400">min</span>
-                </div>
-              </div>
-              <div className="col-span-2 text-xs font-bold text-sky-600 dark:text-sky-400">
-                Total toma: {(Number(leftBreast) || 0) + (Number(rightBreast) || 0)} minutos
-              </div>
-            </div>
-          )}
-
           {feedingType === 'biberon' && (
             <div className="space-y-3.5 animate-in fade-in">
               <div className="relative">
@@ -449,6 +400,7 @@ function FeedingModule({ onTabChange }: { onTabChange?: (tab: any) => void }) {
                   value={bottleType}
                   onChange={(e) => {
                     setBottleType(e.target.value);
+                    setErrorMsg('');
                     setShowBottleTypeDropdown(true);
                   }}
                   onFocus={() => setShowBottleTypeDropdown(true)}
@@ -464,6 +416,7 @@ function FeedingModule({ onTabChange }: { onTabChange?: (tab: any) => void }) {
                         type="button"
                         onMouseDown={() => {
                           setBottleType(shortcut.concepto);
+                          setErrorMsg('');
                           setShowBottleTypeDropdown(false);
                         }}
                         className="w-full text-left px-4 py-2.5 text-xs text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors font-medium border-b border-gray-50 dark:border-gray-750 last:border-0"
@@ -479,11 +432,12 @@ function FeedingModule({ onTabChange }: { onTabChange?: (tab: any) => void }) {
                 <div className="col-span-2 relative">
                   <label className="block text-xs font-extrabold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-1.5">Cantidad</label>
                   <input
-                    type="number"
-                    step="0.5"
+                    type="text"
+                    inputMode="decimal"
                     value={amount}
                     onChange={(e) => {
                       setAmount(e.target.value);
+                      setErrorMsg('');
                       setShowBiberonDropdown(true);
                     }}
                     onFocus={() => setShowBiberonDropdown(true)}
@@ -499,6 +453,7 @@ function FeedingModule({ onTabChange }: { onTabChange?: (tab: any) => void }) {
                           type="button"
                           onMouseDown={() => {
                             handleSelectBiberonShortcut(shortcut.concepto);
+                            setErrorMsg('');
                             setShowBiberonDropdown(false);
                           }}
                           className="w-full text-left px-4 py-2.5 text-xs text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors font-medium border-b border-gray-50 dark:border-gray-750 last:border-0"
@@ -541,7 +496,7 @@ function FeedingModule({ onTabChange }: { onTabChange?: (tab: any) => void }) {
           )}
 
           {feedingType === 'solidos' && (
-            <div className="space-y-3.5">
+            <div className="space-y-3.5 animate-in fade-in">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="relative">
                   <label className="block text-xs font-extrabold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-1.5">Tipo de Comida</label>
@@ -550,6 +505,7 @@ function FeedingModule({ onTabChange }: { onTabChange?: (tab: any) => void }) {
                     value={solidsType}
                     onChange={(e) => {
                       setSolidsType(e.target.value);
+                      setErrorMsg('');
                       setShowTypeDropdown(true);
                     }}
                     onFocus={() => setShowTypeDropdown(true)}
@@ -565,6 +521,7 @@ function FeedingModule({ onTabChange }: { onTabChange?: (tab: any) => void }) {
                           type="button"
                           onMouseDown={() => {
                             setSolidsType(shortcut.concepto);
+                            setErrorMsg('');
                             setShowTypeDropdown(false);
                           }}
                           className="w-full text-left px-4 py-2.5 text-xs text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors font-medium border-b border-gray-50 dark:border-gray-750 last:border-0"
@@ -582,6 +539,7 @@ function FeedingModule({ onTabChange }: { onTabChange?: (tab: any) => void }) {
                     value={solidsAmount}
                     onChange={(e) => {
                       setSolidsAmount(e.target.value);
+                      setErrorMsg('');
                       setShowAmountDropdown(true);
                     }}
                     onFocus={() => setShowAmountDropdown(true)}
@@ -597,6 +555,7 @@ function FeedingModule({ onTabChange }: { onTabChange?: (tab: any) => void }) {
                           type="button"
                           onMouseDown={() => {
                             setSolidsAmount(shortcut.concepto);
+                            setErrorMsg('');
                             setShowAmountDropdown(false);
                           }}
                           className="w-full text-left px-4 py-2.5 text-xs text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors font-medium border-b border-gray-50 dark:border-gray-750 last:border-0"
@@ -623,6 +582,41 @@ function FeedingModule({ onTabChange }: { onTabChange?: (tab: any) => void }) {
             </div>
           )}
 
+          {feedingType === 'lactancia' && (
+            <div className="space-y-3.5 animate-in fade-in">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-extrabold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-1.5">Pecho Izquierdo (min)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={leftBreast}
+                    onChange={(e) => {
+                      setLeftBreast(e.target.value);
+                      setErrorMsg('');
+                    }}
+                    placeholder="Ej. 10"
+                    className="w-full p-3 border border-gray-300 dark:border-gray-600 bg-gray-50/40 dark:bg-gray-700/35 rounded-xl text-xs font-bold focus:ring-2 focus:ring-sky-400 outline-none text-gray-900 dark:text-white transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-extrabold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-1.5">Pecho Derecho (min)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={rightBreast}
+                    onChange={(e) => {
+                      setRightBreast(e.target.value);
+                      setErrorMsg('');
+                    }}
+                    placeholder="Ej. 10"
+                    className="w-full p-3 border border-gray-300 dark:border-gray-600 bg-gray-50/40 dark:bg-gray-700/35 rounded-xl text-xs font-bold focus:ring-2 focus:ring-sky-400 outline-none text-gray-900 dark:text-white transition-all"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Date & Time Selectors for back-recording */}
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -630,17 +624,21 @@ function FeedingModule({ onTabChange }: { onTabChange?: (tab: any) => void }) {
               <input
                 type="date"
                 value={date}
-                onChange={(e) => setDate(e.target.value)}
+                onChange={(e) => {
+                  setDate(e.target.value);
+                  setErrorMsg('');
+                }}
                 className="w-full p-3 border border-gray-300 dark:border-gray-600 bg-gray-50/40 dark:bg-gray-700/35 rounded-xl text-xs focus:ring-2 focus:ring-sky-400 outline-none text-gray-950 dark:text-white transition-all font-bold"
               />
             </div>
             <div>
               <label className="block text-xs font-extrabold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-1.5">Hora</label>
-              <input
-                type="time"
+              <TimeInput12
                 value={time}
-                onChange={(e) => setTime(e.target.value)}
-                className="w-full p-3 border border-gray-300 dark:border-gray-600 bg-gray-50/40 dark:bg-gray-700/35 rounded-xl text-xs focus:ring-2 focus:ring-sky-400 outline-none text-gray-950 dark:text-white transition-all font-bold"
+                onChange={(newTime) => {
+                  setTime(newTime);
+                  setErrorMsg('');
+                }}
               />
             </div>
           </div>
@@ -650,17 +648,28 @@ function FeedingModule({ onTabChange }: { onTabChange?: (tab: any) => void }) {
             <input
               type="text"
               value={notes}
-              onChange={(e) => setNotes(e.target.value)}
+              onChange={(e) => {
+                setNotes(e.target.value);
+                setErrorMsg('');
+              }}
               placeholder="Ej. Tomó con buen apetito"
               className="w-full p-3 border border-gray-300 dark:border-gray-600 bg-gray-50/40 dark:bg-gray-700/35 rounded-xl text-xs focus:ring-2 focus:ring-sky-400 outline-none text-gray-900 dark:text-white transition-all placeholder-gray-500"
             />
           </div>
 
+          {errorMsg && (
+            <div className="p-2.5 rounded-xl bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-300 text-xs font-semibold flex items-center space-x-2 animate-in fade-in">
+              <AlertTriangle className="w-4 h-4 shrink-0 text-red-500" />
+              <span>{errorMsg}</span>
+            </div>
+          )}
+
           <button
+            type="button"
             onClick={handleSave}
             disabled={showSaveSuccess}
             className={cn(
-              "w-full py-3 rounded-xl font-bold flex items-center justify-center space-x-2 transition-all duration-300 select-none shadow-sm",
+              "w-full py-3 rounded-xl font-bold flex items-center justify-center space-x-2 transition-all duration-300 select-none shadow-sm cursor-pointer",
               showSaveSuccess 
                 ? "bg-green-100 border border-green-200 text-green-700 dark:bg-green-900/30 dark:border-green-800 dark:text-green-400 scale-95" 
                 : "bg-theme-dark dark:bg-theme-dark/95 text-white hover:opacity-90 active:scale-98 disabled:opacity-40"
@@ -943,30 +952,52 @@ function HygieneModule() {
 function SleepModule({ onTabChange }: { onTabChange?: (tab: any) => void }) {
   const { addEvent } = useStore();
   const [date, setDate] = useState(() => format(new Date(), 'yyyy-MM-dd'));
+  const [startTime, setStartTime] = useState(() => {
+    const d = new Date(Date.now() - 3600000);
+    return format(d, 'HH:mm');
+  });
   const [endTime, setEndTime] = useState(() => format(new Date(), 'HH:mm'));
-  const [hours, setHours] = useState('1');
-  const [minutes, setMinutes] = useState('0');
   const [notes, setNotes] = useState('');
   const [showSaveSuccess, setShowSaveSuccess] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
 
   const getCalculatedTimes = () => {
-    if (!date || !endTime) return null;
+    if (!date || !startTime || !endTime) return null;
     try {
       const [year, month, day] = date.split('-').map(Number);
+      const [startH, startM] = startTime.split(':').map(Number);
       const [endH, endM] = endTime.split(':').map(Number);
-      const endDateTime = new Date(year, month - 1, day, endH, endM);
 
-      const hrs = Number(hours) || 0;
-      const mins = Number(minutes) || 0;
-      const durationMs = (hrs * 60 + mins) * 60 * 1000;
+      const startDateTime = new Date(year, month - 1, day, startH, startM);
+      let endDateTime = new Date(year, month - 1, day, endH, endM);
 
-      const startDateTime = new Date(endDateTime.getTime() - durationMs);
+      if (endDateTime.getTime() < startDateTime.getTime()) {
+        endDateTime = new Date(year, month - 1, day + 1, endH, endM);
+      }
+
+      const durationMs = endDateTime.getTime() - startDateTime.getTime();
+      const totalMinutes = Math.floor(durationMs / (1000 * 60));
+      const hours = Math.floor(totalMinutes / 60);
+      const mins = totalMinutes % 60;
+
+      let durationText = '';
+      if (hours > 0 && mins > 0) {
+        durationText = `${hours} hr ${mins} min`;
+      } else if (hours > 0) {
+        durationText = `${hours} hr${hours > 1 ? 's' : ''}`;
+      } else {
+        durationText = `${mins} min`;
+      }
+
       return {
         start: startDateTime,
         end: endDateTime,
         durationMs,
-        startStr: format(startDateTime, 'HH:mm'),
-        startDateStr: format(startDateTime, 'dd/MM/yyyy')
+        durationText,
+        startStr: format(startDateTime, 'hh:mm a', { locale: es }),
+        endStr: format(endDateTime, 'hh:mm a', { locale: es }),
+        startDateStr: format(startDateTime, 'dd/MM/yyyy'),
+        endDateStr: format(endDateTime, 'dd/MM/yyyy')
       };
     } catch (e) {
       return null;
@@ -976,10 +1007,11 @@ function SleepModule({ onTabChange }: { onTabChange?: (tab: any) => void }) {
   const times = getCalculatedTimes();
 
   const handleSave = () => {
+    setErrorMsg('');
     if (!times) return;
 
     if (times.durationMs <= 0) {
-      alert('La duración del sueño debe ser mayor a 0 minutos.');
+      setErrorMsg('La hora de fin debe ser posterior a la hora de inicio.');
       return;
     }
 
@@ -993,15 +1025,11 @@ function SleepModule({ onTabChange }: { onTabChange?: (tab: any) => void }) {
     setShowSaveSuccess(true);
     setTimeout(() => {
       setShowSaveSuccess(false);
-      setHours('1');
-      setMinutes('0');
       setNotes('');
       setDate(format(new Date(), 'yyyy-MM-dd'));
-      setEndTime(format(new Date(), 'HH:mm'));
-
-      if (onTabChange) {
-        onTabChange('history');
-      }
+      const now = new Date();
+      setEndTime(format(now, 'HH:mm'));
+      setStartTime(format(new Date(now.getTime() - 3600000), 'HH:mm'));
     }, 1500);
   };
 
@@ -1019,71 +1047,48 @@ function SleepModule({ onTabChange }: { onTabChange?: (tab: any) => void }) {
             </div>
             <div>
               <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 leading-tight">Sueño</h2>
-              <span className="text-[11px] text-gray-500 dark:text-gray-400 md:inline-block hidden font-medium">Registra siestas e historial sin temporizadores</span>
+              <span className="text-[11px] text-gray-500 dark:text-gray-400 md:inline-block hidden font-medium">Registra siestas e historial indicando inicio y fin</span>
             </div>
           </div>
         </div>
 
         <div className="space-y-4 animate-in fade-in duration-200">
-          <div className="grid grid-cols-2 gap-3.5">
-            <div>
-              <label className="block text-xs font-extrabold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-1.5">Fecha de Siesta</label>
-              <input
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                className="w-full p-3 border border-gray-300 dark:border-gray-600 bg-gray-50/40 dark:bg-gray-700/35 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 outline-none text-gray-950 dark:text-white transition-all font-bold"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-extrabold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-1.5">Hora de Fin</label>
-              <input
-                type="time"
-                value={endTime}
-                onChange={(e) => setEndTime(e.target.value)}
-                className="w-full p-3 border border-gray-300 dark:border-gray-600 bg-gray-50/40 dark:bg-gray-700/35 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 outline-none text-gray-950 dark:text-white transition-all font-bold"
-              />
-            </div>
+          <div>
+            <label className="block text-xs font-extrabold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-1.5">Fecha de Sueño</label>
+            <input
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="w-full p-3 border border-gray-300 dark:border-gray-600 bg-gray-50/40 dark:bg-gray-700/35 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 outline-none text-gray-950 dark:text-white transition-all font-bold"
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-3.5">
             <div>
-              <label className="block text-xs font-extrabold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-1.5">Horas de Sueño</label>
-              <input
-                type="number"
-                min="0"
-                max="24"
-                value={hours}
-                onChange={(e) => setHours(e.target.value)}
-                className="w-full p-3 border border-gray-300 dark:border-gray-600 bg-gray-50/40 dark:bg-gray-700/35 rounded-xl text-sm font-bold focus:ring-2 focus:ring-indigo-500 outline-none text-gray-950 dark:text-white transition-all"
-                placeholder="Ej. 1"
+              <label className="block text-xs font-extrabold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-1.5">Hora de Inicio</label>
+              <TimeInput12
+                value={startTime}
+                onChange={setStartTime}
               />
             </div>
             <div>
-              <label className="block text-xs font-extrabold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-1.5">Minutos de Sueño</label>
-              <input
-                type="number"
-                min="0"
-                max="59"
-                value={minutes}
-                onChange={(e) => setMinutes(e.target.value)}
-                className="w-full p-3 border border-gray-300 dark:border-gray-600 bg-gray-50/40 dark:bg-gray-700/35 rounded-xl text-sm font-bold focus:ring-2 focus:ring-indigo-500 outline-none text-gray-950 dark:text-white transition-all"
-                placeholder="Ej. 30"
+              <label className="block text-xs font-extrabold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-1.5">Hora de Fin</label>
+              <TimeInput12
+                value={endTime}
+                onChange={setEndTime}
               />
             </div>
           </div>
 
           {/* Computed times preview */}
-          {times && (
-            <div className="p-4 bg-indigo-50/60 dark:bg-indigo-950/25 border border-indigo-100/50 dark:border-indigo-900/40 rounded-2xl flex items-start space-x-3 text-xs leading-relaxed">
-              <span className="text-base text-indigo-500">⏰</span>
+          {times && times.durationMs > 0 && (
+            <div className="p-4 bg-indigo-50/60 dark:bg-indigo-950/25 border border-indigo-100/50 dark:border-indigo-900/40 rounded-2xl flex items-center space-x-3 text-xs leading-relaxed">
+              <span className="text-lg">⏱️</span>
               <div>
-                <span className="font-extrabold text-indigo-950 dark:text-indigo-200 block uppercase tracking-wider text-[10px] mb-1">Cálculo Automático</span>
+                <span className="font-extrabold text-indigo-950 dark:text-indigo-200 block uppercase tracking-wider text-[10px] mb-0.5">Duración Calculada</span>
                 <p className="text-gray-700 dark:text-gray-300 font-medium">
-                  Inicio estimado: <strong className="text-indigo-600 dark:text-indigo-400 font-bold">{times.startStr}</strong> ({times.startDateStr})
-                </p>
-                <p className="text-gray-500 dark:text-gray-400 mt-0.5">
-                  Fin de la siesta: <span className="font-bold">{endTime}</span> ({format(times.end, 'dd/MM/yyyy')})
+                  Total: <strong className="text-indigo-600 dark:text-indigo-400 font-bold">{times.durationText}</strong>
+                  <span className="text-gray-500 dark:text-gray-400 font-normal ml-2">({times.startStr} a {times.endStr})</span>
                 </p>
               </div>
             </div>
@@ -1100,11 +1105,19 @@ function SleepModule({ onTabChange }: { onTabChange?: (tab: any) => void }) {
             />
           </div>
 
+          {errorMsg && (
+            <div className="p-2.5 rounded-xl bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-300 text-xs font-semibold flex items-center space-x-2 animate-in fade-in">
+              <AlertTriangle className="w-4 h-4 shrink-0 text-red-500" />
+              <span>{errorMsg}</span>
+            </div>
+          )}
+
           <button
+            type="button"
             onClick={handleSave}
             disabled={showSaveSuccess}
             className={cn(
-              "w-full py-3 rounded-xl font-bold flex items-center justify-center space-x-2 transition-all duration-300 select-none shadow-sm",
+              "w-full py-3 rounded-xl font-bold flex items-center justify-center space-x-2 transition-all duration-300 select-none shadow-sm cursor-pointer",
               showSaveSuccess 
                 ? "bg-green-100 border border-green-200 text-green-700 dark:bg-green-900/30 dark:border-green-800 dark:text-green-400 scale-95" 
                 : "bg-indigo-600 dark:bg-indigo-500 text-white hover:opacity-90 active:scale-98 disabled:opacity-40"
